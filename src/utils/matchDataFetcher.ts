@@ -1,9 +1,6 @@
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { parseString } from 'xml2js';
-import { promisify } from 'util';
-
-const parseXMLAsync = promisify(parseString);
 
 export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
   try {
@@ -18,7 +15,18 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     }
 
     const text = await response.text();
-    const result = await parseXMLAsync(text);
+    
+    // Use a Promise wrapper around parseString instead of util.promisify
+    const parseXML = (xmlData: string): Promise<any> => {
+      return new Promise((resolve, reject) => {
+        parseString(xmlData, (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      });
+    };
+
+    const result = await parseXML(text);
     
     // Extract fixtures from the XML structure
     const fixtures = result?.League?.Week?.[0]?.Fixture || [];
