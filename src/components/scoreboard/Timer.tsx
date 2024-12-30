@@ -44,13 +44,11 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps)
   const seconds = timeLeft % 60;
 
   return (
-    <div className="w-full space-y-4">
-      <div className="flex items-center justify-center">
-        <div className="text-volleyball-cream text-[10rem] font-mono tracking-wider">
-          {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
-        </div>
+    <div className="text-volleyball-cream text-center">
+      <div className="text-[12rem] font-mono tracking-wider leading-none">
+        {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
       </div>
-      <div className="flex items-center justify-center space-x-4">
+      <div className="flex justify-center gap-4 mt-4">
         <Button
           variant="outline"
           size="icon"

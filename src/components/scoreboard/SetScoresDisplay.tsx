@@ -13,22 +13,22 @@ export const SetScoresDisplay = ({ setScores, match, isTeamsSwitched }: SetScore
   }));
 
   return (
-    <div className="flex flex-col justify-between h-full gap-4">
-      <div className="text-volleyball-cream text-3xl text-center mb-2 uppercase tracking-wider">
+    <div className="flex flex-col items-center gap-4">
+      <div className="text-volleyball-cream text-5xl uppercase tracking-[0.2em] mb-4">
         SETS
       </div>
       {sets.map((set, index) => (
         <div 
           key={index} 
-          className="grid grid-cols-2 gap-2"
+          className="grid grid-cols-2 gap-4 w-full"
         >
           <div className="bg-volleyball-black rounded-2xl p-4 flex items-center justify-center">
-            <span className="text-volleyball-cream text-3xl font-mono">
+            <span className="text-volleyball-cream text-4xl font-mono">
               {set.home}
             </span>
           </div>
           <div className="bg-volleyball-black rounded-2xl p-4 flex items-center justify-center">
-            <span className="text-volleyball-cream text-3xl font-mono">
+            <span className="text-volleyball-cream text-4xl font-mono">
               {set.away}
             </span>
           </div>
