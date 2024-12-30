@@ -20,9 +20,12 @@ export const SetScoresDisplay = ({ setScores, match, isTeamsSwitched }: SetScore
     <div className="bg-volleyball-darkBlue rounded-lg p-4">
       <div className="grid grid-cols-[200px_1fr] gap-4">
         {/* Team Names Column */}
-        <div className="flex flex-col space-y-4">
-          <div className="text-white text-2xl font-semibold h-16 flex items-center">{homeTeam.name}</div>
-          <div className="text-white text-2xl font-semibold h-16 flex items-center">{awayTeam.name}</div>
+        <div>
+          <div className="text-white text-sm mb-2">Teams</div>
+          <div className="flex flex-col space-y-4">
+            <div className="text-white text-2xl font-semibold h-16 flex items-center justify-center">{homeTeam.name}</div>
+            <div className="text-white text-2xl font-semibold h-16 flex items-center justify-center">{awayTeam.name}</div>
+          </div>
         </div>
 
         {/* Scores Column */}
