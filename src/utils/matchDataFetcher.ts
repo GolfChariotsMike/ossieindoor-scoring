@@ -1,6 +1,7 @@
 import { toast } from "@/components/ui/use-toast";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { XMLParser } from 'fast-xml-parser';
+import { Match } from "@/types/volleyball";
 
 export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
   try {
@@ -30,6 +31,16 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     // Transform the XML data into our expected format
     const transformedData = Array.isArray(fixtures) ? fixtures : [fixtures];
     
+    // Helper function to parse the date string
+    const parseDateTime = (dateTimeStr: string) => {
+      try {
+        return parse(dateTimeStr, 'dd/MM/yyyy HH:mm', new Date()).toISOString();
+      } catch (error) {
+        console.error('Error parsing date:', dateTimeStr, error);
+        return new Date().toISOString();
+      }
+    };
+
     if (courtId) {
       const currentMatch = transformedData.find(
         (match) => match.PlayingAreaName === `Court ${courtId}`
@@ -48,13 +59,16 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       return {
         id: currentMatch.Id,
         court: parseInt(courtId),
-        startTime: currentMatch.DateTime,
+        startTime: parseDateTime(currentMatch.DateTime),
         homeTeam: { id: currentMatch.HomeTeamId, name: currentMatch.HomeTeam },
         awayTeam: { id: currentMatch.AwayTeamId, name: currentMatch.AwayTeam },
       };
     }
 
-    return transformedData;
+    return transformedData.map(fixture => ({
+      ...fixture,
+      DateTime: parseDateTime(fixture.DateTime)
+    }));
   } catch (error) {
     console.error("Error fetching match data:", error);
     toast({

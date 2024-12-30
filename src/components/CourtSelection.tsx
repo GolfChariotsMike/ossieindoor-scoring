@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
+import { Fixture } from "@/types/volleyball";
 
 const CourtSelection = () => {
   const navigate = useNavigate();
@@ -15,15 +16,15 @@ const CourtSelection = () => {
   const [selectedCourt, setSelectedCourt] = useState<number | null>(null);
   const courts = [1, 2, 3, 4, 5, 6, 7, 8];
 
-  const { data: matches, isLoading } = useQuery({
+  const { data: matches = [], isLoading } = useQuery({
     queryKey: ["matches", date],
     queryFn: () => fetchMatchData(undefined, date),
   });
 
   const getCourtFixtures = (courtNumber: number) => {
-    if (!matches) return [];
+    if (!Array.isArray(matches)) return [];
     return matches.filter(
-      (match: any) => match.PlayingAreaName === `Court ${courtNumber}`
+      (match: Fixture) => match.PlayingAreaName === `Court ${courtNumber}`
     );
   };
 
@@ -77,7 +78,7 @@ const CourtSelection = () => {
                 {selectedCourt === court && (
                   <div className="space-y-2">
                     {fixtures.length > 0 ? (
-                      fixtures.map((fixture: any, index: number) => (
+                      fixtures.map((fixture: Fixture, index: number) => (
                         <Button
                           key={index}
                           variant="outline"
