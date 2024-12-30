@@ -6,11 +6,16 @@ interface TimerProps {
   initialMinutes: number;
   onComplete: () => void;
   onSwitchTeams: () => void;
+  isBreak: boolean;
 }
 
-export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps) => {
+export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
+
+  useEffect(() => {
+    setTimeLeft(initialMinutes * 60);
+  }, [initialMinutes]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -45,7 +50,11 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps)
 
   return (
     <div className="text-volleyball-cream text-center">
-      <div className="font-score text-[12rem] tracking-[0.2em] leading-none mb-2 [text-shadow:_2px_2px_0_rgb(0_0_0)]">
+      <div 
+        className={`font-score text-[12rem] tracking-[0.2em] leading-none mb-2 [text-shadow:_2px_2px_0_rgb(0_0_0)] ${
+          isBreak ? 'text-blue-400' : 'text-volleyball-cream'
+        }`}
+      >
         {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
       </div>
       

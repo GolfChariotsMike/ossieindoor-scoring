@@ -53,13 +53,22 @@ const Scoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
+      // Break time is over, start new set
       setIsBreak(false);
+      setCurrentScore({ home: 0, away: 0 }); // Reset current scores
+      handleSwitchTeams(); // Switch teams at the end of break
       toast({
         title: "Break Time Over",
         description: "Starting next set",
       });
     } else {
+      // Set is complete, start break
       setIsBreak(true);
+      // Save current set scores
+      setSetScores(prev => ({
+        home: [...prev.home, currentScore.home],
+        away: [...prev.away, currentScore.away]
+      }));
       toast({
         title: "Set Complete",
         description: "Starting 1 minute break",
@@ -110,6 +119,7 @@ const Scoreboard = () => {
             initialMinutes={isBreak ? 1 : 2}
             onComplete={handleTimerComplete}
             onSwitchTeams={handleSwitchTeams}
+            isBreak={isBreak}
           />
 
           <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
