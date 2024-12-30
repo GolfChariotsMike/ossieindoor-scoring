@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const CourtSelection = () => {
   const navigate = useNavigate();
-  const courts = [1, 2, 3, 4, 5, 6];
+  const courts = [1, 2, 3, 4, 5, 6, 7, 8];
 
   return (
     <div className="min-h-screen bg-volleyball-navy p-4">
