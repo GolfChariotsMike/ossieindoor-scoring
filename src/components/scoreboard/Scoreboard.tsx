@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "../scoreboard/BackButton";
 import { TeamsDisplay } from "../scoreboard/TeamsDisplay";
 import { ExitConfirmationDialog } from "../scoreboard/ExitConfirmationDialog";
+import { TeamScore } from "./TeamScore";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
