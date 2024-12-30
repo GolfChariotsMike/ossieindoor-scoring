@@ -3,13 +3,13 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
-import { MatchHeader } from "./scoreboard/MatchHeader";
-import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
-import { Timer } from "./scoreboard/Timer";
+import { MatchHeader } from "./MatchHeader";
+import { SetScoresDisplay } from "./SetScoresDisplay";
+import { Timer } from "./Timer";
 import { useToast } from "@/components/ui/use-toast";
-import { BackButton } from "./scoreboard/BackButton";
-import { TeamsDisplay } from "./scoreboard/TeamsDisplay";
-import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
+import { BackButton } from "./BackButton";
+import { TeamsDisplay } from "./TeamsDisplay";
+import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
