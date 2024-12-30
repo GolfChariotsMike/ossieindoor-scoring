@@ -3,12 +3,11 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
-import { Timer } from "./Timer";
 import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "./BackButton";
-import { TeamScore } from "./TeamScore";
-import { SetScoresDisplay } from "./SetScoresDisplay";
 import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
+import { LoadingState } from "./LoadingState";
+import { ScoreboardLayout } from "./ScoreboardLayout";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -54,12 +53,18 @@ const Scoreboard = () => {
   const handleTimerComplete = () => {
     if (isBreak) {
       setIsBreak(false);
+      setCurrentScore({ home: 0, away: 0 });
+      handleSwitchTeams();
       toast({
         title: "Break Time Over",
         description: "Starting next set",
       });
     } else {
       setIsBreak(true);
+      setSetScores(prev => ({
+        home: [...prev.home, currentScore.home],
+        away: [...prev.away, currentScore.away]
+      }));
       toast({
         title: "Set Complete",
         description: "Starting 1 minute break",
@@ -90,51 +95,24 @@ const Scoreboard = () => {
   };
 
   if (isLoading || !match) {
-    return (
-      <div className="min-h-screen bg-volleyball-red flex items-center justify-center">
-        <div className="text-volleyball-cream text-2xl">Loading match data...</div>
-      </div>
-    );
+    return <LoadingState />;
   }
-
-  const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
-  const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
   return (
     <div className="min-h-screen bg-volleyball-red">
-      <div className="max-w-[1920px] mx-auto relative h-full p-8 pb-12">
+      <div className="max-w-[1920px] mx-auto relative h-screen p-6">
         <BackButton onClick={handleBack} />
 
-        <div className="flex flex-col justify-between h-full">
-          <Timer
-            initialMinutes={isBreak ? 1 : 14}
-            onComplete={handleTimerComplete}
-            onSwitchTeams={handleSwitchTeams}
-            isBreak={isBreak}
-          />
-
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-16 items-center mb-8">
-            <TeamScore
-              teamName={homeTeam.name}
-              score={currentScore.home}
-              onScoreUpdate={() => handleScore("home")}
-            />
-
-            <div className="w-64">
-              <SetScoresDisplay 
-                setScores={setScores} 
-                match={match}
-                isTeamsSwitched={isTeamsSwitched}
-              />
-            </div>
-
-            <TeamScore
-              teamName={awayTeam.name}
-              score={currentScore.away}
-              onScoreUpdate={() => handleScore("away")}
-            />
-          </div>
-        </div>
+        <ScoreboardLayout
+          isBreak={isBreak}
+          currentScore={currentScore}
+          setScores={setScores}
+          match={match}
+          isTeamsSwitched={isTeamsSwitched}
+          onTimerComplete={handleTimerComplete}
+          onSwitchTeams={handleSwitchTeams}
+          onScoreUpdate={handleScore}
+        />
 
         <ExitConfirmationDialog
           open={showExitConfirmation}
