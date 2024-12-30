@@ -13,20 +13,20 @@ const CourtSelection = () => {
   const courts = [1, 2, 3, 4, 5, 6, 7, 8];
 
   return (
-    <div className="min-h-screen bg-volleyball-navy p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-white mb-8 text-center">
+    <div className="min-h-screen bg-volleyball-red">
+      <div className="max-w-4xl mx-auto p-8">
+        <h1 className="text-4xl font-bold text-volleyball-cream mb-8 text-center">
           Volleyball Scoreboard
         </h1>
 
-        <div className="bg-volleyball-darkBlue rounded-lg p-6 mb-8">
-          <h2 className="text-white text-xl mb-4">Select Date</h2>
+        <div className="bg-volleyball-black/80 rounded-lg p-6 mb-8">
+          <h2 className="text-volleyball-cream text-xl mb-4">Select Date</h2>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 className={cn(
-                  "w-full justify-start text-left font-normal",
+                  "w-full justify-start text-left font-normal bg-volleyball-cream hover:bg-volleyball-cream/90",
                   !date && "text-muted-foreground"
                 )}
               >
@@ -49,10 +49,10 @@ const CourtSelection = () => {
           {courts.map((court) => (
             <div
               key={court}
-              className="bg-volleyball-darkBlue rounded-lg p-4"
+              className="bg-volleyball-black/80 rounded-lg p-4"
             >
               <Button
-                className="w-full h-20 text-2xl bg-volleyball-darkBlue hover:bg-volleyball-lightBlue transition-colors"
+                className="w-full h-20 text-2xl bg-volleyball-cream text-volleyball-black hover:bg-volleyball-cream/90 transition-colors"
                 onClick={() => navigate(`/court/${court}/${date.toISOString()}`)}
               >
                 Court {court}

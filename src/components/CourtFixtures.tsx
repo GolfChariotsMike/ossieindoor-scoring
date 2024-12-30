@@ -22,21 +22,21 @@ const CourtFixtures = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-volleyball-navy flex items-center justify-center">
-        <div className="text-white text-2xl">Loading fixtures...</div>
+      <div className="min-h-screen bg-volleyball-red flex items-center justify-center">
+        <div className="text-volleyball-cream text-2xl">Loading fixtures...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-volleyball-navy p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-volleyball-red">
+      <div className="max-w-4xl mx-auto p-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-white">Court {courtId} Fixtures</h1>
+          <h1 className="text-4xl font-bold text-volleyball-cream">Court {courtId} Fixtures</h1>
           <Button 
             variant="outline" 
             onClick={() => navigate(-1)}
-            className="text-white"
+            className="bg-volleyball-cream text-volleyball-black hover:bg-volleyball-cream/90"
           >
             Back
           </Button>
@@ -48,7 +48,7 @@ const CourtFixtures = () => {
               <Button
                 key={index}
                 variant="outline"
-                className="w-full text-left justify-between p-4 hover:bg-volleyball-lightBlue text-lg"
+                className="w-full text-left justify-between p-4 bg-volleyball-black/80 hover:bg-volleyball-black/90 text-volleyball-cream text-lg"
                 onClick={() =>
                   navigate(`/scoreboard/${courtId}`, {
                     state: { fixture },
@@ -62,14 +62,14 @@ const CourtFixtures = () => {
                   <div className="text-center flex-1 px-4">
                     {fixture.HomeTeam} vs {fixture.AwayTeam}
                   </div>
-                  <div className="text-sm text-gray-400 min-w-[120px] text-right">
+                  <div className="text-sm text-volleyball-cream/70 min-w-[120px] text-right">
                     {fixture.DivisionName}
                   </div>
                 </div>
               </Button>
             ))
           ) : (
-            <div className="text-white text-center p-4 bg-volleyball-darkBlue rounded-lg text-xl">
+            <div className="text-volleyball-cream text-center p-4 bg-volleyball-black/80 rounded-lg text-xl">
               No fixtures available for this court
             </div>
           )}
