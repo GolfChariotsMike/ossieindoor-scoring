@@ -21,15 +21,15 @@ export const SetScoresDisplay = ({ setScores }: SetScoresDisplayProps) => {
       {sets.map((set) => (
         <div 
           key={set.number}
-          className="grid grid-cols-2 gap-4 w-full mb-4"
+          className="grid grid-cols-2 gap-6 w-full mb-6"
         >
-          <div className="bg-volleyball-black rounded-2xl p-4 flex items-center justify-center">
-            <span className="text-volleyball-cream text-4xl font-mono">
+          <div className="bg-volleyball-black rounded-2xl p-6 flex items-center justify-center">
+            <span className="text-volleyball-cream text-6xl font-mono">
               {set.home}
             </span>
           </div>
-          <div className="bg-volleyball-black rounded-2xl p-4 flex items-center justify-center">
-            <span className="text-volleyball-cream text-4xl font-mono">
+          <div className="bg-volleyball-black rounded-2xl p-6 flex items-center justify-center">
+            <span className="text-volleyball-cream text-6xl font-mono">
               {set.away}
             </span>
           </div>
