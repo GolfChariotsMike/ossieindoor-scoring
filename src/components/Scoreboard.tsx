@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import { Score, SetScores } from "@/types/volleyball";
+import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { MatchHeader } from "./scoreboard/MatchHeader";
@@ -10,21 +10,21 @@ import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
 const Scoreboard = () => {
   const { courtId } = useParams();
   const location = useLocation();
-  const fixture = location.state?.fixture;
+  const fixture = location.state?.fixture as Fixture | undefined;
 
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
   const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
 
-  const { data: match, isLoading } = useQuery({
+  const { data: match, isLoading } = useQuery<Match>({
     queryKey: ["match", courtId],
     queryFn: () => {
       if (fixture) {
         return {
-          id: fixture.id || "match-1",
+          id: fixture.Id || "match-1",
           court: parseInt(courtId!),
           startTime: fixture.DateTime,
-          homeTeam: { id: "team-1", name: fixture.HomeTeam },
-          awayTeam: { id: "team-2", name: fixture.AwayTeam },
+          homeTeam: { id: fixture.HomeTeamId, name: fixture.HomeTeam },
+          awayTeam: { id: fixture.AwayTeamId, name: fixture.AwayTeam },
         };
       }
       return fetchMatchData(courtId!);
