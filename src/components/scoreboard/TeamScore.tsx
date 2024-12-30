@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-
 interface TeamScoreProps {
   teamName: string;
   score: number;
@@ -12,13 +10,13 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
       <div className="text-volleyball-cream text-6xl mb-8 uppercase tracking-[0.2em] font-bold">
         {teamName}
       </div>
-      <Button
+      <button
         className="w-full aspect-square text-[12rem] bg-volleyball-black hover:bg-volleyball-black/90 
-        text-volleyball-cream font-mono tracking-wider rounded-3xl border-none shadow-lg"
+        text-volleyball-cream font-mono tracking-wider rounded-3xl border-none"
         onClick={onScoreUpdate}
       >
         {score}
-      </Button>
+      </button>
     </div>
   );
 };

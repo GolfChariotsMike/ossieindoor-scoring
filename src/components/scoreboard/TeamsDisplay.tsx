@@ -1,5 +1,5 @@
-import { TeamScore } from "./TeamScore";
 import { Team } from "@/types/volleyball";
+import { TeamScore } from "./TeamScore";
 
 interface TeamsDisplayProps {
   homeTeam: Team;
@@ -8,7 +8,6 @@ interface TeamsDisplayProps {
   awayScore: number;
   onHomeScore: () => void;
   onAwayScore: () => void;
-  onSwitchTeams: () => void;
 }
 
 export const TeamsDisplay = ({
@@ -18,16 +17,14 @@ export const TeamsDisplay = ({
   awayScore,
   onHomeScore,
   onAwayScore,
-  onSwitchTeams,
 }: TeamsDisplayProps) => {
   return (
-    <div className="grid grid-cols-2 gap-4 items-center">
+    <div className="grid grid-cols-2 gap-16 items-center">
       <TeamScore
         teamName={homeTeam.name}
         score={homeScore}
         onScoreUpdate={onHomeScore}
       />
-
       <TeamScore
         teamName={awayTeam.name}
         score={awayScore}

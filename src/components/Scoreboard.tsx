@@ -3,12 +3,11 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
-import { MatchHeader } from "./scoreboard/MatchHeader";
-import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
 import { Timer } from "./scoreboard/Timer";
 import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "./scoreboard/BackButton";
 import { TeamsDisplay } from "./scoreboard/TeamsDisplay";
+import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 
 const Scoreboard = () => {
@@ -92,8 +91,8 @@ const Scoreboard = () => {
 
   if (isLoading || !match) {
     return (
-      <div className="min-h-screen bg-volleyball-navy flex items-center justify-center">
-        <div className="text-white text-2xl">Loading match data...</div>
+      <div className="min-h-screen bg-volleyball-red flex items-center justify-center">
+        <div className="text-volleyball-cream text-2xl">Loading match data...</div>
       </div>
     );
   }
@@ -102,41 +101,36 @@ const Scoreboard = () => {
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
   return (
-    <div className="min-h-screen bg-volleyball-navy p-4">
-      <div className="max-w-4xl mx-auto relative">
+    <div className="min-h-screen bg-volleyball-red">
+      <div className="max-w-[1920px] mx-auto relative h-screen p-8">
         <BackButton onClick={handleBack} />
 
-        <div className="bg-volleyball-darkBlue rounded-lg p-6 mb-4 mt-12">
-          <MatchHeader 
-            court={match.court} 
-            startTime={match.startTime} 
-            division={match.division}
-          />
-
-          <div className="mb-6">
-            <Timer
-              initialMinutes={isBreak ? 1 : 14}
-              onComplete={handleTimerComplete}
-              onSwitchTeams={handleSwitchTeams}
-            />
-          </div>
-
-          <TeamsDisplay
-            homeTeam={homeTeam}
-            awayTeam={awayTeam}
-            homeScore={currentScore.home}
-            awayScore={currentScore.away}
-            onHomeScore={() => handleScore("home")}
-            onAwayScore={() => handleScore("away")}
+        <div className="h-full flex flex-col justify-between">
+          <Timer
+            initialMinutes={isBreak ? 1 : 14}
+            onComplete={handleTimerComplete}
             onSwitchTeams={handleSwitchTeams}
           />
-        </div>
 
-        <SetScoresDisplay 
-          setScores={setScores} 
-          match={match}
-          isTeamsSwitched={isTeamsSwitched}
-        />
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-16 items-center">
+            <TeamsDisplay
+              homeTeam={homeTeam}
+              awayTeam={awayTeam}
+              homeScore={currentScore.home}
+              awayScore={currentScore.away}
+              onHomeScore={() => handleScore("home")}
+              onAwayScore={() => handleScore("away")}
+            />
+
+            <div className="w-64">
+              <SetScoresDisplay 
+                setScores={setScores} 
+                match={match}
+                isTeamsSwitched={isTeamsSwitched}
+              />
+            </div>
+          </div>
+        </div>
 
         <ExitConfirmationDialog
           open={showExitConfirmation}
