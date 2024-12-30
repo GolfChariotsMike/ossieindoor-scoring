@@ -6,27 +6,11 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { fetchMatchData } from "@/utils/matchDataFetcher";
-import { Fixture } from "@/types/volleyball";
 
 const CourtSelection = () => {
   const navigate = useNavigate();
   const [date, setDate] = useState<Date>(new Date());
-  const [selectedCourt, setSelectedCourt] = useState<number | null>(null);
   const courts = [1, 2, 3, 4, 5, 6, 7, 8];
-
-  const { data: matches = [], isLoading } = useQuery({
-    queryKey: ["matches", date],
-    queryFn: () => fetchMatchData(undefined, date),
-  });
-
-  const getCourtFixtures = (courtNumber: number) => {
-    if (!Array.isArray(matches)) return [];
-    return matches.filter(
-      (match: Fixture) => match.PlayingAreaName === `Court ${courtNumber}`
-    );
-  };
 
   return (
     <div className="min-h-screen bg-volleyball-navy p-4">
@@ -62,53 +46,19 @@ const CourtSelection = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {courts.map((court) => {
-            const fixtures = getCourtFixtures(court);
-            return (
-              <div
-                key={court}
-                className="bg-volleyball-darkBlue rounded-lg p-4"
+          {courts.map((court) => (
+            <div
+              key={court}
+              className="bg-volleyball-darkBlue rounded-lg p-4"
+            >
+              <Button
+                className="w-full h-20 text-2xl bg-volleyball-darkBlue hover:bg-volleyball-lightBlue transition-colors"
+                onClick={() => navigate(`/court/${court}/${date.toISOString()}`)}
               >
-                <Button
-                  className="w-full h-20 text-2xl mb-4 bg-volleyball-darkBlue hover:bg-volleyball-lightBlue transition-colors"
-                  onClick={() => setSelectedCourt(court)}
-                >
-                  Court {court}
-                </Button>
-                {selectedCourt === court && (
-                  <div className="space-y-2">
-                    {fixtures.length > 0 ? (
-                      fixtures.map((fixture: Fixture, index: number) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          className="w-full text-left justify-start p-4"
-                          onClick={() =>
-                            navigate(`/scoreboard/${court}`, {
-                              state: { fixture },
-                            })
-                          }
-                        >
-                          <div>
-                            <div className="font-semibold">
-                              {format(new Date(fixture.DateTime), "h:mm a")}
-                            </div>
-                            <div className="text-sm">
-                              {fixture.HomeTeam} vs {fixture.AwayTeam}
-                            </div>
-                          </div>
-                        </Button>
-                      ))
-                    ) : (
-                      <div className="text-white text-center p-4">
-                        No fixtures available for this court
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                Court {court}
+              </Button>
+            </div>
+          ))}
         </div>
       </div>
     </div>

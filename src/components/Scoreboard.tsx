@@ -17,19 +17,23 @@ const Scoreboard = () => {
 
   const { data: match, isLoading } = useQuery<Match>({
     queryKey: ["match", courtId],
-    queryFn: () => {
+    queryFn: async () => {
       if (fixture) {
         return {
           id: fixture.Id || "match-1",
           court: parseInt(courtId!),
           startTime: fixture.DateTime,
+          division: fixture.DivisionName,
           homeTeam: { id: fixture.HomeTeamId, name: fixture.HomeTeam },
           awayTeam: { id: fixture.AwayTeamId, name: fixture.AwayTeam },
         };
       }
-      return fetchMatchData(courtId!);
+      const data = await fetchMatchData(courtId!);
+      if (Array.isArray(data)) {
+        throw new Error("Invalid match data received");
+      }
+      return data as Match;
     },
-    enabled: !!courtId,
   });
 
   const handleScore = (team: "home" | "away") => {
@@ -51,7 +55,11 @@ const Scoreboard = () => {
     <div className="min-h-screen bg-volleyball-navy p-4">
       <div className="max-w-4xl mx-auto">
         <div className="bg-volleyball-darkBlue rounded-lg p-6 mb-4">
-          <MatchHeader court={match.court} startTime={match.startTime} />
+          <MatchHeader 
+            court={match.court} 
+            startTime={match.startTime} 
+            division={match.division}
+          />
 
           <div className="grid grid-cols-3 gap-4 items-center">
             <TeamScore

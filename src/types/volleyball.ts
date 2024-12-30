@@ -7,6 +7,7 @@ export interface Match {
   id: string;
   court: number;
   startTime: string;
+  division?: string;
   homeTeam: Team;
   awayTeam: Team;
 }
@@ -25,6 +26,7 @@ export interface Fixture {
   Id: string;
   DateTime: string;
   PlayingAreaName: string;
+  DivisionName: string;
   HomeTeam: string;
   AwayTeam: string;
   HomeTeamId: string;
