@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 const CourtSelection = () => {
   const navigate = useNavigate();
   const [date, setDate] = useState<Date>(new Date());
+  const [open, setOpen] = useState(false);
   const courts = [1, 2, 3, 4, 5, 6, 7, 8];
 
   return (
@@ -21,7 +22,7 @@ const CourtSelection = () => {
 
         <div className="bg-volleyball-black/80 rounded-lg p-6 mb-8">
           <h2 className="text-volleyball-cream text-xl mb-4">Select Date</h2>
-          <Popover>
+          <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -38,7 +39,12 @@ const CourtSelection = () => {
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={(newDate) => newDate && setDate(newDate)}
+                onSelect={(newDate) => {
+                  if (newDate) {
+                    setDate(newDate);
+                    setOpen(false);
+                  }
+                }}
                 initialFocus
               />
             </PopoverContent>
