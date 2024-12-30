@@ -21,18 +21,18 @@ export const SetScoresDisplay = ({ setScores, match, isTeamsSwitched }: SetScore
       <div className="grid grid-cols-[200px_1fr] gap-4">
         {/* Team Names Column */}
         <div className="flex flex-col justify-center space-y-4">
-          <div className="text-white text-2xl font-semibold text-left">{homeTeam.name}</div>
-          <div className="text-white text-2xl font-semibold text-left">{awayTeam.name}</div>
+          <div className="text-white text-2xl font-semibold">{homeTeam.name}</div>
+          <div className="text-white text-2xl font-semibold">{awayTeam.name}</div>
         </div>
 
         {/* Scores Column */}
-        <div className="flex justify-around">
+        <div className="flex justify-around items-center">
           {sets.map((set, index) => (
             <div key={index} className="text-center px-4">
               <div className="text-white text-sm mb-2">Set {index + 1}</div>
               <div className="grid grid-rows-2 gap-2">
-                <div className="text-white text-2xl font-bold">{set.home}</div>
-                <div className="text-white text-2xl font-bold">{set.away}</div>
+                <div className="text-white text-2xl font-bold flex justify-center items-center">{set.home}</div>
+                <div className="text-white text-2xl font-bold flex justify-center items-center">{set.away}</div>
               </div>
             </div>
           ))}
