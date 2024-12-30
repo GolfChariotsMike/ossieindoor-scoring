@@ -6,12 +6,15 @@ interface SetScoresDisplayProps {
   isTeamsSwitched: boolean;
 }
 
-export const SetScoresDisplay = ({ setScores }: SetScoresDisplayProps) => {
+export const SetScoresDisplay = ({ setScores, isTeamsSwitched }: SetScoresDisplayProps) => {
+  // Create an array of 3 sets, filling in scores where they exist
   const sets = Array.from({ length: 3 }, (_, i) => ({
-    home: setScores.home[i] || 0,
-    away: setScores.away[i] || 0,
+    home: setScores.home[i] ?? 0,
+    away: setScores.away[i] ?? 0,
     number: i + 1
   }));
+
+  console.log('Current set scores:', setScores); // Add logging to debug
 
   return (
     <div className="flex flex-col items-center">

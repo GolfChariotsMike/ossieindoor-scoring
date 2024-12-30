@@ -62,10 +62,12 @@ const Scoreboard = () => {
   const handleTimerComplete = () => {
     if (isBreak) {
       // Break time is over, save the break scores to set scores and start new set
-      setSetScores(prev => ({
-        home: [...prev.home, breakScore.home],
-        away: [...prev.away, breakScore.away]
-      }));
+      const newSetScores = {
+        home: [...setScores.home, breakScore.home],
+        away: [...setScores.away, breakScore.away]
+      };
+      console.log('Updating set scores:', newSetScores); // Add logging
+      setSetScores(newSetScores);
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 }); // Reset current scores for next set
       handleSwitchTeams(); // Switch teams at the end of break
