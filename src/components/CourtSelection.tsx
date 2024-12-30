@@ -17,7 +17,7 @@ const CourtSelection = () => {
 
   const { data: matches, isLoading } = useQuery({
     queryKey: ["matches", date],
-    queryFn: () => fetchMatchData(),
+    queryFn: () => fetchMatchData(undefined, date),
   });
 
   const getCourtFixtures = (courtNumber: number) => {
