@@ -54,7 +54,7 @@ const Scoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // When break is over, start next set
+      // Break is over, start new set with fresh scores
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 });
       handleSwitchTeams();
@@ -66,46 +66,44 @@ const Scoreboard = () => {
         });
       }
     } else {
-      // When set is complete, update set scores and start break
-      setSetScores((prev) => {
-        const newSetScores = {
-          home: [...prev.home, currentScore.home],
-          away: [...prev.away, currentScore.away],
-        };
-        
-        // Check if match should be complete after this set
-        if (newSetScores.home.length >= 3) {
-          setIsMatchComplete(true);
-          toast({
-            title: "Match Complete",
-            description: "The match has ended",
-          });
-        }
-        
-        return newSetScores;
-      });
+      // Set is complete, save scores and start break
+      const newSetScores = {
+        home: [...setScores.home, currentScore.home],
+        away: [...setScores.away, currentScore.away],
+      };
       
+      console.log('Saving set scores:', newSetScores);
+      
+      setSetScores(newSetScores);
       setIsBreak(true);
-      toast({
-        title: "Set Complete",
-        description: "Starting 1 minute break",
-      });
+      
+      // Check if match should be complete after this set
+      if (newSetScores.home.length >= 3) {
+        setIsMatchComplete(true);
+        toast({
+          title: "Match Complete",
+          description: "The match has ended",
+        });
+      } else {
+        toast({
+          title: "Set Complete",
+          description: "Starting 1 minute break",
+        });
+      }
     }
   };
 
   const handleSwitchTeams = () => {
     if (isMatchComplete) return;
     setIsTeamsSwitched(!isTeamsSwitched);
-    const newScore = {
-      home: currentScore.away,
-      away: currentScore.home
-    };
-    setCurrentScore(newScore);
-    const newSetScores = {
-      home: [...setScores.away],
-      away: [...setScores.home]
-    };
-    setSetScores(newSetScores);
+    setCurrentScore((prev) => ({
+      home: prev.away,
+      away: prev.home
+    }));
+    setSetScores((prev) => ({
+      home: [...prev.away],
+      away: [...prev.home]
+    }));
   };
 
   const handleBack = () => {
