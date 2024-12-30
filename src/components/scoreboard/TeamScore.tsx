@@ -11,7 +11,7 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
     <div className="text-center">
       <div className="text-white text-2xl mb-3 font-bold">{teamName}</div>
       <Button
-        className="w-full h-48 text-[8rem] bg-volleyball-lightBlue hover:bg-volleyball-gold transition-colors font-mono tracking-wider border-4 border-volleyball-gold shadow-lg"
+        className="w-full h-96 text-[12rem] bg-volleyball-lightBlue hover:bg-volleyball-gold transition-colors font-mono tracking-wider border-4 border-volleyball-gold shadow-lg"
         onClick={onScoreUpdate}
       >
         {score}
