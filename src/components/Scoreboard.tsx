@@ -6,14 +6,18 @@ import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { MatchHeader } from "./scoreboard/MatchHeader";
 import { TeamScore } from "./scoreboard/TeamScore";
 import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
+import { Timer } from "./scoreboard/Timer";
+import { useToast } from "@/components/ui/use-toast";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
   const location = useLocation();
   const fixture = location.state?.fixture as Fixture | undefined;
+  const { toast } = useToast();
 
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
   const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
+  const [isBreak, setIsBreak] = useState(false);
 
   const { data: match, isLoading } = useQuery<Match>({
     queryKey: ["match", courtId],
@@ -43,6 +47,22 @@ const Scoreboard = () => {
     }));
   };
 
+  const handleTimerComplete = () => {
+    if (isBreak) {
+      setIsBreak(false);
+      toast({
+        title: "Break Time Over",
+        description: "Starting next set",
+      });
+    } else {
+      setIsBreak(true);
+      toast({
+        title: "Set Complete",
+        description: "Starting 1 minute break",
+      });
+    }
+  };
+
   if (isLoading || !match) {
     return (
       <div className="min-h-screen bg-volleyball-navy flex items-center justify-center">
@@ -60,6 +80,13 @@ const Scoreboard = () => {
             startTime={match.startTime} 
             division={match.division}
           />
+
+          <div className="mb-6">
+            <Timer
+              initialMinutes={isBreak ? 1 : 14}
+              onComplete={handleTimerComplete}
+            />
+          </div>
 
           <div className="grid grid-cols-3 gap-4 items-center">
             <TeamScore
