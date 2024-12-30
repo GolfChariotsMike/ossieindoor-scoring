@@ -110,6 +110,7 @@ const Scoreboard = () => {
             initialMinutes={isBreak ? 1 : 14}
             onComplete={handleTimerComplete}
             onSwitchTeams={handleSwitchTeams}
+            isBreak={isBreak}
           />
 
           <div className="grid grid-cols-[1fr_auto_1fr] gap-16 items-center mb-8">
