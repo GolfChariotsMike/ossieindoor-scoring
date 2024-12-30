@@ -19,7 +19,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        'score': ['Roboto Mono', 'monospace'],
+        'score': ['Orbitron', 'monospace'],
         'display': ['Oswald', 'sans-serif'],
         'sets': ['Bebas Neue', 'cursive'],
       },
