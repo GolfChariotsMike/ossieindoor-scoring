@@ -14,7 +14,7 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
 
   return (
     <div className="text-center flex flex-col items-center">
-      <div className={`font-display text-volleyball-cream uppercase tracking-[0.2em] mb-8 w-[400px] h-24 flex items-center justify-center ${getTextSizeClass(teamName)}`}>
+      <div className={`font-display text-volleyball-cream uppercase tracking-[0.2em] mb-8 w-[400px] h-24 flex items-center justify-center [text-shadow:_2px_2px_0_rgb(0_0_0)] ${getTextSizeClass(teamName)}`}>
         {teamName}
       </div>
       <button
