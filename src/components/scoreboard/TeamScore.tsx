@@ -6,13 +6,13 @@ interface TeamScoreProps {
 
 export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) => {
   return (
-    <div className="text-center w-full">
-      <div className="text-volleyball-cream text-6xl mb-8 uppercase tracking-[0.2em] font-bold">
+    <div className="text-center">
+      <div className="text-volleyball-cream text-6xl uppercase tracking-[0.2em] mb-8">
         {teamName}
       </div>
       <button
         className="w-full aspect-square text-[12rem] bg-volleyball-black hover:bg-volleyball-black/90 
-        text-volleyball-cream font-mono tracking-wider rounded-3xl border-none"
+        text-volleyball-cream font-mono rounded-3xl"
         onClick={onScoreUpdate}
       >
         {score}

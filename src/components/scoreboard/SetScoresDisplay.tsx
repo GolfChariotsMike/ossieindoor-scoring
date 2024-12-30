@@ -6,21 +6,22 @@ interface SetScoresDisplayProps {
   isTeamsSwitched: boolean;
 }
 
-export const SetScoresDisplay = ({ setScores, match, isTeamsSwitched }: SetScoresDisplayProps) => {
+export const SetScoresDisplay = ({ setScores }: SetScoresDisplayProps) => {
   const sets = Array.from({ length: 3 }, (_, i) => ({
     home: setScores.home[i] || 0,
-    away: setScores.away[i] || 0
+    away: setScores.away[i] || 0,
+    number: i + 1
   }));
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="text-volleyball-cream text-5xl uppercase tracking-[0.2em] mb-4">
+    <div className="flex flex-col items-center">
+      <div className="text-volleyball-cream text-6xl uppercase tracking-[0.2em] mb-8">
         SETS
       </div>
-      {sets.map((set, index) => (
+      {sets.map((set) => (
         <div 
-          key={index} 
-          className="grid grid-cols-2 gap-4 w-full"
+          key={set.number}
+          className="grid grid-cols-2 gap-4 w-full mb-4"
         >
           <div className="bg-volleyball-black rounded-2xl p-4 flex items-center justify-center">
             <span className="text-volleyball-cream text-4xl font-mono">

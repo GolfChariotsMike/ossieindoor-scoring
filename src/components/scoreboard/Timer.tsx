@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { ArrowLeftRight } from "lucide-react";
 
 interface TimerProps {
   initialMinutes: number;
@@ -7,7 +6,7 @@ interface TimerProps {
   onSwitchTeams: () => void;
 }
 
-export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps) => {
+export const Timer = ({ initialMinutes, onComplete }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -34,8 +33,8 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps)
   const seconds = timeLeft % 60;
 
   return (
-    <div className="text-volleyball-cream text-center mb-12">
-      <div className="text-[12rem] font-mono tracking-wider leading-none">
+    <div className="text-volleyball-cream text-center">
+      <div className="text-[12rem] font-mono tracking-[0.2em] leading-none">
         {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
       </div>
     </div>

@@ -6,7 +6,7 @@ import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { Timer } from "./scoreboard/Timer";
 import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "./scoreboard/BackButton";
-import { TeamsDisplay } from "./scoreboard/TeamsDisplay";
+import { TeamScore } from "./scoreboard/TeamScore";
 import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 
@@ -105,21 +105,18 @@ const Scoreboard = () => {
       <div className="max-w-[1920px] mx-auto relative h-screen p-8">
         <BackButton onClick={handleBack} />
 
-        <div className="h-full flex flex-col justify-between">
+        <div className="flex flex-col justify-between h-full">
           <Timer
             initialMinutes={isBreak ? 1 : 14}
             onComplete={handleTimerComplete}
             onSwitchTeams={handleSwitchTeams}
           />
 
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-16 items-center">
-            <TeamsDisplay
-              homeTeam={homeTeam}
-              awayTeam={awayTeam}
-              homeScore={currentScore.home}
-              awayScore={currentScore.away}
-              onHomeScore={() => handleScore("home")}
-              onAwayScore={() => handleScore("away")}
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-16 items-center mb-12">
+            <TeamScore
+              teamName={homeTeam.name}
+              score={currentScore.home}
+              onScoreUpdate={() => handleScore("home")}
             />
 
             <div className="w-64">
@@ -129,6 +126,12 @@ const Scoreboard = () => {
                 isTeamsSwitched={isTeamsSwitched}
               />
             </div>
+
+            <TeamScore
+              teamName={awayTeam.name}
+              score={currentScore.away}
+              onScoreUpdate={() => handleScore("away")}
+            />
           </div>
         </div>
 
