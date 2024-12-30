@@ -9,9 +9,9 @@ interface TeamScoreProps {
 export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) => {
   return (
     <div className="text-center">
-      <div className="text-white text-xl mb-2">{teamName}</div>
+      <div className="text-white text-2xl mb-3 font-bold">{teamName}</div>
       <Button
-        className="w-full h-20 text-3xl bg-volleyball-lightBlue hover:bg-volleyball-gold transition-colors"
+        className="w-full h-24 text-5xl bg-volleyball-lightBlue hover:bg-volleyball-gold transition-colors"
         onClick={onScoreUpdate}
       >
         {score}

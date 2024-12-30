@@ -48,7 +48,7 @@ export const Timer = ({ initialMinutes, onComplete }: TimerProps) => {
   return (
     <div className="w-full space-y-2">
       <div className="flex items-center justify-center mb-4">
-        <div className="text-5xl font-bold text-white">
+        <div className="text-7xl font-bold text-white">
           {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
         </div>
       </div>
@@ -57,17 +57,17 @@ export const Timer = ({ initialMinutes, onComplete }: TimerProps) => {
           variant="outline"
           size="icon"
           onClick={toggleTimer}
-          className="bg-volleyball-lightBlue hover:bg-volleyball-gold"
+          className="bg-volleyball-lightBlue hover:bg-volleyball-gold w-12 h-12"
         >
-          {isRunning ? <PauseCircle className="h-6 w-6" /> : <PlayCircle className="h-6 w-6" />}
+          {isRunning ? <PauseCircle className="h-8 w-8" /> : <PlayCircle className="h-8 w-8" />}
         </Button>
         <Button
           variant="outline"
           size="icon"
           onClick={resetTimer}
-          className="bg-volleyball-lightBlue hover:bg-volleyball-gold"
+          className="bg-volleyball-lightBlue hover:bg-volleyball-gold w-12 h-12"
         >
-          <RotateCcw className="h-6 w-6" />
+          <RotateCcw className="h-8 w-8" />
         </Button>
       </div>
       <Progress value={progress} className="h-2" />
