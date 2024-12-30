@@ -8,6 +8,7 @@ interface TeamsDisplayProps {
   awayScore: number;
   onHomeScore: () => void;
   onAwayScore: () => void;
+  onSwitchTeams: () => void;
 }
 
 export const TeamsDisplay = ({
@@ -17,6 +18,7 @@ export const TeamsDisplay = ({
   awayScore,
   onHomeScore,
   onAwayScore,
+  onSwitchTeams,
 }: TeamsDisplayProps) => {
   return (
     <div className="grid grid-cols-2 gap-4 items-center">

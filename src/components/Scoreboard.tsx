@@ -8,7 +8,6 @@ import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
 import { Timer } from "./scoreboard/Timer";
 import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "./scoreboard/BackButton";
-import { ScoreboardControls } from "./scoreboard/ScoreboardControls";
 import { TeamsDisplay } from "./scoreboard/TeamsDisplay";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 
@@ -118,6 +117,7 @@ const Scoreboard = () => {
             <Timer
               initialMinutes={isBreak ? 1 : 14}
               onComplete={handleTimerComplete}
+              onSwitchTeams={handleSwitchTeams}
             />
           </div>
 
