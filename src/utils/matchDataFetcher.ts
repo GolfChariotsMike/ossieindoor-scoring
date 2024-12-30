@@ -1,6 +1,6 @@
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
-import { parseString } from 'xml2js';
+import { XMLParser } from 'fast-xml-parser';
 
 export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
   try {
@@ -15,42 +15,24 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     }
 
     const text = await response.text();
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: "",
+    });
     
-    // Use a Promise wrapper around parseString instead of util.promisify
-    const parseXML = (xmlData: string): Promise<any> => {
-      return new Promise((resolve, reject) => {
-        parseString(xmlData, (err, result) => {
-          if (err) reject(err);
-          else resolve(result);
-        });
-      });
-    };
-
-    const result = await parseXML(text);
+    const result = parser.parse(text);
+    console.log('Parsed XML result:', result);
     
     // Extract fixtures from the XML structure
     const fixtures = result?.League?.Week?.[0]?.Fixture || [];
+    console.log('Extracted fixtures:', fixtures);
     
     // Transform the XML data into our expected format
-    const transformedData = fixtures.map((fixture: any) => ({
-      id: fixture.$.Id,
-      DateTime: fixture.$.DateTime,
-      PlayingAreaName: fixture.$.PlayingAreaName,
-      HomeTeam: fixture.$.HomeTeam,
-      AwayTeam: fixture.$.AwayTeam,
-      HomeTeamScore: fixture.$.HomeTeamScore,
-      AwayTeamScore: fixture.$.AwayTeamScore,
-      HomeTeamSet1Score: fixture.$.HomeTeamSet1Score,
-      AwayTeamSet1Score: fixture.$.AwayTeamSet1Score,
-      HomeTeamSet2Score: fixture.$.HomeTeamSet2Score,
-      AwayTeamSet2Score: fixture.$.AwayTeamSet2Score,
-      HomeTeamSet3Score: fixture.$.HomeTeamSet3Score,
-      AwayTeamSet3Score: fixture.$.AwayTeamSet3Score,
-    }));
-
+    const transformedData = Array.isArray(fixtures) ? fixtures : [fixtures];
+    
     if (courtId) {
       const currentMatch = transformedData.find(
-        (match: any) => match.PlayingAreaName === `Court ${courtId}`
+        (match) => match.PlayingAreaName === `Court ${courtId}`
       );
 
       if (!currentMatch) {
@@ -64,11 +46,11 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       }
 
       return {
-        id: currentMatch.id,
+        id: currentMatch.Id,
         court: parseInt(courtId),
         startTime: currentMatch.DateTime,
-        homeTeam: { id: "team-1", name: currentMatch.HomeTeam },
-        awayTeam: { id: "team-2", name: currentMatch.AwayTeam },
+        homeTeam: { id: currentMatch.HomeTeamId, name: currentMatch.HomeTeam },
+        awayTeam: { id: currentMatch.AwayTeamId, name: currentMatch.AwayTeam },
       };
     }
 
