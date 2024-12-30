@@ -23,6 +23,7 @@ const Scoreboard = () => {
   const [isBreak, setIsBreak] = useState(false);
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [isMatchComplete, setIsMatchComplete] = useState(false);
 
   const { data: match, isLoading } = useQuery<Match>({
     queryKey: ["match", courtId],
@@ -46,6 +47,8 @@ const Scoreboard = () => {
   });
 
   const handleScore = (team: "home" | "away") => {
+    if (isMatchComplete) return;
+    
     if (isBreak) {
       setBreakScore((prev) => ({
         ...prev,
@@ -60,16 +63,30 @@ const Scoreboard = () => {
   };
 
   const handleTimerComplete = () => {
+    if (isMatchComplete) return;
+
     if (isBreak) {
       // When break is over, save the break scores to set scores
       setSetScores((prevSetScores) => {
+        // Only add scores if we haven't reached 3 sets yet
+        if (prevSetScores.home.length >= 3) {
+          return prevSetScores;
+        }
+        
         const newSetScores = {
-          home: [...prevSetScores.home, breakScore.home],
-          away: [...prevSetScores.away, breakScore.away],
+          home: [...prevSetScores.home, currentScore.home],
+          away: [...prevSetScores.away, currentScore.away],
         };
-        console.log('Previous set scores:', prevSetScores);
-        console.log('Break scores to add:', breakScore);
-        console.log('New set scores:', newSetScores);
+        
+        // Check if match should be complete after this set
+        if (newSetScores.home.length >= 3) {
+          setIsMatchComplete(true);
+          toast({
+            title: "Match Complete",
+            description: "The match has ended",
+          });
+        }
+        
         return newSetScores;
       });
       
@@ -79,10 +96,12 @@ const Scoreboard = () => {
       setBreakScore({ home: 0, away: 0 });
       handleSwitchTeams();
       
-      toast({
-        title: "Break Time Over",
-        description: "Starting next set",
-      });
+      if (!isMatchComplete) {
+        toast({
+          title: "Break Time Over",
+          description: "Starting next set",
+        });
+      }
     } else {
       // Set is complete, start break and transfer current scores to break scores
       setIsBreak(true);
@@ -95,6 +114,8 @@ const Scoreboard = () => {
   };
 
   const handleSwitchTeams = () => {
+    if (isMatchComplete) return;
+    
     setIsTeamsSwitched(!isTeamsSwitched);
     if (isBreak) {
       setBreakScore((prev) => ({
@@ -132,8 +153,6 @@ const Scoreboard = () => {
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
-  console.log('Current setScores state:', setScores);
-
   return (
     <div className="min-h-screen bg-volleyball-red">
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
@@ -145,6 +164,7 @@ const Scoreboard = () => {
             onComplete={handleTimerComplete}
             onSwitchTeams={handleSwitchTeams}
             isBreak={isBreak}
+            isMatchComplete={isMatchComplete}
           />
 
           <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">

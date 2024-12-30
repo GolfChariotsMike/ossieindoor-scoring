@@ -7,29 +7,38 @@ interface TimerProps {
   onComplete: () => void;
   onSwitchTeams: () => void;
   isBreak: boolean;
+  isMatchComplete: boolean;
 }
 
-export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: TimerProps) => {
+export const Timer = ({ 
+  initialMinutes, 
+  onComplete, 
+  onSwitchTeams, 
+  isBreak,
+  isMatchComplete 
+}: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
-  const [isRunning, setIsRunning] = useState(false); // Start paused for first set
+  const [isRunning, setIsRunning] = useState(false);
   const [isFirstSet, setIsFirstSet] = useState(true);
 
-  // Reset timer when initialMinutes or isBreak changes
   useEffect(() => {
+    if (isMatchComplete) {
+      setIsRunning(false);
+      return;
+    }
+    
     setTimeLeft(initialMinutes * 60);
-    // Auto-start only if it's a break or not the first set
     setIsRunning(isBreak || !isFirstSet);
     
-    // If this is a break, we know the next set won't be the first set
     if (isBreak) {
       setIsFirstSet(false);
     }
-  }, [initialMinutes, isBreak]);
+  }, [initialMinutes, isBreak, isMatchComplete]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
-    if (isRunning && timeLeft > 0) {
+    if (isRunning && timeLeft > 0 && !isMatchComplete) {
       interval = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -44,17 +53,19 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: Ti
     }
 
     return () => clearInterval(interval);
-  }, [isRunning, timeLeft, onComplete]);
+  }, [isRunning, timeLeft, onComplete, isMatchComplete]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
   const handleReset = () => {
+    if (isMatchComplete) return;
     setIsRunning(false);
     setTimeLeft(initialMinutes * 60);
   };
 
   const handleStartStop = () => {
+    if (isMatchComplete) return;
     setIsRunning(!isRunning);
   };
 
@@ -62,7 +73,7 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: Ti
     <div className="text-volleyball-cream text-center">
       <div 
         className={`font-score text-[12rem] tracking-[0.2em] leading-none mb-2 [text-shadow:_2px_2px_0_rgb(0_0_0)] ${
-          isBreak ? 'text-blue-400' : 'text-volleyball-cream'
+          isBreak ? 'text-blue-400' : isMatchComplete ? 'text-green-400' : 'text-volleyball-cream'
         }`}
       >
         {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
@@ -73,7 +84,8 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: Ti
           variant="outline"
           size="icon"
           onClick={handleStartStop}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
           <Play />
         </Button>
@@ -82,7 +94,8 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: Ti
           variant="outline"
           size="icon"
           onClick={handleReset}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
           <RotateCcw />
         </Button>
@@ -91,7 +104,8 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: Ti
           variant="outline"
           size="icon"
           onClick={onSwitchTeams}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
           <ArrowLeftRight />
         </Button>
