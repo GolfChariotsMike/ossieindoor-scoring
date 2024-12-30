@@ -107,7 +107,7 @@ const Scoreboard = () => {
 
         <div className="flex flex-col justify-between h-full">
           <Timer
-            initialMinutes={isBreak ? 1 : 14}
+            initialMinutes={isBreak ? 1 : 2}
             onComplete={handleTimerComplete}
             onSwitchTeams={handleSwitchTeams}
           />
