@@ -61,27 +61,32 @@ const Scoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // Break time is over, save the break scores to set scores and start new set
-      const newSetScores = {
-        home: [...setScores.home, breakScore.home],
-        away: [...setScores.away, breakScore.away]
-      };
-      console.log('Previous set scores:', setScores);
-      console.log('Break scores to add:', breakScore);
-      console.log('New set scores:', newSetScores);
+      // When break is over, save the break scores to set scores
+      setSetScores((prevSetScores) => {
+        const newSetScores = {
+          home: [...prevSetScores.home, breakScore.home],
+          away: [...prevSetScores.away, breakScore.away],
+        };
+        console.log('Previous set scores:', prevSetScores);
+        console.log('Break scores to add:', breakScore);
+        console.log('New set scores:', newSetScores);
+        return newSetScores;
+      });
       
-      setSetScores(newSetScores);
+      // Reset for next set
       setIsBreak(false);
-      setCurrentScore({ home: 0, away: 0 }); // Reset current scores for next set
-      handleSwitchTeams(); // Switch teams at the end of break
+      setCurrentScore({ home: 0, away: 0 });
+      setBreakScore({ home: 0, away: 0 });
+      handleSwitchTeams();
+      
       toast({
         title: "Break Time Over",
         description: "Starting next set",
       });
     } else {
-      // Set is complete, start break without saving scores yet
+      // Set is complete, start break and transfer current scores to break scores
       setIsBreak(true);
-      setBreakScore(currentScore); // Initialize break scores with current scores
+      setBreakScore(currentScore);
       toast({
         title: "Set Complete",
         description: "Starting 1 minute break",
@@ -92,23 +97,20 @@ const Scoreboard = () => {
   const handleSwitchTeams = () => {
     setIsTeamsSwitched(!isTeamsSwitched);
     if (isBreak) {
-      const newBreakScore = {
-        home: breakScore.away,
-        away: breakScore.home
-      };
-      setBreakScore(newBreakScore);
+      setBreakScore((prev) => ({
+        home: prev.away,
+        away: prev.home
+      }));
     } else {
-      const newScore = {
-        home: currentScore.away,
-        away: currentScore.home
-      };
-      setCurrentScore(newScore);
+      setCurrentScore((prev) => ({
+        home: prev.away,
+        away: prev.home
+      }));
     }
-    const newSetScores = {
-      home: [...setScores.away],
-      away: [...setScores.home]
-    };
-    setSetScores(newSetScores);
+    setSetScores((prev) => ({
+      home: [...prev.away],
+      away: [...prev.home]
+    }));
   };
 
   const handleBack = () => {
