@@ -96,11 +96,24 @@ const Scoreboard = () => {
 
   const handleSwitchTeams = () => {
     if (isMatchComplete) return;
+    
     setIsTeamsSwitched(!isTeamsSwitched);
-    setSetScores((prev) => ({
-      home: [...prev.away],
-      away: [...prev.home]
+    
+    // Switch current scores
+    setCurrentScore((prev) => ({
+      home: prev.away,
+      away: prev.home
     }));
+    
+    // Switch set scores by creating new arrays with swapped values
+    setSetScores((prev) => {
+      const homeScores = [...prev.home];
+      const awayScores = [...prev.away];
+      return {
+        home: awayScores,
+        away: homeScores
+      };
+    });
   };
 
   const handleBack = () => {
