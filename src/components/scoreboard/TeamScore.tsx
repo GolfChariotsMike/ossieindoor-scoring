@@ -18,7 +18,7 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
         {teamName}
       </div>
       <button
-        className="w-[400px] aspect-square text-[16rem] bg-volleyball-black hover:bg-volleyball-black/90 
+        className="w-[450px] aspect-square text-[16rem] bg-volleyball-black hover:bg-volleyball-black/90 
         text-volleyball-cream font-score rounded-3xl"
         onClick={onScoreUpdate}
       >
