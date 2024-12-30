@@ -15,7 +15,7 @@ export const SetScoresDisplay = ({ setScores }: SetScoresDisplayProps) => {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="text-volleyball-cream text-6xl uppercase tracking-[0.2em] mb-8">
+      <div className="text-volleyball-cream text-4xl uppercase tracking-[0.2em] mb-8">
         SETS
       </div>
       {sets.map((set) => (
@@ -24,12 +24,12 @@ export const SetScoresDisplay = ({ setScores }: SetScoresDisplayProps) => {
           className="grid grid-cols-2 gap-6 w-full mb-6"
         >
           <div className="bg-volleyball-black rounded-2xl p-6 flex items-center justify-center">
-            <span className="text-volleyball-cream text-6xl font-mono">
+            <span className="text-volleyball-cream text-4xl font-mono">
               {set.home}
             </span>
           </div>
           <div className="bg-volleyball-black rounded-2xl p-6 flex items-center justify-center">
-            <span className="text-volleyball-cream text-6xl font-mono">
+            <span className="text-volleyball-cream text-4xl font-mono">
               {set.away}
             </span>
           </div>
