@@ -101,8 +101,8 @@ const Scoreboard = () => {
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
   return (
-    <div className="min-h-screen bg-volleyball-red">
-      <div className="max-w-[1920px] mx-auto relative h-screen p-8">
+    <div className="min-h-[100vh] bg-volleyball-red pb-8">
+      <div className="max-w-[1920px] mx-auto relative min-h-screen p-8">
         <BackButton onClick={handleBack} />
 
         <div className="h-full flex flex-col justify-between">
@@ -112,7 +112,7 @@ const Scoreboard = () => {
             onSwitchTeams={handleSwitchTeams}
           />
 
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-16 items-center">
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-16 items-center mb-4">
             <TeamScore
               teamName={homeTeam.name}
               score={currentScore.home}
