@@ -14,7 +14,7 @@ export const Timer = ({ initialMinutes, onComplete }: TimerProps) => {
   const totalTime = initialMinutes * 60;
 
   useEffect(() => {
-    let interval: number;
+    let interval: NodeJS.Timeout;
 
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
@@ -47,28 +47,28 @@ export const Timer = ({ initialMinutes, onComplete }: TimerProps) => {
 
   return (
     <div className="w-full space-y-2">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-2xl font-bold text-white">
+      <div className="flex items-center justify-center mb-4">
+        <div className="text-5xl font-bold text-white">
           {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleTimer}
-            className="bg-volleyball-lightBlue hover:bg-volleyball-gold"
-          >
-            {isRunning ? <PauseCircle className="h-6 w-6" /> : <PlayCircle className="h-6 w-6" />}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={resetTimer}
-            className="bg-volleyball-lightBlue hover:bg-volleyball-gold"
-          >
-            <RotateCcw className="h-6 w-6" />
-          </Button>
-        </div>
+      </div>
+      <div className="flex items-center justify-center space-x-2 mb-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={toggleTimer}
+          className="bg-volleyball-lightBlue hover:bg-volleyball-gold"
+        >
+          {isRunning ? <PauseCircle className="h-6 w-6" /> : <PlayCircle className="h-6 w-6" />}
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={resetTimer}
+          className="bg-volleyball-lightBlue hover:bg-volleyball-gold"
+        >
+          <RotateCcw className="h-6 w-6" />
+        </Button>
       </div>
       <Progress value={progress} className="h-2" />
     </div>

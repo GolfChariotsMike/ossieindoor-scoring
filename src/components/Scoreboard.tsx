@@ -8,6 +8,8 @@ import { TeamScore } from "./scoreboard/TeamScore";
 import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
 import { Timer } from "./scoreboard/Timer";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "./ui/button";
+import { ArrowLeftRight } from "lucide-react";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -18,6 +20,7 @@ const Scoreboard = () => {
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
   const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
   const [isBreak, setIsBreak] = useState(false);
+  const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
 
   const { data: match, isLoading } = useQuery<Match>({
     queryKey: ["match", courtId],
@@ -63,6 +66,20 @@ const Scoreboard = () => {
     }
   };
 
+  const handleSwitchTeams = () => {
+    setIsTeamsSwitched(!isTeamsSwitched);
+    const newScore = {
+      home: currentScore.away,
+      away: currentScore.home
+    };
+    setCurrentScore(newScore);
+    const newSetScores = {
+      home: [...setScores.away],
+      away: [...setScores.home]
+    };
+    setSetScores(newSetScores);
+  };
+
   if (isLoading || !match) {
     return (
       <div className="min-h-screen bg-volleyball-navy flex items-center justify-center">
@@ -70,6 +87,9 @@ const Scoreboard = () => {
       </div>
     );
   }
+
+  const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
+  const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
   return (
     <div className="min-h-screen bg-volleyball-navy p-4">
@@ -88,9 +108,20 @@ const Scoreboard = () => {
             />
           </div>
 
+          <div className="flex justify-center mb-4">
+            <Button
+              variant="outline"
+              onClick={handleSwitchTeams}
+              className="bg-volleyball-lightBlue hover:bg-volleyball-gold"
+            >
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
+              Switch Teams
+            </Button>
+          </div>
+
           <div className="grid grid-cols-3 gap-4 items-center">
             <TeamScore
-              teamName={match.homeTeam.name}
+              teamName={homeTeam.name}
               score={currentScore.home}
               onScoreUpdate={() => handleScore("home")}
             />
@@ -98,7 +129,7 @@ const Scoreboard = () => {
             <div className="text-white text-4xl text-center">vs</div>
 
             <TeamScore
-              teamName={match.awayTeam.name}
+              teamName={awayTeam.name}
               score={currentScore.away}
               onScoreUpdate={() => handleScore("away")}
             />
