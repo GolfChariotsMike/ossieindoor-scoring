@@ -4,22 +4,13 @@ import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { MatchHeader } from "./scoreboard/MatchHeader";
-import { TeamScore } from "./scoreboard/TeamScore";
 import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
 import { Timer } from "./scoreboard/Timer";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "./ui/button";
-import { ArrowLeftRight, ArrowLeft } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { BackButton } from "./scoreboard/BackButton";
+import { ScoreboardControls } from "./scoreboard/ScoreboardControls";
+import { TeamsDisplay } from "./scoreboard/TeamsDisplay";
+import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -114,15 +105,7 @@ const Scoreboard = () => {
   return (
     <div className="min-h-screen bg-volleyball-navy p-4">
       <div className="max-w-4xl mx-auto relative">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleBack}
-          className="absolute left-0 top-0 bg-volleyball-lightBlue hover:bg-volleyball-gold"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+        <BackButton onClick={handleBack} />
 
         <div className="bg-volleyball-darkBlue rounded-lg p-6 mb-4 mt-12">
           <MatchHeader 
@@ -138,50 +121,25 @@ const Scoreboard = () => {
             />
           </div>
 
-          <div className="flex justify-center mb-4">
-            <Button
-              variant="outline"
-              onClick={handleSwitchTeams}
-              className="bg-volleyball-lightBlue hover:bg-volleyball-gold"
-            >
-              <ArrowLeftRight className="mr-2 h-4 w-4" />
-              Switch Teams
-            </Button>
-          </div>
+          <ScoreboardControls onSwitchTeams={handleSwitchTeams} />
 
-          <div className="grid grid-cols-3 gap-4 items-center">
-            <TeamScore
-              teamName={homeTeam.name}
-              score={currentScore.home}
-              onScoreUpdate={() => handleScore("home")}
-            />
-
-            <div className="text-white text-4xl text-center">vs</div>
-
-            <TeamScore
-              teamName={awayTeam.name}
-              score={currentScore.away}
-              onScoreUpdate={() => handleScore("away")}
-            />
-          </div>
+          <TeamsDisplay
+            homeTeam={homeTeam}
+            awayTeam={awayTeam}
+            homeScore={currentScore.home}
+            awayScore={currentScore.away}
+            onHomeScore={() => handleScore("home")}
+            onAwayScore={() => handleScore("away")}
+          />
         </div>
 
         <SetScoresDisplay setScores={setScores} />
 
-        <AlertDialog open={showExitConfirmation} onOpenChange={setShowExitConfirmation}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
-              <AlertDialogDescription>
-                All score data will be lost if you haven't submitted the match results.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmExit}>Exit</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <ExitConfirmationDialog
+          open={showExitConfirmation}
+          onOpenChange={setShowExitConfirmation}
+          onConfirm={confirmExit}
+        />
       </div>
     </div>
   );
