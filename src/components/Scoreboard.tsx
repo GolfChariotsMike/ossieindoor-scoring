@@ -102,7 +102,7 @@ const Scoreboard = () => {
 
   return (
     <div className="min-h-screen bg-volleyball-red">
-      <div className="max-w-[1920px] mx-auto relative h-screen p-8">
+      <div className="max-w-[1920px] mx-auto relative h-screen p-6">
         <BackButton onClick={handleBack} />
 
         <div className="flex flex-col justify-between h-full">
@@ -112,7 +112,7 @@ const Scoreboard = () => {
             onSwitchTeams={handleSwitchTeams}
           />
 
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-16 items-center mb-12">
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
             <TeamScore
               teamName={homeTeam.name}
               score={currentScore.home}
