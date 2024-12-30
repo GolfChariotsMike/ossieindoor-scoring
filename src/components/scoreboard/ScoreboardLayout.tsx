@@ -2,7 +2,6 @@ import { Timer } from "./Timer";
 import { TeamScore } from "./TeamScore";
 import { SetScoresDisplay } from "./SetScoresDisplay";
 import { Match, Score, SetScores } from "@/types/volleyball";
-import { Team } from "@/types/volleyball";
 
 interface ScoreboardLayoutProps {
   isBreak: boolean;
@@ -31,7 +30,7 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={isBreak ? 1 : 2}
+        initialMinutes={isBreak ? 0.33 : 0.5} // 20 seconds for break, 30 seconds for set
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
