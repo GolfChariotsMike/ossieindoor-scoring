@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { PlayCircle, PauseCircle, RotateCcw } from "lucide-react";
+import { PlayCircle, PauseCircle, RotateCcw, ArrowLeftRight } from "lucide-react";
 
 interface TimerProps {
   initialMinutes: number;
   onComplete: () => void;
+  onSwitchTeams: () => void;
 }
 
-export const Timer = ({ initialMinutes, onComplete }: TimerProps) => {
+export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
   const totalTime = initialMinutes * 60;
@@ -68,6 +69,14 @@ export const Timer = ({ initialMinutes, onComplete }: TimerProps) => {
           className="bg-volleyball-lightBlue hover:bg-volleyball-gold w-12 h-12"
         >
           <RotateCcw className="h-8 w-8" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onSwitchTeams}
+          className="bg-volleyball-lightBlue hover:bg-volleyball-gold w-12 h-12"
+        >
+          <ArrowLeftRight className="h-8 w-8" />
         </Button>
       </div>
       <Progress value={progress} className="h-2" />
