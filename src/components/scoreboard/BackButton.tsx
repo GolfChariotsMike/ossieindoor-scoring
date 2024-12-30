@@ -9,12 +9,11 @@ export const BackButton = ({ onClick }: BackButtonProps) => {
   return (
     <Button
       variant="outline"
-      size="sm"
+      size="icon"
       onClick={onClick}
-      className="absolute left-0 top-0 bg-volleyball-lightBlue hover:bg-volleyball-gold"
+      className="absolute left-8 top-8 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
     >
-      <ArrowLeft className="mr-2 h-4 w-4" />
-      Back
+      <ArrowLeft />
     </Button>
   );
 };

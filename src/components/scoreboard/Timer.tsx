@@ -52,32 +52,29 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps)
       <div className="flex justify-center gap-4">
         <Button
           variant="outline"
-          size="lg"
+          size="icon"
           onClick={handleStartStop}
           className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
         >
-          <Play className="mr-2" />
-          {isRunning ? "Stop" : "Start"} Time
+          <Play />
         </Button>
 
         <Button
           variant="outline"
-          size="lg"
+          size="icon"
           onClick={handleReset}
           className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
         >
-          <RotateCcw className="mr-2" />
-          Reset Time
+          <RotateCcw />
         </Button>
 
         <Button
           variant="outline"
-          size="lg"
+          size="icon"
           onClick={onSwitchTeams}
           className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
         >
-          <ArrowLeftRight className="mr-2" />
-          Switch Sides
+          <ArrowLeftRight />
         </Button>
       </div>
     </div>
