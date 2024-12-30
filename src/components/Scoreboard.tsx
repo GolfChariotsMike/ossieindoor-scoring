@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
@@ -9,11 +9,22 @@ import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
 import { Timer } from "./scoreboard/Timer";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "./ui/button";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, ArrowLeft } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const fixture = location.state?.fixture as Fixture | undefined;
   const { toast } = useToast();
 
@@ -21,6 +32,7 @@ const Scoreboard = () => {
   const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
   const [isBreak, setIsBreak] = useState(false);
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
 
   const { data: match, isLoading } = useQuery<Match>({
     queryKey: ["match", courtId],
@@ -80,6 +92,14 @@ const Scoreboard = () => {
     setSetScores(newSetScores);
   };
 
+  const handleBack = () => {
+    setShowExitConfirmation(true);
+  };
+
+  const confirmExit = () => {
+    navigate('/');
+  };
+
   if (isLoading || !match) {
     return (
       <div className="min-h-screen bg-volleyball-navy flex items-center justify-center">
@@ -93,8 +113,18 @@ const Scoreboard = () => {
 
   return (
     <div className="min-h-screen bg-volleyball-navy p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-volleyball-darkBlue rounded-lg p-6 mb-4">
+      <div className="max-w-4xl mx-auto relative">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleBack}
+          className="absolute left-0 top-0 bg-volleyball-lightBlue hover:bg-volleyball-gold"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+
+        <div className="bg-volleyball-darkBlue rounded-lg p-6 mb-4 mt-12">
           <MatchHeader 
             court={match.court} 
             startTime={match.startTime} 
@@ -137,6 +167,21 @@ const Scoreboard = () => {
         </div>
 
         <SetScoresDisplay setScores={setScores} />
+
+        <AlertDialog open={showExitConfirmation} onOpenChange={setShowExitConfirmation}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
+              <AlertDialogDescription>
+                All score data will be lost if you haven't submitted the match results.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmExit}>Exit</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
