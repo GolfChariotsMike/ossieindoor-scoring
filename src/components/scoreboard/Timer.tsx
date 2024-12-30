@@ -49,7 +49,7 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps)
         {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
       </div>
       
-      <div className="flex justify-center gap-4 mb-2">
+      <div className="flex justify-center gap-4 mb-1">
         <Button
           variant="outline"
           size="icon"
