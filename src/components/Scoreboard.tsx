@@ -61,7 +61,11 @@ const Scoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // Break time is over, start new set
+      // Break time is over, save the break scores to set scores and start new set
+      setSetScores(prev => ({
+        home: [...prev.home, breakScore.home],
+        away: [...prev.away, breakScore.away]
+      }));
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 }); // Reset current scores for next set
       handleSwitchTeams(); // Switch teams at the end of break
@@ -70,11 +74,7 @@ const Scoreboard = () => {
         description: "Starting next set",
       });
     } else {
-      // Set is complete, save scores and start break
-      setSetScores(prev => ({
-        home: [...prev.home, currentScore.home],
-        away: [...prev.away, currentScore.away]
-      }));
+      // Set is complete, start break without saving scores yet
       setIsBreak(true);
       setBreakScore(currentScore); // Initialize break scores with current scores
       toast({
