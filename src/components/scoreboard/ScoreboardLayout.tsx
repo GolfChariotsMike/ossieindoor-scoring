@@ -9,6 +9,7 @@ interface ScoreboardLayoutProps {
   setScores: SetScores;
   match: Match;
   isTeamsSwitched: boolean;
+  isMatchComplete: boolean;
   onTimerComplete: () => void;
   onSwitchTeams: () => void;
   onScoreUpdate: (team: "home" | "away") => void;
@@ -20,6 +21,7 @@ export const ScoreboardLayout = ({
   setScores,
   match,
   isTeamsSwitched,
+  isMatchComplete,
   onTimerComplete,
   onSwitchTeams,
   onScoreUpdate,
@@ -30,10 +32,11 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={1} // 1 minute for both break and set
+        initialMinutes={1}
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
+        isMatchComplete={isMatchComplete}
       />
 
       <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
