@@ -30,7 +30,7 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={isBreak ? 0.33 : 0.5} // 20 seconds for break, 30 seconds for set
+        initialMinutes={1} // 1 minute for both break and set
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
