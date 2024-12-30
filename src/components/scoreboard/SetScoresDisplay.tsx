@@ -14,7 +14,8 @@ export const SetScoresDisplay = ({ setScores, isTeamsSwitched }: SetScoresDispla
     number: i + 1
   }));
 
-  console.log('Current set scores:', setScores); // Add logging to debug
+  console.log('SetScoresDisplay - Current set scores:', setScores);
+  console.log('SetScoresDisplay - Formatted sets:', sets);
 
   return (
     <div className="flex flex-col items-center">

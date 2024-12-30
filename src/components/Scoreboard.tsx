@@ -66,7 +66,10 @@ const Scoreboard = () => {
         home: [...setScores.home, breakScore.home],
         away: [...setScores.away, breakScore.away]
       };
-      console.log('Updating set scores:', newSetScores); // Add logging
+      console.log('Previous set scores:', setScores);
+      console.log('Break scores to add:', breakScore);
+      console.log('New set scores:', newSetScores);
+      
       setSetScores(newSetScores);
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 }); // Reset current scores for next set
@@ -126,6 +129,8 @@ const Scoreboard = () => {
 
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
+
+  console.log('Current setScores state:', setScores);
 
   return (
     <div className="min-h-screen bg-volleyball-red">
