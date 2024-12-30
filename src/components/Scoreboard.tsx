@@ -18,7 +18,6 @@ const Scoreboard = () => {
   const { toast } = useToast();
 
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
-  const [breakScore, setBreakScore] = useState<Score>({ home: 0, away: 0 });
   const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
   const [isBreak, setIsBreak] = useState(false);
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
@@ -48,86 +47,56 @@ const Scoreboard = () => {
 
   const handleScore = (team: "home" | "away") => {
     if (isMatchComplete) return;
-    
-    if (isBreak) {
-      setBreakScore((prev) => ({
-        ...prev,
-        [team]: prev[team] + 1,
-      }));
-    } else {
-      setCurrentScore((prev) => ({
-        ...prev,
-        [team]: prev[team] + 1,
-      }));
-    }
+    setCurrentScore((prev) => ({
+      ...prev,
+      [team]: prev[team] + 1,
+    }));
   };
 
   const handleTimerComplete = () => {
     if (isMatchComplete) return;
 
     if (isBreak) {
-      // When break is over, save the break scores to set scores
-      setSetScores((prevSetScores) => {
-        // Only add scores if we haven't reached 3 sets yet
-        if (prevSetScores.home.length >= 3) {
-          return prevSetScores;
-        }
-        
-        const newSetScores = {
-          home: [...prevSetScores.home, currentScore.home],
-          away: [...prevSetScores.away, currentScore.away],
-        };
-        
-        // Check if match should be complete after this set
-        if (newSetScores.home.length >= 3) {
-          setIsMatchComplete(true);
-          toast({
-            title: "Match Complete",
-            description: "The match has ended",
-          });
-        }
-        
-        return newSetScores;
-      });
-      
-      // Reset for next set
+      // Break is over, start new set
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 });
-      setBreakScore({ home: 0, away: 0 });
       handleSwitchTeams();
+      toast({
+        title: "Break Time Over",
+        description: "Starting next set",
+      });
+    } else {
+      // Set is complete, save current scores to set scores
+      const updatedSetScores = {
+        home: [...setScores.home, currentScore.home],
+        away: [...setScores.away, currentScore.away],
+      };
       
-      if (!isMatchComplete) {
+      console.log('Current scores being saved:', currentScore);
+      console.log('Updated set scores:', updatedSetScores);
+      
+      setSetScores(updatedSetScores);
+      setIsBreak(true);
+
+      // Check if match should be complete
+      if (updatedSetScores.home.length >= 3) {
+        setIsMatchComplete(true);
         toast({
-          title: "Break Time Over",
-          description: "Starting next set",
+          title: "Match Complete",
+          description: "The match has ended",
+        });
+      } else {
+        toast({
+          title: "Set Complete",
+          description: "Starting 1 minute break",
         });
       }
-    } else {
-      // Set is complete, start break and transfer current scores to break scores
-      setIsBreak(true);
-      setBreakScore(currentScore);
-      toast({
-        title: "Set Complete",
-        description: "Starting 1 minute break",
-      });
     }
   };
 
   const handleSwitchTeams = () => {
     if (isMatchComplete) return;
-    
     setIsTeamsSwitched(!isTeamsSwitched);
-    if (isBreak) {
-      setBreakScore((prev) => ({
-        home: prev.away,
-        away: prev.home
-      }));
-    } else {
-      setCurrentScore((prev) => ({
-        home: prev.away,
-        away: prev.home
-      }));
-    }
     setSetScores((prev) => ({
       home: [...prev.away],
       away: [...prev.home]
@@ -170,7 +139,7 @@ const Scoreboard = () => {
           <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
             <TeamScore
               teamName={homeTeam.name}
-              score={isBreak ? breakScore.home : currentScore.home}
+              score={currentScore.home}
               onScoreUpdate={() => handleScore("home")}
             />
 
@@ -184,7 +153,7 @@ const Scoreboard = () => {
 
             <TeamScore
               teamName={awayTeam.name}
-              score={isBreak ? breakScore.away : currentScore.away}
+              score={currentScore.away}
               onScoreUpdate={() => handleScore("away")}
             />
           </div>
