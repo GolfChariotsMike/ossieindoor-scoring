@@ -133,7 +133,11 @@ const Scoreboard = () => {
           />
         </div>
 
-        <SetScoresDisplay setScores={setScores} />
+        <SetScoresDisplay 
+          setScores={setScores} 
+          match={match}
+          isTeamsSwitched={isTeamsSwitched}
+        />
 
         <ExitConfirmationDialog
           open={showExitConfirmation}
