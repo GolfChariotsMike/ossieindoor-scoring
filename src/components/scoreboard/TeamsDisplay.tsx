@@ -1,5 +1,6 @@
 import { TeamScore } from "./TeamScore";
 import { Team } from "@/types/volleyball";
+import { ScoreboardControls } from "./ScoreboardControls";
 
 interface TeamsDisplayProps {
   homeTeam: Team;
@@ -8,6 +9,7 @@ interface TeamsDisplayProps {
   awayScore: number;
   onHomeScore: () => void;
   onAwayScore: () => void;
+  onSwitchTeams: () => void;
 }
 
 export const TeamsDisplay = ({
@@ -17,6 +19,7 @@ export const TeamsDisplay = ({
   awayScore,
   onHomeScore,
   onAwayScore,
+  onSwitchTeams,
 }: TeamsDisplayProps) => {
   return (
     <div className="grid grid-cols-3 gap-4 items-center">
@@ -26,7 +29,9 @@ export const TeamsDisplay = ({
         onScoreUpdate={onHomeScore}
       />
 
-      <div className="text-white text-4xl text-center">vs</div>
+      <div className="flex flex-col items-center justify-center space-y-4">
+        <ScoreboardControls onSwitchTeams={onSwitchTeams} />
+      </div>
 
       <TeamScore
         teamName={awayTeam.name}

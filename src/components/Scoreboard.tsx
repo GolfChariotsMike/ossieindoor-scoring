@@ -121,8 +121,6 @@ const Scoreboard = () => {
             />
           </div>
 
-          <ScoreboardControls onSwitchTeams={handleSwitchTeams} />
-
           <TeamsDisplay
             homeTeam={homeTeam}
             awayTeam={awayTeam}
@@ -130,6 +128,7 @@ const Scoreboard = () => {
             awayScore={currentScore.away}
             onHomeScore={() => handleScore("home")}
             onAwayScore={() => handleScore("away")}
+            onSwitchTeams={handleSwitchTeams}
           />
         </div>
 
