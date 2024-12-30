@@ -18,6 +18,7 @@ const Scoreboard = () => {
   const { toast } = useToast();
 
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
+  const [breakScore, setBreakScore] = useState<Score>({ home: 0, away: 0 });
   const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
   const [isBreak, setIsBreak] = useState(false);
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
@@ -45,17 +46,28 @@ const Scoreboard = () => {
   });
 
   const handleScore = (team: "home" | "away") => {
-    setCurrentScore((prev) => ({
-      ...prev,
-      [team]: prev[team] + 1,
-    }));
+    if (isBreak) {
+      setBreakScore((prev) => ({
+        ...prev,
+        [team]: prev[team] + 1,
+      }));
+    } else {
+      setCurrentScore((prev) => ({
+        ...prev,
+        [team]: prev[team] + 1,
+      }));
+    }
   };
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // Break time is over, start new set
+      // Break time is over, update set scores with break scores and start new set
+      setSetScores(prev => ({
+        home: [...prev.home, breakScore.home],
+        away: [...prev.away, breakScore.away]
+      }));
       setIsBreak(false);
-      setCurrentScore({ home: 0, away: 0 }); // Reset current scores
+      setCurrentScore({ home: 0, away: 0 }); // Reset current scores for next set
       handleSwitchTeams(); // Switch teams at the end of break
       toast({
         title: "Break Time Over",
@@ -64,11 +76,7 @@ const Scoreboard = () => {
     } else {
       // Set is complete, start break
       setIsBreak(true);
-      // Save current set scores before resetting
-      setSetScores(prev => ({
-        home: [...prev.home, currentScore.home],
-        away: [...prev.away, currentScore.away]
-      }));
+      setBreakScore(currentScore); // Initialize break scores with current scores
       toast({
         title: "Set Complete",
         description: "Starting 1 minute break",
@@ -78,11 +86,19 @@ const Scoreboard = () => {
 
   const handleSwitchTeams = () => {
     setIsTeamsSwitched(!isTeamsSwitched);
-    const newScore = {
-      home: currentScore.away,
-      away: currentScore.home
-    };
-    setCurrentScore(newScore);
+    if (isBreak) {
+      const newBreakScore = {
+        home: breakScore.away,
+        away: breakScore.home
+      };
+      setBreakScore(newBreakScore);
+    } else {
+      const newScore = {
+        home: currentScore.away,
+        away: currentScore.home
+      };
+      setCurrentScore(newScore);
+    }
     const newSetScores = {
       home: [...setScores.away],
       away: [...setScores.home]
@@ -116,7 +132,7 @@ const Scoreboard = () => {
 
         <div className="flex flex-col justify-between h-full">
           <Timer
-            initialMinutes={1} // Changed from 2 to 1 minute
+            initialMinutes={1}
             onComplete={handleTimerComplete}
             onSwitchTeams={handleSwitchTeams}
             isBreak={isBreak}
@@ -125,7 +141,7 @@ const Scoreboard = () => {
           <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
             <TeamScore
               teamName={homeTeam.name}
-              score={currentScore.home}
+              score={isBreak ? breakScore.home : currentScore.home}
               onScoreUpdate={() => handleScore("home")}
             />
 
@@ -139,7 +155,7 @@ const Scoreboard = () => {
 
             <TeamScore
               teamName={awayTeam.name}
-              score={currentScore.away}
+              score={isBreak ? breakScore.away : currentScore.away}
               onScoreUpdate={() => handleScore("away")}
             />
           </div>
