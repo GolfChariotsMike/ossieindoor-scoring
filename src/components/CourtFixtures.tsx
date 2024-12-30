@@ -48,30 +48,28 @@ const CourtFixtures = () => {
               <Button
                 key={index}
                 variant="outline"
-                className="w-full text-left justify-start p-4 hover:bg-volleyball-lightBlue"
+                className="w-full text-left justify-between p-4 hover:bg-volleyball-lightBlue text-lg"
                 onClick={() =>
                   navigate(`/scoreboard/${courtId}`, {
                     state: { fixture },
                   })
                 }
               >
-                <div className="w-full">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">
-                      {format(new Date(fixture.DateTime), "h:mm a")}
-                    </span>
-                    <span className="text-sm text-gray-400">
-                      {fixture.DivisionName}
-                    </span>
+                <div className="flex justify-between items-center w-full">
+                  <div className="font-semibold min-w-[100px]">
+                    {format(new Date(fixture.DateTime), "h:mm a")}
                   </div>
-                  <div className="text-sm">
+                  <div className="text-center flex-1 px-4">
                     {fixture.HomeTeam} vs {fixture.AwayTeam}
+                  </div>
+                  <div className="text-sm text-gray-400 min-w-[120px] text-right">
+                    {fixture.DivisionName}
                   </div>
                 </div>
               </Button>
             ))
           ) : (
-            <div className="text-white text-center p-4 bg-volleyball-darkBlue rounded-lg">
+            <div className="text-white text-center p-4 bg-volleyball-darkBlue rounded-lg text-xl">
               No fixtures available for this court
             </div>
           )}
