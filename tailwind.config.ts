@@ -18,6 +18,11 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        'score': ['Roboto Mono', 'monospace'],
+        'display': ['Oswald', 'sans-serif'],
+        'sets': ['Bebas Neue', 'cursive'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

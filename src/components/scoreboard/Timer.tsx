@@ -45,7 +45,7 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps)
 
   return (
     <div className="text-volleyball-cream text-center">
-      <div className="text-[12rem] font-mono tracking-[0.2em] leading-none mb-8">
+      <div className="font-score text-[12rem] tracking-[0.2em] leading-none mb-8">
         {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
       </div>
       
