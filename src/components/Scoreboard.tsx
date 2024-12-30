@@ -64,7 +64,7 @@ const Scoreboard = () => {
     } else {
       // Set is complete, start break
       setIsBreak(true);
-      // Save current set scores
+      // Save current set scores before resetting
       setSetScores(prev => ({
         home: [...prev.home, currentScore.home],
         away: [...prev.away, currentScore.away]

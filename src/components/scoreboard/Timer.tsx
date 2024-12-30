@@ -11,11 +11,13 @@ interface TimerProps {
 
 export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
-  const [isRunning, setIsRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(true); // Auto-start by default
 
+  // Reset timer when initialMinutes or isBreak changes
   useEffect(() => {
     setTimeLeft(initialMinutes * 60);
-  }, [initialMinutes]);
+    setIsRunning(true); // Auto-start when timer resets
+  }, [initialMinutes, isBreak]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -24,6 +26,7 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: Ti
       interval = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
+            clearInterval(interval);
             setIsRunning(false);
             onComplete();
             return 0;
