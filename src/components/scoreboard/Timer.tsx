@@ -11,12 +11,19 @@ interface TimerProps {
 
 export const Timer = ({ initialMinutes, onComplete, onSwitchTeams, isBreak }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
-  const [isRunning, setIsRunning] = useState(true); // Auto-start by default
+  const [isRunning, setIsRunning] = useState(false); // Start paused for first set
+  const [isFirstSet, setIsFirstSet] = useState(true);
 
   // Reset timer when initialMinutes or isBreak changes
   useEffect(() => {
     setTimeLeft(initialMinutes * 60);
-    setIsRunning(true); // Auto-start when timer resets
+    // Auto-start only if it's a break or not the first set
+    setIsRunning(isBreak || !isFirstSet);
+    
+    // If this is a break, we know the next set won't be the first set
+    if (isBreak) {
+      setIsFirstSet(false);
+    }
   }, [initialMinutes, isBreak]);
 
   useEffect(() => {
