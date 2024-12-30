@@ -1,5 +1,4 @@
-import { SetScores } from "@/types/volleyball";
-import { Match } from "@/types/volleyball";
+import { SetScores, Match } from "@/types/volleyball";
 
 interface SetScoresDisplayProps {
   setScores: SetScores;
@@ -14,14 +13,24 @@ export const SetScoresDisplay = ({ setScores, match, isTeamsSwitched }: SetScore
   }));
 
   return (
-    <div className="flex flex-col justify-center space-y-4">
+    <div className="flex flex-col justify-between h-full gap-4">
+      <div className="text-volleyball-cream text-3xl text-center mb-2 uppercase tracking-wider">
+        SETS
+      </div>
       {sets.map((set, index) => (
         <div 
           key={index} 
-          className="bg-volleyball-lightBlue p-4 rounded-lg border-4 border-volleyball-gold shadow-lg h-28 flex items-center justify-center"
+          className="grid grid-cols-2 gap-2"
         >
-          <div className="text-white text-4xl font-mono tracking-wider">
-            {set.home}-{set.away}
+          <div className="bg-volleyball-black rounded-2xl p-4 flex items-center justify-center">
+            <span className="text-volleyball-cream text-3xl font-mono">
+              {set.home}
+            </span>
+          </div>
+          <div className="bg-volleyball-black rounded-2xl p-4 flex items-center justify-center">
+            <span className="text-volleyball-cream text-3xl font-mono">
+              {set.away}
+            </span>
           </div>
         </div>
       ))}

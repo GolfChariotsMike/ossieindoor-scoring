@@ -25,10 +25,9 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         volleyball: {
-          navy: "#1a237e",
-          gold: "#ffd700",
-          lightBlue: "#4a90e2",
-          darkBlue: "#1e3a8a",
+          red: "#ea384c",
+          black: "#222222",
+          cream: "#f5e6d3",
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",

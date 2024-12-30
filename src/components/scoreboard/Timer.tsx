@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { PlayCircle, PauseCircle, RotateCcw, ArrowLeftRight } from "lucide-react";
 
 interface TimerProps {
@@ -12,7 +11,6 @@ interface TimerProps {
 export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
-  const totalTime = initialMinutes * 60;
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -44,42 +42,40 @@ export const Timer = ({ initialMinutes, onComplete, onSwitchTeams }: TimerProps)
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const progress = ((totalTime - timeLeft) / totalTime) * 100;
 
   return (
-    <div className="w-full space-y-2">
-      <div className="flex items-center justify-center mb-4">
-        <div className="text-7xl font-bold text-white">
+    <div className="w-full space-y-4">
+      <div className="flex items-center justify-center">
+        <div className="text-volleyball-cream text-[10rem] font-mono tracking-wider">
           {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
         </div>
       </div>
-      <div className="flex items-center justify-center space-x-2 mb-4">
+      <div className="flex items-center justify-center space-x-4">
         <Button
           variant="outline"
           size="icon"
           onClick={toggleTimer}
-          className="bg-volleyball-lightBlue hover:bg-volleyball-gold w-12 h-12"
+          className="bg-volleyball-black hover:bg-volleyball-black/90 text-volleyball-cream w-16 h-16"
         >
-          {isRunning ? <PauseCircle className="h-8 w-8" /> : <PlayCircle className="h-8 w-8" />}
+          {isRunning ? <PauseCircle className="h-10 w-10" /> : <PlayCircle className="h-10 w-10" />}
         </Button>
         <Button
           variant="outline"
           size="icon"
           onClick={resetTimer}
-          className="bg-volleyball-lightBlue hover:bg-volleyball-gold w-12 h-12"
+          className="bg-volleyball-black hover:bg-volleyball-black/90 text-volleyball-cream w-16 h-16"
         >
-          <RotateCcw className="h-8 w-8" />
+          <RotateCcw className="h-10 w-10" />
         </Button>
         <Button
           variant="outline"
           size="icon"
           onClick={onSwitchTeams}
-          className="bg-volleyball-lightBlue hover:bg-volleyball-gold w-12 h-12"
+          className="bg-volleyball-black hover:bg-volleyball-black/90 text-volleyball-cream w-16 h-16"
         >
-          <ArrowLeftRight className="h-8 w-8" />
+          <ArrowLeftRight className="h-10 w-10" />
         </Button>
       </div>
-      <Progress value={progress} className="h-2" />
     </div>
   );
 };
