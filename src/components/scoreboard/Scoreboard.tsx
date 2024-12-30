@@ -21,6 +21,7 @@ const Scoreboard = () => {
   const [isBreak, setIsBreak] = useState(false);
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [isMatchComplete, setIsMatchComplete] = useState(false);
 
   const { data: match, isLoading } = useQuery<Match>({
     queryKey: ["match", courtId],
@@ -44,6 +45,7 @@ const Scoreboard = () => {
   });
 
   const handleScore = (team: "home" | "away") => {
+    if (isMatchComplete) return;
     setCurrentScore((prev) => ({
       ...prev,
       [team]: prev[team] + 1,
@@ -53,6 +55,23 @@ const Scoreboard = () => {
   const handleTimerComplete = () => {
     if (isBreak) {
       setIsBreak(false);
+      setSetScores((prev) => {
+        const newSetScores = {
+          home: [...prev.home, currentScore.home],
+          away: [...prev.away, currentScore.away],
+        };
+        
+        // Check if match should be complete after this set
+        if (newSetScores.home.length >= 3) {
+          setIsMatchComplete(true);
+          toast({
+            title: "Match Complete",
+            description: "The match has ended",
+          });
+        }
+        
+        return newSetScores;
+      });
       setCurrentScore({ home: 0, away: 0 });
       handleSwitchTeams();
       toast({
@@ -61,10 +80,6 @@ const Scoreboard = () => {
       });
     } else {
       setIsBreak(true);
-      setSetScores(prev => ({
-        home: [...prev.home, currentScore.home],
-        away: [...prev.away, currentScore.away]
-      }));
       toast({
         title: "Set Complete",
         description: "Starting 1 minute break",
@@ -73,6 +88,7 @@ const Scoreboard = () => {
   };
 
   const handleSwitchTeams = () => {
+    if (isMatchComplete) return;
     setIsTeamsSwitched(!isTeamsSwitched);
     const newScore = {
       home: currentScore.away,
@@ -109,6 +125,7 @@ const Scoreboard = () => {
           setScores={setScores}
           match={match}
           isTeamsSwitched={isTeamsSwitched}
+          isMatchComplete={isMatchComplete}
           onTimerComplete={handleTimerComplete}
           onSwitchTeams={handleSwitchTeams}
           onScoreUpdate={handleScore}
