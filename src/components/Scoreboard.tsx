@@ -7,7 +7,7 @@ import { BackButton } from "./scoreboard/BackButton";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 import { GameScores } from "./scoreboard/GameScores";
 import { useGameState } from "@/hooks/useGameState";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -25,6 +25,7 @@ const Scoreboard = () => {
     handleScore,
     handleTimerComplete,
     handleSwitchTeams,
+    saveMatchScores,
   } = useGameState();
 
   const { data: match, isLoading } = useQuery<Match>({
@@ -47,6 +48,12 @@ const Scoreboard = () => {
       return data as Match;
     },
   });
+
+  useEffect(() => {
+    if (isMatchComplete && fixture) {
+      saveMatchScores(fixture.Id, setScores.home, setScores.away);
+    }
+  }, [isMatchComplete, fixture, setScores, saveMatchScores]);
 
   const handleBack = () => {
     setShowExitConfirmation(true);

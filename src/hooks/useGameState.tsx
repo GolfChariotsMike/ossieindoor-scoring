@@ -18,6 +18,37 @@ export const useGameState = () => {
     }));
   };
 
+  const saveMatchScores = async (fixtureId: string, homeScores: number[], awayScores: number[]) => {
+    try {
+      const response = await fetch(`/api/matches/${fixtureId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          HomeTeamScore: JSON.stringify(homeScores),
+          AwayTeamScore: JSON.stringify(awayScores),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save match scores');
+      }
+
+      toast({
+        title: "Match scores saved",
+        description: "The match scores have been successfully recorded",
+      });
+    } catch (error) {
+      console.error('Error saving match scores:', error);
+      toast({
+        title: "Error saving scores",
+        description: "There was a problem saving the match scores",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleTimerComplete = () => {
     if (isMatchComplete) return;
 
@@ -85,5 +116,6 @@ export const useGameState = () => {
     handleScore,
     handleTimerComplete,
     handleSwitchTeams,
+    saveMatchScores,
   };
 };
