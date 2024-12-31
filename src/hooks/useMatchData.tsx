@@ -1,8 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Match, Fixture } from "@/types/volleyball";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 export const useMatchData = (courtId: string, fixture?: Fixture) => {
+  const { toast } = useToast();
+
   return useQuery({
     queryKey: ["match", courtId],
     queryFn: async () => {
@@ -26,6 +29,11 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
 
         if (error) {
           console.error('Error creating match:', error);
+          toast({
+            title: "Error",
+            description: "Failed to create match data",
+            variant: "destructive",
+          });
           throw error;
         }
 
@@ -48,11 +56,22 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
 
       if (error) {
         console.error('Error fetching match:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch match data",
+          variant: "destructive",
+        });
         throw error;
       }
 
       if (!existingMatch) {
-        throw new Error("No match found for this court");
+        return {
+          id: crypto.randomUUID(),
+          court: parseInt(courtId),
+          startTime: new Date().toISOString(),
+          homeTeam: { id: 'unknown', name: 'Team A' },
+          awayTeam: { id: 'unknown', name: 'Team B' },
+        };
       }
 
       return {
