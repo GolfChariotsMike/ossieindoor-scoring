@@ -33,11 +33,14 @@ const Scoreboard = () => {
     queryKey: ["match", courtId],
     queryFn: async () => {
       if (fixture) {
+        // Generate a UUID for the match
+        const matchId = crypto.randomUUID();
+        
         // Create or update match in Supabase
         const { data: matchData, error } = await supabase
           .from('matches')
           .upsert({
-            id: fixture.Id,
+            id: matchId,
             court_number: parseInt(courtId!),
             start_time: fixture.DateTime,
             division: fixture.DivisionName,
@@ -55,7 +58,7 @@ const Scoreboard = () => {
         }
 
         return {
-          id: fixture.Id,
+          id: matchId,
           court: parseInt(courtId!),
           startTime: fixture.DateTime,
           division: fixture.DivisionName,
