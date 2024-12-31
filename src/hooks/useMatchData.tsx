@@ -38,11 +38,11 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
                 id: existingMatch.away_team_id, 
                 name: existingMatch.away_team_name 
               },
-            };
+            } as Match;
           }
 
           // If no match exists, create a new one
-          const { data: matchData, error: insertError } = await supabase
+          const { data: newMatch, error: insertError } = await supabase
             .from('matches')
             .insert({
               court_number: parseInt(courtId),
@@ -62,7 +62,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           }
 
           return {
-            id: matchData.id,
+            id: newMatch.id,
             court: parseInt(courtId),
             startTime: fixture.DateTime,
             division: fixture.DivisionName,
@@ -74,15 +74,14 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
               id: fixture.AwayTeamId || 'unknown', 
               name: fixture.AwayTeam 
             },
-          };
+          } as Match;
         }
 
         // If no fixture provided, try to fetch existing match
         const { data: existingMatch, error } = await supabase
           .from('matches')
-          .select('*')
+          .select()
           .eq('court_number', parseInt(courtId))
-          .order('created_at', { ascending: false })
           .maybeSingle();
 
         if (error) {
@@ -91,11 +90,6 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         }
 
         if (!existingMatch) {
-          toast({
-            title: "No match found",
-            description: "Creating a default match for this court",
-          });
-          
           // Create a default match if none exists
           const { data: defaultMatch, error: createError } = await supabase
             .from('matches')
@@ -105,6 +99,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
               home_team_name: 'Team A',
               away_team_id: 'default',
               away_team_name: 'Team B',
+              start_time: new Date().toISOString(),
             })
             .select()
             .single();
@@ -117,7 +112,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           return {
             id: defaultMatch.id,
             court: defaultMatch.court_number,
-            startTime: defaultMatch.start_time || new Date().toISOString(),
+            startTime: defaultMatch.start_time,
             division: defaultMatch.division,
             homeTeam: { 
               id: defaultMatch.home_team_id, 
@@ -127,13 +122,13 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
               id: defaultMatch.away_team_id, 
               name: defaultMatch.away_team_name 
             },
-          };
+          } as Match;
         }
 
         return {
           id: existingMatch.id,
           court: existingMatch.court_number,
-          startTime: existingMatch.start_time || new Date().toISOString(),
+          startTime: existingMatch.start_time,
           division: existingMatch.division,
           homeTeam: { 
             id: existingMatch.home_team_id, 
@@ -143,12 +138,12 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
             id: existingMatch.away_team_id, 
             name: existingMatch.away_team_name 
           },
-        };
+        } as Match;
       } catch (error) {
         console.error('Error in useMatchData:', error);
         toast({
           title: "Error loading match",
-          description: "There was a problem loading the match data",
+          description: "There was a problem loading the match data. Creating a default match.",
           variant: "destructive",
         });
         throw error;
