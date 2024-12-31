@@ -10,13 +10,15 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
     queryKey: ["match", courtId],
     queryFn: async () => {
       try {
-        // If we have a fixture, create a new match
+        // If we have a fixture, check for existing match or create new one
         if (fixture) {
-          const { data: existingMatch } = await supabase
+          const { data: existingMatch, error: fetchError } = await supabase
             .from('matches')
             .select()
             .eq('court_number', parseInt(courtId))
             .maybeSingle();
+
+          if (fetchError) throw fetchError;
 
           // If match exists for this court, return it
           if (existingMatch) {
@@ -51,10 +53,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
             .select()
             .single();
 
-          if (insertError) {
-            console.error('Error creating match:', insertError);
-            throw insertError;
-          }
+          if (insertError) throw insertError;
 
           return {
             id: newMatch.id,
@@ -79,10 +78,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           .eq('court_number', parseInt(courtId))
           .maybeSingle();
 
-        if (fetchError) {
-          console.error('Error fetching match:', fetchError);
-          throw fetchError;
-        }
+        if (fetchError) throw fetchError;
 
         // If no match exists, create a default one
         if (!existingMatch) {
@@ -99,10 +95,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
             .select()
             .single();
 
-          if (createError) {
-            console.error('Error creating default match:', createError);
-            throw createError;
-          }
+          if (createError) throw createError;
 
           return {
             id: defaultMatch.id,
