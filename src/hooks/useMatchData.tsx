@@ -2,15 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { Match, Fixture } from "@/types/volleyball";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useSession } from '@supabase/auth-helpers-react';
 
 export const useMatchData = (courtId: string, fixture?: Fixture) => {
   const { toast } = useToast();
+  const session = useSession();
 
   return useQuery({
     queryKey: ["match", courtId],
     queryFn: async () => {
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
+
       if (fixture) {
-        // Create a new match from fixture data
         const match: Match = {
           id: fixture.Id || crypto.randomUUID(),
           court: parseInt(courtId),
@@ -20,7 +25,6 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           awayTeam: { id: fixture.AwayTeamId || 'unknown', name: fixture.AwayTeam },
         };
 
-        // Insert the match into the database
         const { error } = await supabase
           .from('matches')
           .insert({
@@ -47,7 +51,6 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         return match;
       }
 
-      // If no fixture, create a default match
       const defaultMatch: Match = {
         id: crypto.randomUUID(),
         court: parseInt(courtId),
@@ -56,7 +59,6 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         awayTeam: { id: 'unknown', name: 'Team B' },
       };
 
-      // Insert the default match
       const { error } = await supabase
         .from('matches')
         .insert({
