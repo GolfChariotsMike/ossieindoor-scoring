@@ -11,7 +11,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
     queryFn: async () => {
       try {
         if (fixture) {
-          // Create a match from fixture data
+          console.log('Creating new match from fixture:', fixture);
           const { data: newMatch, error: insertError } = await supabase
             .from('matches')
             .insert({
@@ -47,7 +47,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           } as Match;
         }
 
-        // If no fixture, try to fetch existing match
+        console.log('Fetching existing match for court:', courtId);
         const { data: existingMatch, error: fetchError } = await supabase
           .from('matches')
           .select()
@@ -59,8 +59,8 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           throw fetchError;
         }
 
-        // If no match exists, create a default one
         if (!existingMatch) {
+          console.log('No existing match found, creating default match');
           const { data: defaultMatch, error: createError } = await supabase
             .from('matches')
             .insert({
