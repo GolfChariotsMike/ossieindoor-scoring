@@ -11,37 +11,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
     queryFn: async () => {
       try {
         if (fixture) {
-          // First check if a match already exists for this court
-          const { data: existingMatch, error: fetchError } = await supabase
-            .from('matches')
-            .select()
-            .eq('court_number', parseInt(courtId))
-            .maybeSingle();
-
-          if (fetchError) {
-            console.error('Error checking existing match:', fetchError);
-            throw fetchError;
-          }
-
-          // If match exists, return it
-          if (existingMatch) {
-            return {
-              id: existingMatch.id,
-              court: existingMatch.court_number,
-              startTime: existingMatch.start_time,
-              division: existingMatch.division,
-              homeTeam: { 
-                id: existingMatch.home_team_id, 
-                name: existingMatch.home_team_name 
-              },
-              awayTeam: { 
-                id: existingMatch.away_team_id, 
-                name: existingMatch.away_team_name 
-              },
-            } as Match;
-          }
-
-          // If no match exists, create a new one
+          // Create a match from fixture data
           const { data: newMatch, error: insertError } = await supabase
             .from('matches')
             .insert({
@@ -77,20 +47,20 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           } as Match;
         }
 
-        // If no fixture provided, try to fetch existing match
-        const { data: existingMatch, error } = await supabase
+        // If no fixture, try to fetch existing match
+        const { data: existingMatch, error: fetchError } = await supabase
           .from('matches')
           .select()
           .eq('court_number', parseInt(courtId))
           .maybeSingle();
 
-        if (error) {
-          console.error('Error fetching match:', error);
-          throw error;
+        if (fetchError) {
+          console.error('Error fetching match:', fetchError);
+          throw fetchError;
         }
 
+        // If no match exists, create a default one
         if (!existingMatch) {
-          // Create a default match if none exists
           const { data: defaultMatch, error: createError } = await supabase
             .from('matches')
             .insert({
