@@ -6,5 +6,11 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = createClient<Database>(
   SUPABASE_URL,
-  SUPABASE_ANON_KEY
+  SUPABASE_ANON_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  }
 );
