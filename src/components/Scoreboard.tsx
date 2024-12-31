@@ -1,28 +1,31 @@
-import { useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
+import { Match, Fixture } from "@/types/volleyball";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { Timer } from "./scoreboard/Timer";
-import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "./scoreboard/BackButton";
-import { TeamScore } from "./scoreboard/TeamScore";
-import { SetScoresDisplay } from "./scoreboard/SetScoresDisplay";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
+import { GameScores } from "./scoreboard/GameScores";
+import { useGameState } from "@/hooks/useGameState";
+import { useState } from "react";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const fixture = location.state?.fixture as Fixture | undefined;
-  const { toast } = useToast();
-
-  const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
-  const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
-  const [isBreak, setIsBreak] = useState(false);
-  const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
-  const [isMatchComplete, setIsMatchComplete] = useState(false);
+
+  const {
+    currentScore,
+    setScores,
+    isBreak,
+    isTeamsSwitched,
+    isMatchComplete,
+    handleScore,
+    handleTimerComplete,
+    handleSwitchTeams,
+  } = useGameState();
 
   const { data: match, isLoading } = useQuery<Match>({
     queryKey: ["match", courtId],
@@ -45,77 +48,6 @@ const Scoreboard = () => {
     },
   });
 
-  const handleScore = (team: "home" | "away") => {
-    if (isMatchComplete) return;
-    setCurrentScore((prev) => ({
-      ...prev,
-      [team]: prev[team] + 1,
-    }));
-  };
-
-  const handleTimerComplete = () => {
-    if (isMatchComplete) return;
-
-    if (isBreak) {
-      // Break is over, start new set
-      setIsBreak(false);
-      setCurrentScore({ home: 0, away: 0 });
-      handleSwitchTeams();
-      toast({
-        title: "Break Time Over",
-        description: "Starting next set",
-      });
-    } else {
-      // Set is complete, save current scores to set scores
-      const updatedSetScores = {
-        home: [...setScores.home, currentScore.home],
-        away: [...setScores.away, currentScore.away],
-      };
-      
-      console.log('Current scores being saved:', currentScore);
-      console.log('Updated set scores:', updatedSetScores);
-      
-      setSetScores(updatedSetScores);
-      setIsBreak(true);
-
-      // Check if match should be complete
-      if (updatedSetScores.home.length >= 3) {
-        setIsMatchComplete(true);
-        toast({
-          title: "Match Complete",
-          description: "The match has ended",
-        });
-      } else {
-        toast({
-          title: "Set Complete",
-          description: "Starting 1 minute break",
-        });
-      }
-    }
-  };
-
-  const handleSwitchTeams = () => {
-    if (isMatchComplete) return;
-    
-    setIsTeamsSwitched(!isTeamsSwitched);
-    
-    // Switch current scores
-    setCurrentScore((prev) => ({
-      home: prev.away,
-      away: prev.home
-    }));
-    
-    // Switch set scores by creating new arrays with swapped values
-    setSetScores((prev) => {
-      const homeScores = [...prev.home];
-      const awayScores = [...prev.away];
-      return {
-        home: awayScores,
-        away: homeScores
-      };
-    });
-  };
-
   const handleBack = () => {
     setShowExitConfirmation(true);
   };
@@ -132,9 +64,6 @@ const Scoreboard = () => {
     );
   }
 
-  const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
-  const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
-
   return (
     <div className="min-h-screen bg-volleyball-red">
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
@@ -149,27 +78,13 @@ const Scoreboard = () => {
             isMatchComplete={isMatchComplete}
           />
 
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
-            <TeamScore
-              teamName={homeTeam.name}
-              score={currentScore.home}
-              onScoreUpdate={() => handleScore("home")}
-            />
-
-            <div className="w-64">
-              <SetScoresDisplay 
-                setScores={setScores} 
-                match={match}
-                isTeamsSwitched={isTeamsSwitched}
-              />
-            </div>
-
-            <TeamScore
-              teamName={awayTeam.name}
-              score={currentScore.away}
-              onScoreUpdate={() => handleScore("away")}
-            />
-          </div>
+          <GameScores
+            currentScore={currentScore}
+            setScores={setScores}
+            match={match}
+            isTeamsSwitched={isTeamsSwitched}
+            onScoreUpdate={handleScore}
+          />
         </div>
 
         <ExitConfirmationDialog
