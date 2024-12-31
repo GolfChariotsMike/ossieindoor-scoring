@@ -9,13 +9,12 @@ interface SetScoresDisplayProps {
 export const SetScoresDisplay = ({ setScores, isTeamsSwitched }: SetScoresDisplayProps) => {
   // Create an array of 3 sets, filling in scores where they exist
   const sets = Array.from({ length: 3 }, (_, i) => ({
-    home: isTeamsSwitched ? setScores.away[i] ?? 0 : setScores.home[i] ?? 0,
-    away: isTeamsSwitched ? setScores.home[i] ?? 0 : setScores.away[i] ?? 0,
+    home: setScores.home[i] ?? 0,
+    away: setScores.away[i] ?? 0,
     number: i + 1
   }));
 
   console.log('SetScoresDisplay - Current set scores:', setScores);
-  console.log('SetScoresDisplay - Teams switched:', isTeamsSwitched);
   console.log('SetScoresDisplay - Formatted sets:', sets);
 
   return (
