@@ -44,13 +44,13 @@ const Scoreboard = () => {
             court_number: parseInt(courtId!),
             start_time: fixture.DateTime,
             division: fixture.DivisionName,
-            home_team_id: fixture.HomeTeamId,
+            home_team_id: fixture.HomeTeamId || 'unknown',
             home_team_name: fixture.HomeTeam,
-            away_team_id: fixture.AwayTeamId,
+            away_team_id: fixture.AwayTeamId || 'unknown',
             away_team_name: fixture.AwayTeam,
           })
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error creating match:', error);
@@ -62,16 +62,36 @@ const Scoreboard = () => {
           court: parseInt(courtId!),
           startTime: fixture.DateTime,
           division: fixture.DivisionName,
-          homeTeam: { id: fixture.HomeTeamId, name: fixture.HomeTeam },
-          awayTeam: { id: fixture.AwayTeamId, name: fixture.AwayTeam },
+          homeTeam: { id: fixture.HomeTeamId || 'unknown', name: fixture.HomeTeam },
+          awayTeam: { id: fixture.AwayTeamId || 'unknown', name: fixture.AwayTeam },
         };
       }
 
-      const data = await fetchMatchData(courtId!);
-      if (Array.isArray(data)) {
-        throw new Error("Invalid match data received");
+      // If no fixture provided, try to find an existing match for this court
+      const { data: existingMatch, error } = await supabase
+        .from('matches')
+        .select()
+        .eq('court_number', parseInt(courtId!))
+        .order('created_at', { ascending: false })
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching match:', error);
+        throw error;
       }
-      return data as Match;
+
+      if (!existingMatch) {
+        throw new Error("No match found for this court");
+      }
+
+      return {
+        id: existingMatch.id,
+        court: existingMatch.court_number,
+        startTime: existingMatch.start_time,
+        division: existingMatch.division,
+        homeTeam: { id: existingMatch.home_team_id, name: existingMatch.home_team_name },
+        awayTeam: { id: existingMatch.away_team_id, name: existingMatch.away_team_name },
+      };
     },
   });
 
