@@ -24,11 +24,15 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
               away_team_name: fixture.AwayTeam,
             })
             .select()
-            .single();
+            .maybeSingle();
 
           if (insertError) {
             console.error('Error creating match:', insertError);
             throw insertError;
+          }
+
+          if (!newMatch) {
+            throw new Error('Failed to create match from fixture');
           }
 
           return {
@@ -72,11 +76,15 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
               start_time: new Date().toISOString(),
             })
             .select()
-            .single();
+            .maybeSingle();
 
           if (createError) {
             console.error('Error creating default match:', createError);
             throw createError;
+          }
+
+          if (!defaultMatch) {
+            throw new Error('Failed to create default match');
           }
 
           return {
