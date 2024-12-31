@@ -1,7 +1,8 @@
 import { createRoot } from 'react-dom/client';
-import { StrictMode } from 'react';
+import { StrictMode, useState, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from './integrations/supabase/client';
 import App from './App.tsx';
 import Login from './pages/Login.tsx';
