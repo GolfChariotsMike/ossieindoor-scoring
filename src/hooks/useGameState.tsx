@@ -20,20 +20,23 @@ export const useGameState = () => {
 
   const saveMatchScores = async (fixtureId: string, homeScores: number[], awayScores: number[]) => {
     try {
-      const response = await fetch(`/api/matches/${fixtureId}`, {
-        method: 'PUT',
+      const response = await fetch(`/fixtures/${fixtureId}/scores`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          HomeTeamScore: JSON.stringify(homeScores),
-          AwayTeamScore: JSON.stringify(awayScores),
+          homeTeamScores: homeScores,
+          awayTeamScores: awayScores,
         }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to save match scores');
       }
+
+      const data = await response.json();
+      console.log('Scores saved successfully:', data);
 
       toast({
         title: "Match scores saved",
