@@ -14,7 +14,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           // First check if a match already exists for this court
           const { data: existingMatch, error: fetchError } = await supabase
             .from('matches')
-            .select('*')
+            .select()
             .eq('court_number', parseInt(courtId))
             .maybeSingle();
 
