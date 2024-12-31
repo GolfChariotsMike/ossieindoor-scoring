@@ -8,6 +8,7 @@ import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 import { GameScores } from "./scoreboard/GameScores";
 import { useGameState } from "@/hooks/useGameState";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -28,12 +29,33 @@ const Scoreboard = () => {
     saveMatchScores,
   } = useGameState();
 
-  const { data: match, isLoading } = useQuery<Match>({
+  const { data: match, isLoading } = useQuery({
     queryKey: ["match", courtId],
     queryFn: async () => {
       if (fixture) {
+        // Create or update match in Supabase
+        const { data: matchData, error } = await supabase
+          .from('matches')
+          .upsert({
+            id: fixture.Id,
+            court_number: parseInt(courtId!),
+            start_time: fixture.DateTime,
+            division: fixture.DivisionName,
+            home_team_id: fixture.HomeTeamId,
+            home_team_name: fixture.HomeTeam,
+            away_team_id: fixture.AwayTeamId,
+            away_team_name: fixture.AwayTeam,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating match:', error);
+          throw error;
+        }
+
         return {
-          id: fixture.Id || "match-1",
+          id: fixture.Id,
           court: parseInt(courtId!),
           startTime: fixture.DateTime,
           division: fixture.DivisionName,
@@ -41,6 +63,7 @@ const Scoreboard = () => {
           awayTeam: { id: fixture.AwayTeamId, name: fixture.AwayTeam },
         };
       }
+
       const data = await fetchMatchData(courtId!);
       if (Array.isArray(data)) {
         throw new Error("Invalid match data received");
@@ -50,10 +73,10 @@ const Scoreboard = () => {
   });
 
   useEffect(() => {
-    if (isMatchComplete && fixture) {
-      saveMatchScores(fixture.Id, setScores.home, setScores.away);
+    if (isMatchComplete && match) {
+      saveMatchScores(match.id, setScores.home, setScores.away);
     }
-  }, [isMatchComplete, fixture, setScores, saveMatchScores]);
+  }, [isMatchComplete, match, setScores, saveMatchScores]);
 
   const handleBack = () => {
     setShowExitConfirmation(true);

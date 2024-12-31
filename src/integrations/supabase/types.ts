@@ -9,7 +9,77 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      match_scores: {
+        Row: {
+          away_score: number
+          created_at: string | null
+          home_score: number
+          id: string
+          match_id: string | null
+          set_number: number
+        }
+        Insert: {
+          away_score?: number
+          created_at?: string | null
+          home_score?: number
+          id?: string
+          match_id?: string | null
+          set_number: number
+        }
+        Update: {
+          away_score?: number
+          created_at?: string | null
+          home_score?: number
+          id?: string
+          match_id?: string | null
+          set_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_scores_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          away_team_id: string
+          away_team_name: string
+          court_number: number
+          created_at: string | null
+          division: string | null
+          home_team_id: string
+          home_team_name: string
+          id: string
+          start_time: string | null
+        }
+        Insert: {
+          away_team_id: string
+          away_team_name: string
+          court_number: number
+          created_at?: string | null
+          division?: string | null
+          home_team_id: string
+          home_team_name: string
+          id?: string
+          start_time?: string | null
+        }
+        Update: {
+          away_team_id?: string
+          away_team_name?: string
+          court_number?: number
+          created_at?: string | null
+          division?: string | null
+          home_team_id?: string
+          home_team_name?: string
+          id?: string
+          start_time?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

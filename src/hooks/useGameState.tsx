@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Score, SetScores } from "@/types/volleyball";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useGameState = () => {
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
@@ -18,36 +19,48 @@ export const useGameState = () => {
     }));
   };
 
-  const saveMatchScores = async (fixtureId: string, homeScores: number[], awayScores: number[]) => {
-    console.log('Attempting to save scores:', { fixtureId, homeScores, awayScores });
+  const saveMatchScores = async (matchId: string, homeScores: number[], awayScores: number[]) => {
+    console.log('Attempting to save scores:', { matchId, homeScores, awayScores });
     
     try {
-      const response = await fetch(`/api/fixtures/${fixtureId}/scores`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          homeTeamScores: homeScores,
-          awayTeamScores: awayScores,
-        }),
+      // First, create or update the match record
+      const { data: matchData, error: matchError } = await supabase
+        .from('matches')
+        .upsert({
+          id: matchId,
+          court_number: 1, // Using default court number
+          home_team_id: 'temp-home-id',
+          home_team_name: 'Home Team',
+          away_team_id: 'temp-away-id',
+          away_team_name: 'Away Team'
+        })
+        .select()
+        .single();
+
+      if (matchError) throw matchError;
+
+      // Then save each set's scores
+      const setScoresPromises = homeScores.map(async (homeScore, index) => {
+        const { error: scoreError } = await supabase
+          .from('match_scores')
+          .upsert({
+            match_id: matchId,
+            set_number: index + 1,
+            home_score: homeScore,
+            away_score: awayScores[index]
+          });
+
+        if (scoreError) throw scoreError;
       });
 
-      console.log('API Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Error response:', errorData);
-        throw new Error(`Failed to save match scores: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Scores saved successfully:', data);
+      await Promise.all(setScoresPromises);
 
       toast({
         title: "Match scores saved",
         description: "The match scores have been successfully recorded",
       });
+
+      console.log('Scores saved successfully');
     } catch (error) {
       console.error('Error saving match scores:', error);
       toast({
