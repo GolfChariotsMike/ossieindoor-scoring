@@ -19,8 +19,10 @@ export const useGameState = () => {
   };
 
   const saveMatchScores = async (fixtureId: string, homeScores: number[], awayScores: number[]) => {
+    console.log('Attempting to save scores:', { fixtureId, homeScores, awayScores });
+    
     try {
-      const response = await fetch(`/fixtures/${fixtureId}/scores`, {
+      const response = await fetch(`/api/fixtures/${fixtureId}/scores`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,8 +33,12 @@ export const useGameState = () => {
         }),
       });
 
+      console.log('API Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to save match scores');
+        const errorData = await response.text();
+        console.error('Error response:', errorData);
+        throw new Error(`Failed to save match scores: ${response.status}`);
       }
 
       const data = await response.json();
