@@ -45,14 +45,13 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     const formattedDate = format(date, 'dd/MM/yyyy');
     const dayOfWeek = format(date, 'EEEE') as keyof typeof LEAGUE_URLS;
     
-    console.log('Fetching data for date:', {
+    console.log('Fetching data for:', {
       formattedDate,
       dayOfWeek,
-      originalDate: date.toISOString(),
+      courtId,
       selectedDate: selectedDate?.toISOString(),
-      targetDate: format(date, 'yyyy-MM-dd')
     });
-    
+
     const urls = LEAGUE_URLS[dayOfWeek];
     if (!urls) {
       console.error('No URLs configured for day:', dayOfWeek);
@@ -87,7 +86,17 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
             return fixtures.filter(Boolean);
           });
 
-          console.log('Extracted fixtures for URL:', url, allWeekFixtures);
+          // Log each fixture in detail
+          console.log('Extracted fixtures for URL:', url);
+          allWeekFixtures.forEach((fixture, index) => {
+            console.log(`Fixture ${index + 1}:`, {
+              DateTime: fixture.DateTime,
+              Court: fixture.PlayingAreaName,
+              Division: fixture.DivisionName,
+              Teams: `${fixture.HomeTeam} vs ${fixture.AwayTeam}`
+            });
+          });
+
           return allWeekFixtures;
         } catch (error) {
           console.error('Error processing URL:', url, error);
@@ -98,7 +107,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
 
     // Combine and flatten fixtures from all sources
     let fixtures = allFixtures.flat();
-    console.log('All combined fixtures:', fixtures);
+    console.log('Total number of fixtures found:', fixtures.length);
 
     // Filter fixtures by the selected date
     fixtures = fixtures.filter(fixture => {
@@ -123,13 +132,19 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       }
     });
 
-    console.log('Final filtered fixtures:', fixtures);
-    
-    if (courtId) {
-      const currentMatch = Array.isArray(fixtures) 
-        ? fixtures.find((match) => match.PlayingAreaName === `Court ${courtId}`)
-        : fixtures;
+    console.log('Fixtures after date filtering:', fixtures.length);
+    fixtures.forEach((fixture, index) => {
+      console.log(`Filtered Fixture ${index + 1}:`, {
+        DateTime: fixture.DateTime,
+        Court: fixture.PlayingAreaName,
+        Division: fixture.DivisionName,
+        Teams: `${fixture.HomeTeam} vs ${fixture.AwayTeam}`
+      });
+    });
 
+    if (courtId) {
+      const currentMatch = fixtures.find((match) => match.PlayingAreaName === `Court ${courtId}`);
+      
       if (!currentMatch) {
         return {
           id: "match-1",
