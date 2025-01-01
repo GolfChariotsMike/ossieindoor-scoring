@@ -50,40 +50,40 @@ export const Timer = ({
       "results_display",
       "complete"
     ];
+    
     const currentIndex = phases.indexOf(matchPhase);
     const nextPhase = phases[currentIndex + 1];
     
-    console.log('Progressing from', matchPhase, 'to', nextPhase);
+    console.log('Current phase:', matchPhase, 'Next phase:', nextPhase);
     
     if (nextPhase) {
       setMatchPhase(nextPhase);
       
-      if (nextPhase === 'final_break') {
-        console.log('Starting final break timer');
+      if (nextPhase.startsWith('set')) {
+        console.log('Starting set:', nextPhase);
+        if (nextPhase !== 'set1') {
+          onComplete(); // Notify parent break is over
+        }
+        setTimeLeft(initialMinutes * 60);
+        setIsRunning(true);
+      } else if (nextPhase.startsWith('break')) {
+        console.log('Starting break:', nextPhase);
+        onComplete(); // Notify parent set is over
+        setTimeLeft(60); // 1 minute break
+        setIsRunning(true);
+      } else if (nextPhase === 'final_break') {
+        console.log('Starting final break');
         onComplete(); // Notify parent set is over
         setTimeLeft(30); // 30 seconds final break
         setIsRunning(true);
       } else if (nextPhase === 'results_display') {
-        console.log('Starting results display timer');
+        console.log('Starting results display');
         setTimeLeft(30); // 30 seconds results display
         setIsRunning(true);
       } else if (nextPhase === 'complete') {
         console.log('Match complete');
         onComplete(); // Notify parent match is complete
         setIsRunning(false);
-      } else if (nextPhase.includes('break')) {
-        console.log('Starting break timer');
-        onComplete(); // Notify parent set is over
-        setTimeLeft(60); // 1 minute regular break
-        setIsRunning(true);
-      } else {
-        // This handles all sets (set1, set2, set3)
-        console.log('Starting new set:', nextPhase);
-        if (nextPhase !== 'set1') {
-          onComplete(); // Notify parent break is over for set2 and set3
-        }
-        setTimeLeft(initialMinutes * 60);
-        setIsRunning(true);
       }
     }
   };
@@ -113,16 +113,18 @@ export const Timer = ({
 
   useEffect(() => {
     if (isBreak && matchPhase.includes('set')) {
-      if (matchPhase === 'set3') {
+      const currentSetNumber = parseInt(matchPhase.charAt(3));
+      if (currentSetNumber === 3) {
+        console.log('Moving to final break from set 3');
         setMatchPhase('final_break');
         setTimeLeft(30); // 30 seconds final break
       } else {
-        const breakPhase = `break${matchPhase.charAt(3)}` as MatchPhase;
+        console.log('Moving to break', currentSetNumber, 'from set', currentSetNumber);
+        const breakPhase = `break${currentSetNumber}` as MatchPhase;
         setMatchPhase(breakPhase);
         setTimeLeft(60); // 1 minute regular break
       }
       setIsRunning(true);
-      console.log('Auto-starting break timer');
     }
   }, [isBreak, matchPhase]);
 
