@@ -17,6 +17,8 @@ type MatchPhase =
   | "set2"
   | "break2"
   | "set3"
+  | "final_break"
+  | "results_display"
   | "complete";
 
 export const Timer = ({ 
@@ -46,6 +48,8 @@ export const Timer = ({
       "set2", 
       "break2", 
       "set3",
+      "final_break",
+      "results_display",
       "complete"
     ];
     const currentIndex = phases.indexOf(matchPhase);
@@ -57,20 +61,29 @@ export const Timer = ({
       setMatchPhase(nextPhase);
       
       // Handle phase transitions
-      if (nextPhase.includes('break')) {
-        console.log('Starting break timer');
+      if (nextPhase === 'final_break') {
+        console.log('Starting final break timer');
         onComplete(); // Notify parent set is over
-        setTimeLeft(60); // 1 minute break
-        setIsRunning(true); // Auto-start break timer
+        setTimeLeft(30); // 30 seconds final break
+        setIsRunning(true);
+      } else if (nextPhase === 'results_display') {
+        console.log('Starting results display timer');
+        setTimeLeft(30); // 30 seconds results display
+        setIsRunning(true);
       } else if (nextPhase === 'complete') {
         console.log('Match complete');
         onComplete(); // Notify parent match is complete
         setIsRunning(false);
+      } else if (nextPhase.includes('break')) {
+        console.log('Starting break timer');
+        onComplete(); // Notify parent set is over
+        setTimeLeft(60); // 1 minute regular break
+        setIsRunning(true);
       } else {
         console.log('Starting new set');
         onComplete(); // Notify parent break is over
         setTimeLeft(initialMinutes * 60);
-        setIsRunning(true); // Auto-start set timer
+        setIsRunning(true);
       }
     }
   };
@@ -102,10 +115,15 @@ export const Timer = ({
   // Effect to handle isBreak prop changes
   useEffect(() => {
     if (isBreak && matchPhase.includes('set')) {
-      const breakPhase = `break${matchPhase.charAt(3)}` as MatchPhase;
-      setMatchPhase(breakPhase);
-      setTimeLeft(60);
-      setIsRunning(true); // Auto-start break timer
+      if (matchPhase === 'set3') {
+        setMatchPhase('final_break');
+        setTimeLeft(30); // 30 seconds final break
+      } else {
+        const breakPhase = `break${matchPhase.charAt(3)}` as MatchPhase;
+        setMatchPhase(breakPhase);
+        setTimeLeft(60); // 1 minute regular break
+      }
+      setIsRunning(true);
       console.log('Auto-starting break timer');
     }
   }, [isBreak, matchPhase]);

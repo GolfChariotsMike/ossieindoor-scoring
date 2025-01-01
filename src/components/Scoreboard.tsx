@@ -9,6 +9,9 @@ import { ResultsScreen } from "./scoreboard/ResultsScreen";
 import { useGameState } from "@/hooks/useGameState";
 import { useMatchData } from "@/hooks/useMatchData";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchMatchData } from "@/utils/matchDataFetcher";
+import { format } from "date-fns";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -32,9 +35,44 @@ const Scoreboard = () => {
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
 
+  // Query to get next match
+  const { data: nextMatches = [] } = useQuery({
+    queryKey: ["matches", format(new Date(), 'yyyy-MM-dd')],
+    queryFn: () => fetchMatchData(undefined, new Date()),
+  });
+
+  const findNextMatch = () => {
+    if (!fixture || !nextMatches.length) return null;
+    
+    const currentMatchIndex = nextMatches.findIndex(
+      (m: Fixture) => m.Id === fixture.Id
+    );
+    
+    if (currentMatchIndex === -1) return null;
+    
+    const nextMatch = nextMatches
+      .slice(currentMatchIndex + 1)
+      .find((m: Fixture) => m.PlayingAreaName === `Court ${courtId}`);
+    
+    return nextMatch;
+  };
+
   useEffect(() => {
     if (isMatchComplete && match && hasGameStarted) {
       saveMatchScores(match.id, setScores.home, setScores.away);
+      
+      // After 30 seconds, navigate to next match if available
+      const timer = setTimeout(() => {
+        const nextMatch = findNextMatch();
+        if (nextMatch) {
+          navigate(`/scoreboard/${courtId}`, {
+            state: { fixture: nextMatch },
+            replace: true
+          });
+        }
+      }, 30000); // 30 seconds
+
+      return () => clearTimeout(timer);
     }
   }, [isMatchComplete, match, setScores, saveMatchScores, hasGameStarted]);
 
