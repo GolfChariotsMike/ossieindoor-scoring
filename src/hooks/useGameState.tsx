@@ -20,25 +20,12 @@ export const useGameState = () => {
   };
 
   const saveMatchScores = async (matchId: string, homeScores: number[], awayScores: number[]) => {
-    // Only proceed if we have scores to save
-    if (!homeScores.length || !awayScores.length) {
-      console.log('No scores to save yet');
+    // Only proceed if we have actual scores to save
+    if (!homeScores.length || !awayScores.length || (homeScores[0] === 0 && awayScores[0] === 0)) {
       return;
     }
     
-    console.log('Attempting to save scores:', { matchId, homeScores, awayScores });
-    
     try {
-      // First ensure the match exists
-      const { data: matchData, error: matchError } = await supabase
-        .from('matches_v2')
-        .select()
-        .eq('id', matchId)
-        .maybeSingle();
-
-      if (matchError) throw matchError;
-
-      // Prepare set scores data for upsert
       const setScoresData = homeScores.map((homeScore, index) => ({
         match_id: matchId,
         set_number: index + 1,
@@ -46,26 +33,19 @@ export const useGameState = () => {
         away_score: awayScores[index]
       }));
 
-      console.log('Upserting scores:', setScoresData);
-
-      // Use upsert operation with onConflict parameter
       const { error: upsertError } = await supabase
         .from('match_scores_v2')
         .upsert(setScoresData, {
           onConflict: 'match_id,set_number'
         });
 
-      if (upsertError) {
-        console.error('Error upserting scores:', upsertError);
-        throw upsertError;
-      }
+      if (upsertError) throw upsertError;
 
       toast({
         title: "Match scores saved",
         description: "The match scores have been successfully recorded",
       });
 
-      console.log('Scores saved successfully');
     } catch (error) {
       console.error('Error saving match scores:', error);
       toast({
@@ -88,20 +68,17 @@ export const useGameState = () => {
         description: "Starting next set",
       });
     } else {
-      // Only save scores if at least one team has scored
-      if (currentScore.home > 0 || currentScore.away > 0) {
-        // When saving set scores, we need to account for whether teams are currently switched
-        const updatedSetScores = {
-          home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
-          away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
-        };
-        
-        console.log('Current scores being saved:', currentScore);
-        console.log('Updated set scores:', updatedSetScores);
-        
-        setSetScores(updatedSetScores);
+      // Only proceed if there are actual scores
+      if (currentScore.home === 0 && currentScore.away === 0) {
+        return;
       }
+
+      const updatedSetScores = {
+        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
+        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
+      };
       
+      setSetScores(updatedSetScores);
       setIsBreak(true);
 
       if (setScores.home.length >= 2) {
@@ -121,10 +98,7 @@ export const useGameState = () => {
 
   const handleSwitchTeams = () => {
     if (isMatchComplete) return;
-    
     setIsTeamsSwitched(!isTeamsSwitched);
-    
-    // Switch current scores
     setCurrentScore((prev) => ({
       home: prev.away,
       away: prev.home

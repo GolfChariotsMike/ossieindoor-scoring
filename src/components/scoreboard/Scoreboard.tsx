@@ -23,7 +23,7 @@ const Scoreboard = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
 
-  const { data: match, isLoading } = useQuery<Match>({
+  const { data: match, isLoading } = useQuery({
     queryKey: ["match", courtId],
     queryFn: async () => {
       if (fixture) {
@@ -54,7 +54,6 @@ const Scoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // Break is over, start new set with fresh scores
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 });
       handleSwitchTeams();
@@ -66,18 +65,19 @@ const Scoreboard = () => {
         });
       }
     } else {
-      // Set is complete, save scores and start break
+      // Only proceed if there are actual scores
+      if (currentScore.home === 0 && currentScore.away === 0) {
+        return;
+      }
+
       const newSetScores = {
-        home: [...setScores.home, currentScore.home],
-        away: [...setScores.away, currentScore.away],
+        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
+        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
       };
-      
-      console.log('Saving set scores:', newSetScores);
       
       setSetScores(newSetScores);
       setIsBreak(true);
       
-      // Check if match should be complete after this set
       if (newSetScores.home.length >= 3) {
         setIsMatchComplete(true);
         toast({
@@ -99,10 +99,6 @@ const Scoreboard = () => {
     setCurrentScore((prev) => ({
       home: prev.away,
       away: prev.home
-    }));
-    setSetScores((prev) => ({
-      home: [...prev.away],
-      away: [...prev.home]
     }));
   };
 
