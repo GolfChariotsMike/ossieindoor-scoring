@@ -17,7 +17,6 @@ type MatchPhase =
   | "set2"
   | "break2"
   | "set3"
-  | "break3"
   | "complete";
 
 export const Timer = ({ 
@@ -46,8 +45,7 @@ export const Timer = ({
       "break1", 
       "set2", 
       "break2", 
-      "set3", 
-      "break3",
+      "set3",
       "complete"
     ];
     const currentIndex = phases.indexOf(matchPhase);
@@ -104,21 +102,13 @@ export const Timer = ({
   // Effect to handle isBreak prop changes
   useEffect(() => {
     if (isBreak && matchPhase.includes('set')) {
-      const currentSetNumber = parseInt(matchPhase.charAt(3));
-      const breakPhase = `break${currentSetNumber}` as MatchPhase;
+      const breakPhase = `break${matchPhase.charAt(3)}` as MatchPhase;
       setMatchPhase(breakPhase);
       setTimeLeft(60);
-      setIsRunning(true);
-      console.log('Auto-starting break timer for set', currentSetNumber);
-    } else if (!isBreak && matchPhase.includes('break')) {
-      const nextSetNumber = parseInt(matchPhase.charAt(5)) + 1;
-      const nextPhase = `set${nextSetNumber}` as MatchPhase;
-      setMatchPhase(nextPhase);
-      setTimeLeft(initialMinutes * 60);
-      setIsRunning(true);
-      console.log('Starting set', nextSetNumber);
+      setIsRunning(true); // Auto-start break timer
+      console.log('Auto-starting break timer');
     }
-  }, [isBreak, matchPhase, initialMinutes]);
+  }, [isBreak, matchPhase]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
