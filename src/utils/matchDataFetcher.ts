@@ -49,7 +49,6 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
         try {
           const text = await fetchFromUrl(url, formattedDate);
           const result = parser.parse(text);
-          console.log('Parsed XML result:', result);
           return result?.League?.Week?.[0]?.Fixture || [];
         } catch (error) {
           console.error('Error fetching from URL:', url, error);
@@ -59,8 +58,21 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     );
 
     // Combine and flatten fixtures from all sources
-    const fixtures = allFixtures.flat();
-    console.log('Combined fixtures:', fixtures);
+    let fixtures = allFixtures.flat();
+    
+    // Filter fixtures by the selected date
+    fixtures = fixtures.filter(fixture => {
+      if (!fixture.DateTime) return false;
+      
+      // Parse the fixture date (format: "dd/MM/yyyy HH:mm")
+      const fixtureDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+      const selectedDateStart = new Date(date.setHours(0, 0, 0, 0));
+      const selectedDateEnd = new Date(date.setHours(23, 59, 59, 999));
+      
+      return fixtureDate >= selectedDateStart && fixtureDate <= selectedDateEnd;
+    });
+
+    console.log('Filtered fixtures for date:', formattedDate, fixtures);
     
     // Helper function to parse the date string
     const parseDateTime = (dateTimeStr: string) => {
