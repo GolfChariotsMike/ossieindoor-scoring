@@ -30,7 +30,8 @@ const fetchFromUrl = async (url: string, date: string) => {
       throw new Error("Failed to fetch fixture data");
     }
     const text = await response.text();
-    console.log('Raw XML Response:', text);
+    console.log('Raw XML Response for URL:', url);
+    console.log(text);
     return text;
   } catch (error) {
     console.error('Error fetching from URL:', url, error);
@@ -41,7 +42,6 @@ const fetchFromUrl = async (url: string, date: string) => {
 export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
   try {
     const date = selectedDate || new Date();
-    // Format date for the API request (dd/MM/yyyy)
     const formattedDate = format(date, 'dd/MM/yyyy');
     const dayOfWeek = format(date, 'EEEE') as keyof typeof LEAGUE_URLS;
     
@@ -62,7 +62,8 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "",
-      parseAttributeValue: false, // Changed to false to prevent automatic parsing
+      parseAttributeValue: false,
+      trimValues: true,
     });
 
     // Fetch and parse data from all URLs for the day
@@ -71,12 +72,25 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
         try {
           const text = await fetchFromUrl(url, formattedDate);
           const result = parser.parse(text);
-          console.log('Parsed XML result:', JSON.stringify(result, null, 2));
-          const fixtures = result?.League?.Week?.[0]?.Fixture || [];
-          console.log('Extracted fixtures:', fixtures);
-          return fixtures;
+          
+          console.log('Full parsed XML result for URL:', url);
+          console.log(JSON.stringify(result, null, 2));
+          
+          // Extract all weeks and their fixtures
+          const weeks = Array.isArray(result?.League?.Week) 
+            ? result.League.Week 
+            : [result?.League?.Week];
+            
+          const allWeekFixtures = weeks.flatMap(week => {
+            console.log('Processing week:', week?.Date);
+            const fixtures = Array.isArray(week?.Fixture) ? week.Fixture : [week?.Fixture];
+            return fixtures.filter(Boolean);
+          });
+
+          console.log('Extracted fixtures for URL:', url, allWeekFixtures);
+          return allWeekFixtures;
         } catch (error) {
-          console.error('Error fetching from URL:', url, error);
+          console.error('Error processing URL:', url, error);
           return [];
         }
       })
@@ -84,22 +98,22 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
 
     // Combine and flatten fixtures from all sources
     let fixtures = allFixtures.flat();
-    console.log('Combined fixtures:', fixtures);
+    console.log('All combined fixtures:', fixtures);
 
     // Filter fixtures by the selected date
     fixtures = fixtures.filter(fixture => {
-      if (!fixture.DateTime) return false;
+      if (!fixture?.DateTime) return false;
       
       try {
-        // Extract just the date part from the fixture DateTime (before the space)
         const fixtureDatePart = fixture.DateTime.split(' ')[0];
         const targetDateStr = format(date, 'dd/MM/yyyy');
         
-        console.log('Date comparison:', {
-          fixtureDateTime: fixture.DateTime,
+        console.log('Date comparison for fixture:', {
+          fullDateTime: fixture.DateTime,
           fixtureDatePart,
           targetDate: targetDateStr,
-          isMatch: fixtureDatePart === targetDateStr
+          isMatch: fixtureDatePart === targetDateStr,
+          court: fixture.PlayingAreaName
         });
         
         return fixtureDatePart === targetDateStr;
