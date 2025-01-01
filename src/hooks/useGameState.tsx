@@ -32,7 +32,18 @@ export const useGameState = () => {
 
       if (matchError) throw matchError;
 
-      // Prepare all set scores for upsert
+      // First, delete any existing scores for this match
+      const { error: deleteError } = await supabase
+        .from('match_scores')
+        .delete()
+        .eq('match_id', matchId);
+
+      if (deleteError) {
+        console.error('Error deleting existing scores:', deleteError);
+        throw deleteError;
+      }
+
+      // Then insert new scores
       const setScoresData = homeScores.map((homeScore, index) => ({
         match_id: matchId,
         set_number: index + 1,
@@ -40,19 +51,15 @@ export const useGameState = () => {
         away_score: awayScores[index]
       }));
 
-      console.log('Upserting scores:', setScoresData);
+      console.log('Inserting new scores:', setScoresData);
 
-      // Use upsert with explicit conflict target
-      const { error: scoreError } = await supabase
+      const { error: insertError } = await supabase
         .from('match_scores')
-        .upsert(setScoresData, {
-          onConflict: 'match_id,set_number',
-          ignoreDuplicates: false
-        });
+        .insert(setScoresData);
 
-      if (scoreError) {
-        console.error('Error in upsert:', scoreError);
-        throw scoreError;
+      if (insertError) {
+        console.error('Error inserting scores:', insertError);
+        throw insertError;
       }
 
       toast({
