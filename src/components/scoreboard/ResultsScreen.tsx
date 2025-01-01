@@ -72,13 +72,17 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
           {[homeResults, awayResults].map((result) => (
             <div 
               key={result.name}
-              className="bg-volleyball-black rounded-2xl p-8 flex flex-col items-center"
+              className="bg-volleyball-black rounded-2xl p-8 flex flex-col items-center transition-transform hover:scale-105 duration-300"
             >
-              <h2 className="text-5xl font-sets mb-8 text-volleyball-cream">{result.name}</h2>
+              <h2 className="text-5xl font-sets mb-8 text-volleyball-cream animate-fade-in">
+                {result.name}
+              </h2>
               <div className="space-y-6 text-3xl font-score text-volleyball-cream">
-                <p className="text-4xl">Set Points: {result.setPoints}</p>
-                <p className="text-4xl">Bonus Points: {result.bonusPoints}</p>
-                <p className="text-5xl mt-8">Total: {result.totalPoints}</p>
+                <p className="text-4xl animate-scale-in">Set Points: {result.setPoints}</p>
+                <p className="text-4xl animate-scale-in delay-150">Bonus Points: {result.bonusPoints}</p>
+                <p className="text-5xl mt-8 animate-[pulse_3s_ease-in-out_infinite]">
+                  Total: {result.totalPoints}
+                </p>
               </div>
             </div>
           ))}
