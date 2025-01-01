@@ -27,6 +27,13 @@ export const useGameState = () => {
     }
 
     try {
+      // First, get existing scores for this match
+      const { data: existingScores } = await supabase
+        .from('match_scores')
+        .select('*')
+        .eq('match_id', matchId);
+
+      // Prepare the scores data
       const setScoresData = homeScores.map((homeScore, index) => ({
         match_id: matchId,
         set_number: index + 1,
@@ -34,13 +41,33 @@ export const useGameState = () => {
         away_score: awayScores[index]
       }));
 
-      const { error } = await supabase
-        .from('match_scores')
-        .upsert(setScoresData, {
-          onConflict: 'match_id,set_number'
-        });
+      // For each set score, either update existing or insert new
+      for (const scoreData of setScoresData) {
+        const existingScore = existingScores?.find(
+          score => score.match_id === matchId && score.set_number === scoreData.set_number
+        );
 
-      if (error) throw error;
+        if (existingScore) {
+          // Update existing score
+          const { error: updateError } = await supabase
+            .from('match_scores')
+            .update({
+              home_score: scoreData.home_score,
+              away_score: scoreData.away_score
+            })
+            .eq('match_id', matchId)
+            .eq('set_number', scoreData.set_number);
+
+          if (updateError) throw updateError;
+        } else {
+          // Insert new score
+          const { error: insertError } = await supabase
+            .from('match_scores')
+            .insert([scoreData]);
+
+          if (insertError) throw insertError;
+        }
+      }
 
       toast({
         title: "Match scores saved",
