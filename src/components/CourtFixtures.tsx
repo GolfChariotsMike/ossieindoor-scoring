@@ -10,15 +10,11 @@ const CourtFixtures = () => {
   const { courtId, date } = useParams();
   const navigate = useNavigate();
   
-  // Parse the date from YYYY-MM-DD format and set to start of day
+  // Parse the date from URL format (YYYY-MM-DD) to a Date object
   const parsedDate = date ? parse(date, 'yyyy-MM-dd', new Date()) : new Date();
-  console.log('Parsed date in CourtFixtures:', {
-    original: parsedDate.toISOString(),
-    formatted: format(parsedDate, 'dd/MM/yyyy')
-  });
 
   const { data: matches = [], isLoading } = useQuery({
-    queryKey: ["matches", parsedDate],
+    queryKey: ["matches", date], // Use the raw date string from URL as part of the query key
     queryFn: () => fetchMatchData(undefined, parsedDate),
   });
 
@@ -91,7 +87,7 @@ const CourtFixtures = () => {
                 <div className="flex flex-col w-full">
                   <div className="flex justify-between items-center w-full">
                     <div className="font-semibold min-w-[100px]">
-                      {format(parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date()), "h:mm a")}
+                      {format(parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date()), 'h:mm a')}
                     </div>
                     <div className="text-center flex-1 px-4">
                       {fixture.HomeTeam} vs {fixture.AwayTeam}

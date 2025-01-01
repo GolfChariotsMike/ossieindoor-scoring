@@ -48,7 +48,8 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     console.log('Fetching data for date:', {
       formattedDate,
       dayOfWeek,
-      originalDate: date.toISOString()
+      originalDate: date.toISOString(),
+      selectedDate: selectedDate?.toISOString()
     });
     
     const urls = LEAGUE_URLS[dayOfWeek];
@@ -93,16 +94,15 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
         const selectedDay = startOfDay(date);
         const fixtureDay = startOfDay(fixtureDate);
         
-        const isMatchingDate = isEqual(selectedDay, fixtureDay);
-        
         console.log('Date comparison:', {
           fixtureDateTime: fixture.DateTime,
-          parsedFixtureDate: format(fixtureDate, 'yyyy-MM-dd HH:mm'),
-          selectedDate: format(selectedDay, 'yyyy-MM-dd'),
-          isMatch: isMatchingDate
+          parsedFixtureDate: fixtureDate.toISOString(),
+          selectedDate: selectedDay.toISOString(),
+          fixtureDay: fixtureDay.toISOString(),
+          isMatch: isEqual(selectedDay, fixtureDay)
         });
         
-        return isMatchingDate;
+        return isEqual(selectedDay, fixtureDay);
       } catch (error) {
         console.error('Error parsing fixture date:', fixture.DateTime, error);
         return false;
@@ -136,11 +136,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       };
     }
 
-    // Transform all fixtures
-    return fixtures.map(fixture => ({
-      ...fixture,
-      DateTime: fixture.DateTime // Keep the original DateTime format
-    }));
+    return fixtures;
 
   } catch (error) {
     console.error("Error fetching match data:", error);
