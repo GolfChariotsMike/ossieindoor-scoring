@@ -33,7 +33,6 @@ export const Timer = ({
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
 
   const resetTimer = () => {
-    console.log('Timer reset for phase:', matchPhase);
     setTimeLeft(initialMinutes * 60);
     setIsRunning(false);
   };
@@ -57,10 +56,9 @@ export const Timer = ({
     console.log('Current phase:', matchPhase, 'Next phase:', nextPhase);
     
     if (nextPhase) {
-      setMatchPhase(nextPhase);
-      
       if (nextPhase.startsWith('set')) {
         console.log('Starting set:', nextPhase);
+        setMatchPhase(nextPhase);
         if (nextPhase !== 'set1') {
           onComplete(); // Notify parent break is over
         }
@@ -68,20 +66,24 @@ export const Timer = ({
         setIsRunning(true);
       } else if (nextPhase.startsWith('break')) {
         console.log('Starting break:', nextPhase);
+        setMatchPhase(nextPhase);
         onComplete(); // Notify parent set is over
         setTimeLeft(60); // 1 minute break
         setIsRunning(true);
       } else if (nextPhase === 'final_break') {
         console.log('Starting final break');
+        setMatchPhase(nextPhase);
         onComplete(); // Notify parent set is over
         setTimeLeft(30); // 30 seconds final break
         setIsRunning(true);
       } else if (nextPhase === 'results_display') {
         console.log('Starting results display');
+        setMatchPhase(nextPhase);
         setTimeLeft(30); // 30 seconds results display
         setIsRunning(true);
       } else if (nextPhase === 'complete') {
         console.log('Match complete');
+        setMatchPhase(nextPhase);
         onComplete(); // Notify parent match is complete
         setIsRunning(false);
       }
@@ -114,6 +116,8 @@ export const Timer = ({
   useEffect(() => {
     if (isBreak && matchPhase.includes('set')) {
       const currentSetNumber = parseInt(matchPhase.charAt(3));
+      console.log('Current set number:', currentSetNumber);
+      
       if (currentSetNumber === 3) {
         console.log('Moving to final break from set 3');
         setMatchPhase('final_break');
