@@ -9,6 +9,56 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      match_results: {
+        Row: {
+          away_team_name: string
+          away_team_sets: number | null
+          court_number: number
+          created_at: string | null
+          division: string | null
+          home_team_name: string
+          home_team_sets: number | null
+          id: string
+          match_date: string | null
+          match_id: string | null
+          set_scores: Json | null
+        }
+        Insert: {
+          away_team_name: string
+          away_team_sets?: number | null
+          court_number: number
+          created_at?: string | null
+          division?: string | null
+          home_team_name: string
+          home_team_sets?: number | null
+          id?: string
+          match_date?: string | null
+          match_id?: string | null
+          set_scores?: Json | null
+        }
+        Update: {
+          away_team_name?: string
+          away_team_sets?: number | null
+          court_number?: number
+          created_at?: string | null
+          division?: string | null
+          home_team_name?: string
+          home_team_sets?: number | null
+          id?: string
+          match_date?: string | null
+          match_id?: string | null
+          set_scores?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_results_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_scores: {
         Row: {
           away_score: number

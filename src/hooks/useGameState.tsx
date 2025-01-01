@@ -27,46 +27,55 @@ export const useGameState = () => {
     }
 
     try {
-      // First, get existing scores for this match
-      const { data: existingScores } = await supabase
-        .from('match_scores')
+      // First, get match details
+      const { data: matchData, error: matchError } = await supabase
+        .from('matches_v2')
         .select('*')
-        .eq('match_id', matchId);
+        .eq('id', matchId)
+        .single();
 
-      // Prepare the scores data
-      const setScoresData = homeScores.map((homeScore, index) => ({
+      if (matchError) throw matchError;
+
+      // Format set scores for the new table
+      const setScoresJson = homeScores.map((homeScore, index) => ({
+        home: homeScore,
+        away: awayScores[index]
+      }));
+
+      // Calculate total sets won
+      const homeSetsWon = homeScores.reduce((acc, score, index) => 
+        acc + (score > awayScores[index] ? 1 : 0), 0);
+      const awaySetsWon = homeScores.reduce((acc, score, index) => 
+        acc + (score < awayScores[index] ? 1 : 0), 0);
+
+      // Save to match_results table
+      const { error: resultError } = await supabase
+        .from('match_results')
+        .insert([{
+          match_id: matchId,
+          court_number: matchData.court_number,
+          division: matchData.division,
+          home_team_name: matchData.home_team_name,
+          away_team_name: matchData.away_team_name,
+          home_team_sets: homeSetsWon,
+          away_team_sets: awaySetsWon,
+          set_scores: setScoresJson
+        }]);
+
+      if (resultError) throw resultError;
+
+      // Also save individual set scores for backward compatibility
+      for (const scoreData of homeScores.map((homeScore, index) => ({
         match_id: matchId,
         set_number: index + 1,
         home_score: homeScore,
         away_score: awayScores[index]
-      }));
+      }))) {
+        const { error: scoreError } = await supabase
+          .from('match_scores_v2')
+          .insert([scoreData]);
 
-      // For each set score, either update existing or insert new
-      for (const scoreData of setScoresData) {
-        const existingScore = existingScores?.find(
-          score => score.match_id === matchId && score.set_number === scoreData.set_number
-        );
-
-        if (existingScore) {
-          // Update existing score
-          const { error: updateError } = await supabase
-            .from('match_scores')
-            .update({
-              home_score: scoreData.home_score,
-              away_score: scoreData.away_score
-            })
-            .eq('match_id', matchId)
-            .eq('set_number', scoreData.set_number);
-
-          if (updateError) throw updateError;
-        } else {
-          // Insert new score
-          const { error: insertError } = await supabase
-            .from('match_scores')
-            .insert([scoreData]);
-
-          if (insertError) throw insertError;
-        }
+        if (scoreError) throw scoreError;
       }
 
       toast({
