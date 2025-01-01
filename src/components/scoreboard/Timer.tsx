@@ -79,6 +79,11 @@ export const Timer = ({
         onComplete(); // Notify parent set is over
         setTimeLeft(60); // 1 minute regular break
         setIsRunning(true);
+      } else if (nextPhase === 'set3') {
+        console.log('Starting set 3');
+        onComplete(); // Notify parent break is over
+        setTimeLeft(initialMinutes * 60);
+        setIsRunning(true);
       } else {
         console.log('Starting new set');
         onComplete(); // Notify parent break is over
