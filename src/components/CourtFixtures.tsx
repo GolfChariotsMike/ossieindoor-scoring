@@ -9,6 +9,7 @@ import { Fixture } from "@/types/volleyball";
 const CourtFixtures = () => {
   const { courtId, date } = useParams();
   const navigate = useNavigate();
+  // Parse the date from YYYY-MM-DD format
   const parsedDate = date ? new Date(date) : new Date();
 
   const { data: matches = [], isLoading } = useQuery({

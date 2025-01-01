@@ -2,20 +2,23 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const CourtSelection = () => {
   const navigate = useNavigate();
-  const [date, setDate] = useState<Date>(new Date());
+  const [date, setDate] = useState<Date>(startOfDay(new Date()));
   const [open, setOpen] = useState(false);
   const courts = [1, 2, 3, 4, 5, 6, 7, 8];
 
   const handleCourtSelection = (court: number) => {
-    // Just navigate with the date, let the Scoreboard component handle match creation
-    navigate(`/court/${court}/${date.toISOString()}`);
+    // Use startOfDay to ensure we're working with just the date portion
+    const selectedDate = startOfDay(date);
+    // Format the date as YYYY-MM-DD to avoid timezone issues
+    const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+    navigate(`/court/${court}/${formattedDate}`);
   };
 
   return (
@@ -46,7 +49,7 @@ const CourtSelection = () => {
                 selected={date}
                 onSelect={(newDate) => {
                   if (newDate) {
-                    setDate(newDate);
+                    setDate(startOfDay(newDate));
                     setOpen(false);
                   }
                 }}
