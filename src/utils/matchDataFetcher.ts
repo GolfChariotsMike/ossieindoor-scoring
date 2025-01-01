@@ -30,6 +30,7 @@ const fetchFromUrl = async (url: string, date: string) => {
 export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
   try {
     const date = selectedDate || new Date();
+    // Format date for the API request (dd/MM/yyyy)
     const formattedDate = format(date, 'dd/MM/yyyy');
     const dayOfWeek = format(date, 'EEEE') as keyof typeof LEAGUE_URLS;
     
@@ -64,26 +65,18 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     fixtures = fixtures.filter(fixture => {
       if (!fixture.DateTime) return false;
       
-      // Parse the fixture date (format: "dd/MM/yyyy HH:mm")
+      // Parse the fixture date from the XML format (dd/MM/yyyy HH:mm)
       const fixtureDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-      const selectedDateStart = new Date(date.setHours(0, 0, 0, 0));
-      const selectedDateEnd = new Date(date.setHours(23, 59, 59, 999));
+      const selectedDateStart = new Date(date);
+      selectedDateStart.setHours(0, 0, 0, 0);
+      const selectedDateEnd = new Date(date);
+      selectedDateEnd.setHours(23, 59, 59, 999);
       
       return fixtureDate >= selectedDateStart && fixtureDate <= selectedDateEnd;
     });
 
     console.log('Filtered fixtures for date:', formattedDate, fixtures);
     
-    // Helper function to parse the date string
-    const parseDateTime = (dateTimeStr: string) => {
-      try {
-        return parse(dateTimeStr, 'dd/MM/yyyy HH:mm', new Date()).toISOString();
-      } catch (error) {
-        console.error('Error parsing date:', dateTimeStr, error);
-        return new Date().toISOString();
-      }
-    };
-
     if (courtId) {
       const currentMatch = Array.isArray(fixtures) 
         ? fixtures.find((match) => match.PlayingAreaName === `Court ${courtId}`)
@@ -102,17 +95,17 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       return {
         id: currentMatch.Id,
         court: parseInt(courtId),
-        startTime: parseDateTime(currentMatch.DateTime),
+        startTime: parse(currentMatch.DateTime, 'dd/MM/yyyy HH:mm', new Date()).toISOString(),
+        division: currentMatch.DivisionName,
         homeTeam: { id: currentMatch.HomeTeamId, name: currentMatch.HomeTeam },
         awayTeam: { id: currentMatch.AwayTeamId, name: currentMatch.AwayTeam },
       };
     }
 
     // Transform all fixtures
-    const transformedData = Array.isArray(fixtures) ? fixtures : [fixtures];
-    return transformedData.map(fixture => ({
+    return fixtures.map(fixture => ({
       ...fixture,
-      DateTime: parseDateTime(fixture.DateTime)
+      DateTime: parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date()).toISOString()
     }));
 
   } catch (error) {
