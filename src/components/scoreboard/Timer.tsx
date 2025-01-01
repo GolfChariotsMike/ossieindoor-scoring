@@ -101,6 +101,17 @@ export const Timer = ({
     };
   }, [isRunning, timeLeft, matchPhase]);
 
+  // Effect to handle isBreak prop changes
+  useEffect(() => {
+    if (isBreak && matchPhase.includes('set')) {
+      const breakPhase = `break${matchPhase.charAt(3)}` as MatchPhase;
+      setMatchPhase(breakPhase);
+      setTimeLeft(60);
+      setIsRunning(true); // Auto-start break timer
+      console.log('Auto-starting break timer');
+    }
+  }, [isBreak, matchPhase]);
+
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
