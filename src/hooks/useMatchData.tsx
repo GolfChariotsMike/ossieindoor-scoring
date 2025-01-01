@@ -25,9 +25,9 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           .from('matches_v2')
           .select()
           .eq('match_code', matchCode)
-          .single();
+          .maybeSingle();
 
-        if (checkError && checkError.code !== 'PGRST116') {
+        if (checkError) {
           console.error('Error checking existing match:', checkError);
           throw checkError;
         }
@@ -84,9 +84,9 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         .eq('court_number', parseInt(courtId))
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching match:', error);
         toast({
           title: "Error",
