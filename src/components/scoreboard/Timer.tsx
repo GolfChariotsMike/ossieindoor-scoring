@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 
@@ -21,34 +21,41 @@ export const Timer = ({
   const [isRunning, setIsRunning] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
 
-  // Reset and auto-start timer when break status changes or new set starts
+  const resetTimer = useCallback(() => {
+    setTimeLeft(initialMinutes * 60);
+  }, [initialMinutes]);
+
+  // Handle timer completion
+  const handleComplete = useCallback(() => {
+    setIsRunning(false);
+    onComplete();
+  }, [onComplete]);
+
+  // Reset timer when break status changes
   useEffect(() => {
     if (isMatchComplete) {
       setIsRunning(false);
       return;
     }
+
+    resetTimer();
     
-    // Reset timer when break status changes
-    setTimeLeft(initialMinutes * 60);
-    
-    // Auto-start timer if:
-    // 1. It's a break (between sets)
-    // 2. It's not a break but the game has already started
-    if (isBreak || hasGameStarted) {
+    // Auto-start timer for breaks or if game has started
+    if (hasGameStarted) {
       setIsRunning(true);
     }
-  }, [initialMinutes, isBreak, isMatchComplete, hasGameStarted]);
+  }, [isBreak, isMatchComplete, resetTimer, hasGameStarted]);
 
+  // Timer countdown logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | null = null;
 
     if (isRunning && timeLeft > 0 && !isMatchComplete) {
       interval = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
-            clearInterval(interval);
-            setIsRunning(false);
-            onComplete();
+            if (interval) clearInterval(interval);
+            handleComplete();
             return 0;
           }
           return prev - 1;
@@ -61,7 +68,7 @@ export const Timer = ({
         clearInterval(interval);
       }
     };
-  }, [isRunning, timeLeft, onComplete, isMatchComplete]);
+  }, [isRunning, timeLeft, handleComplete, isMatchComplete]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -69,7 +76,7 @@ export const Timer = ({
   const handleReset = () => {
     if (isMatchComplete) return;
     setIsRunning(false);
-    setTimeLeft(initialMinutes * 60);
+    resetTimer();
   };
 
   const handleStartStop = () => {
