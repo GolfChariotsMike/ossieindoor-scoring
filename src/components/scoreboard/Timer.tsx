@@ -20,6 +20,7 @@ export const Timer = ({
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
 
+  // Auto-start timer when break begins or new set starts
   useEffect(() => {
     if (isMatchComplete) {
       setIsRunning(false);
@@ -27,7 +28,8 @@ export const Timer = ({
     }
     
     setTimeLeft(initialMinutes * 60);
-    setIsRunning(false);
+    // Automatically start the timer for breaks and new sets
+    setIsRunning(true);
   }, [initialMinutes, isBreak, isMatchComplete]);
 
   useEffect(() => {
