@@ -36,7 +36,7 @@ export const saveMatchScores = async (
     // Save to match_results table
     const { error: resultError } = await supabase
       .from('match_results')
-      .insert([{
+      .upsert([{
         match_id: matchId,
         court_number: matchData.court_number,
         division: matchData.division,
@@ -45,11 +45,13 @@ export const saveMatchScores = async (
         home_team_sets: homeSetsWon,
         away_team_sets: awaySetsWon,
         set_scores: setScoresJson
-      }]);
+      }], {
+        onConflict: 'match_id'
+      });
 
     if (resultError) throw resultError;
 
-    // Also save individual set scores for backward compatibility
+    // Save individual set scores using upsert
     for (const scoreData of homeScores.map((homeScore, index) => ({
       match_id: matchId,
       set_number: index + 1,
@@ -58,7 +60,9 @@ export const saveMatchScores = async (
     }))) {
       const { error: scoreError } = await supabase
         .from('match_scores_v2')
-        .insert([scoreData]);
+        .upsert([scoreData], {
+          onConflict: 'match_id,set_number'
+        });
 
       if (scoreError) throw scoreError;
     }
