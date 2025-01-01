@@ -38,11 +38,15 @@ const Scoreboard = () => {
   // Query to get next match
   const { data: nextMatches = [] } = useQuery({
     queryKey: ["matches", format(new Date(), 'yyyy-MM-dd')],
-    queryFn: () => fetchMatchData(undefined, new Date()),
+    queryFn: async () => {
+      const result = await fetchMatchData(undefined, new Date());
+      // Ensure we always return an array
+      return Array.isArray(result) ? result : [];
+    },
   });
 
   const findNextMatch = () => {
-    if (!fixture || !nextMatches.length) return null;
+    if (!fixture || nextMatches.length === 0) return null;
     
     const currentMatchIndex = nextMatches.findIndex(
       (m: Fixture) => m.Id === fixture.Id
