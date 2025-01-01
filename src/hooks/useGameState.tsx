@@ -33,10 +33,12 @@ export const useGameState = () => {
         away_score: awayScores[index]
       }));
 
+      // Use upsert instead of insert to handle duplicate records
       const { error: upsertError } = await supabase
-        .from('match_scores_v2')
+        .from('match_scores')
         .upsert(setScoresData, {
-          onConflict: 'match_id,set_number'
+          onConflict: 'match_id,set_number',
+          ignoreDuplicates: false // This will update existing records
         });
 
       if (upsertError) throw upsertError;
