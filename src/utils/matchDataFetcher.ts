@@ -34,7 +34,11 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     const formattedDate = format(date, 'dd/MM/yyyy');
     const dayOfWeek = format(date, 'EEEE') as keyof typeof LEAGUE_URLS;
     
-    console.log('Fetching data for date:', formattedDate);
+    console.log('Fetching data for date:', {
+      formattedDate,
+      dayOfWeek,
+      originalDate: date.toISOString()
+    });
     
     const urls = LEAGUE_URLS[dayOfWeek];
     if (!urls) {
@@ -72,17 +76,19 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       const selectedDay = startOfDay(date);
       const fixtureDay = startOfDay(fixtureDate);
       
-      console.log('Comparing dates:', {
-        fixtureDate: format(fixtureDate, 'yyyy-MM-dd HH:mm'),
+      const isMatchingDate = isEqual(selectedDay, fixtureDay);
+      
+      console.log('Date comparison:', {
+        fixtureDateTime: fixture.DateTime,
+        parsedFixtureDate: format(fixtureDate, 'yyyy-MM-dd HH:mm'),
         selectedDate: format(selectedDay, 'yyyy-MM-dd'),
-        isMatch: isEqual(selectedDay, fixtureDay)
+        isMatch: isMatchingDate
       });
       
-      // Compare just the dates, ignoring time
-      return isEqual(selectedDay, fixtureDay);
+      return isMatchingDate;
     });
 
-    console.log('Filtered fixtures:', fixtures);
+    console.log('Final filtered fixtures:', fixtures);
     
     if (courtId) {
       const currentMatch = Array.isArray(fixtures) 
@@ -112,7 +118,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     // Transform all fixtures
     return fixtures.map(fixture => ({
       ...fixture,
-      DateTime: parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date()).toISOString()
+      DateTime: fixture.DateTime // Keep the original DateTime format
     }));
 
   } catch (error) {
