@@ -65,7 +65,7 @@ const Scoreboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-volleyball-red">
+    <div className={`min-h-screen ${isMatchComplete ? 'bg-white' : 'bg-volleyball-red'}`}>
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
         <BackButton onClick={handleBack} />
 
