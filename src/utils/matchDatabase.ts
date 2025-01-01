@@ -64,6 +64,7 @@ export const saveMatchScores = async (
         match_id: matchId,
         team_name: matchData.home_team_name,
         is_home_team: true,
+        division: matchData.division,  // Added division field
         set1_points: homeScores[0] || 0,
         set2_points: homeScores[1] || 0,
         set3_points: homeScores[2] || 0,
@@ -81,6 +82,7 @@ export const saveMatchScores = async (
         match_id: matchId,
         team_name: matchData.away_team_name,
         is_home_team: false,
+        division: matchData.division,  // Added division field
         set1_points: awayScores[0] || 0,
         set2_points: awayScores[1] || 0,
         set3_points: awayScores[2] || 0,
@@ -90,20 +92,6 @@ export const saveMatchScores = async (
       }]);
 
     if (awaySimplifiedError) throw awaySimplifiedError;
-
-    // Also save individual set scores for backward compatibility
-    for (const scoreData of homeScores.map((homeScore, index) => ({
-      match_id: matchId,
-      set_number: index + 1,
-      home_score: homeScore,
-      away_score: awayScores[index]
-    }))) {
-      const { error: scoreError } = await supabase
-        .from('match_scores_v2')
-        .insert([scoreData]);
-
-      if (scoreError) throw scoreError;
-    }
 
     toast({
       title: "Match scores saved",

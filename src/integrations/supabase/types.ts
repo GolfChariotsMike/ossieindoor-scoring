@@ -63,6 +63,7 @@ export type Database = {
         Row: {
           bonus_points: number | null
           created_at: string | null
+          division: string | null
           id: string
           is_home_team: boolean
           match_date: string | null
@@ -77,6 +78,7 @@ export type Database = {
         Insert: {
           bonus_points?: number | null
           created_at?: string | null
+          division?: string | null
           id?: string
           is_home_team: boolean
           match_date?: string | null
@@ -91,6 +93,7 @@ export type Database = {
         Update: {
           bonus_points?: number | null
           created_at?: string | null
+          division?: string | null
           id?: string
           is_home_team?: boolean
           match_date?: string | null
