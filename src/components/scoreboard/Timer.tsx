@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 
@@ -10,6 +10,15 @@ interface TimerProps {
   isMatchComplete: boolean;
 }
 
+type MatchPhase = 
+  | "not_started"
+  | "set1"
+  | "break1"
+  | "set2"
+  | "break2"
+  | "set3"
+  | "complete";
+
 export const Timer = ({ 
   initialMinutes, 
   onComplete, 
@@ -19,60 +28,55 @@ export const Timer = ({
 }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
-  const [hasGameStarted, setHasGameStarted] = useState(false);
+  const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
 
   // Reset timer to initial state
-  const resetTimer = useCallback(() => {
-    console.log('Timer reset');
+  const resetTimer = () => {
+    console.log('Timer reset for phase:', matchPhase);
     setTimeLeft(initialMinutes * 60);
     setIsRunning(false);
-  }, [initialMinutes]);
+  };
 
-  // Handle timer completion
-  const handleTimerComplete = useCallback(() => {
-    console.log('Timer complete, isBreak:', isBreak);
-    setIsRunning(false);
-
-    if (isBreak) {
-      console.log('Break ended - switching teams and starting new set');
-      onComplete(); // Notify parent break is over
-      onSwitchTeams(); // Switch team positions
-      resetTimer(); // Reset timer for new set
-    } else {
-      console.log('Set ended - starting break');
-      onComplete(); // Notify parent set is over
-    }
-  }, [isBreak, onComplete, onSwitchTeams, resetTimer]);
-
-  // Handle break transitions
-  useEffect(() => {
-    console.log('Break status changed:', isBreak);
-    if (isMatchComplete) {
-      console.log('Match is complete - stopping timer');
-      setIsRunning(false);
-      return;
-    }
-
-    // Reset timer when break status changes
-    resetTimer();
+  // Progress to next match phase
+  const progressToNextPhase = () => {
+    const phases: MatchPhase[] = ["not_started", "set1", "break1", "set2", "break2", "set3", "complete"];
+    const currentIndex = phases.indexOf(matchPhase);
+    const nextPhase = phases[currentIndex + 1];
     
-    // Auto-start break timer if game has started
-    if (hasGameStarted && isBreak) {
-      console.log('Auto-starting break timer');
-      setIsRunning(true);
+    console.log('Progressing from', matchPhase, 'to', nextPhase);
+    
+    if (nextPhase) {
+      setMatchPhase(nextPhase);
+      
+      // Handle phase transitions
+      if (nextPhase.includes('break')) {
+        console.log('Starting break timer');
+        onComplete(); // Notify parent set is over
+        setTimeLeft(60); // 1 minute break
+        setIsRunning(true);
+      } else if (nextPhase !== 'complete') {
+        console.log('Starting new set');
+        onComplete(); // Notify parent break is over
+        onSwitchTeams();
+        setTimeLeft(initialMinutes * 60);
+        setIsRunning(false);
+      } else {
+        console.log('Match complete');
+        setIsRunning(false);
+      }
     }
-  }, [isBreak, isMatchComplete, resetTimer, hasGameStarted]);
+  };
 
   // Timer countdown logic
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
-    if (isRunning && timeLeft > 0 && !isMatchComplete) {
+    if (isRunning && timeLeft > 0 && matchPhase !== 'complete') {
       interval = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             if (interval) clearInterval(interval);
-            handleTimerComplete();
+            progressToNextPhase();
             return 0;
           }
           return prev - 1;
@@ -85,41 +89,45 @@ export const Timer = ({
         clearInterval(interval);
       }
     };
-  }, [isRunning, timeLeft, handleTimerComplete, isMatchComplete]);
+  }, [isRunning, timeLeft, matchPhase]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
   const handleStartStop = () => {
-    if (isMatchComplete) return;
+    console.log('Start/Stop clicked, current phase:', matchPhase);
     
-    console.log('Start/Stop clicked, current state:', { isRunning, hasGameStarted });
-    
-    if (!hasGameStarted) {
-      console.log('Starting game for the first time');
-      setHasGameStarted(true);
+    if (matchPhase === "not_started") {
+      console.log('Starting first set');
+      setMatchPhase("set1");
     }
     
-    setIsRunning(!isRunning);
+    if (!isMatchComplete) {
+      setIsRunning(!isRunning);
+    }
   };
 
   const handleReset = () => {
-    if (isMatchComplete) return;
-    console.log('Manual timer reset');
-    resetTimer();
+    if (!isMatchComplete) {
+      console.log('Manual timer reset');
+      resetTimer();
+    }
   };
+
+  // Determine if we're in a break phase
+  const isInBreak = matchPhase === "break1" || matchPhase === "break2";
 
   return (
     <div className="text-volleyball-cream text-center">
       <TimerDisplay 
         minutes={minutes}
         seconds={seconds}
-        isBreak={isBreak}
-        isMatchComplete={isMatchComplete}
+        isBreak={isInBreak}
+        isMatchComplete={matchPhase === "complete"}
       />
       
       <TimerControls 
-        isMatchComplete={isMatchComplete}
+        isMatchComplete={matchPhase === "complete"}
         onStartStop={handleStartStop}
         onReset={handleReset}
         onSwitchTeams={onSwitchTeams}
