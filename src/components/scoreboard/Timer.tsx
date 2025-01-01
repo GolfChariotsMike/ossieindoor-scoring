@@ -19,6 +19,7 @@ export const Timer = ({
 }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
+  const [hasGameStarted, setHasGameStarted] = useState(false);
 
   // Auto-start timer when break begins or new set starts
   useEffect(() => {
@@ -28,9 +29,14 @@ export const Timer = ({
     }
     
     setTimeLeft(initialMinutes * 60);
-    // Automatically start the timer for breaks and new sets
-    setIsRunning(true);
-  }, [initialMinutes, isBreak, isMatchComplete]);
+    
+    // Auto-start timer if:
+    // 1. It's a break (between sets)
+    // 2. It's a new set AND the game has already started
+    if (isBreak || hasGameStarted) {
+      setIsRunning(true);
+    }
+  }, [initialMinutes, isBreak, isMatchComplete, hasGameStarted]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -63,6 +69,9 @@ export const Timer = ({
 
   const handleStartStop = () => {
     if (isMatchComplete) return;
+    if (!hasGameStarted) {
+      setHasGameStarted(true);
+    }
     setIsRunning(!isRunning);
   };
 
