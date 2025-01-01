@@ -21,18 +21,19 @@ export const Timer = ({
   const [isRunning, setIsRunning] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
 
-  // Auto-start timer when break begins or new set starts
+  // Reset and auto-start timer when break status changes or new set starts
   useEffect(() => {
     if (isMatchComplete) {
       setIsRunning(false);
       return;
     }
     
+    // Reset timer when break status changes
     setTimeLeft(initialMinutes * 60);
     
     // Auto-start timer if:
     // 1. It's a break (between sets)
-    // 2. It's a new set AND the game has already started
+    // 2. It's not a break but the game has already started
     if (isBreak || hasGameStarted) {
       setIsRunning(true);
     }
@@ -55,7 +56,11 @@ export const Timer = ({
       }, 1000);
     }
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [isRunning, timeLeft, onComplete, isMatchComplete]);
 
   const minutes = Math.floor(timeLeft / 60);
