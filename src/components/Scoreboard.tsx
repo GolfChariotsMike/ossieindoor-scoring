@@ -38,11 +38,18 @@ const Scoreboard = () => {
   }, [isMatchComplete, match, setScores, saveMatchScores, hasGameStarted]);
 
   const handleBack = () => {
-    setShowExitConfirmation(true);
+    if (hasGameStarted) {
+      setShowExitConfirmation(true);
+    } else {
+      // Extract the date from the URL and navigate back to the court selection with that date
+      const dateFromUrl = location.pathname.split('/')[3];
+      navigate(`/court/${courtId}/${dateFromUrl}`);
+    }
   };
 
   const confirmExit = () => {
-    navigate('/');
+    const dateFromUrl = location.pathname.split('/')[3];
+    navigate(`/court/${courtId}/${dateFromUrl}`);
   };
 
   if (isLoading || !match) {
