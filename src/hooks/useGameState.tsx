@@ -11,12 +11,12 @@ export const useGameState = () => {
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
 
-  const handleScore = (team: "home" | "away") => {
+  const handleScore = (team: "home" | "away", increment: boolean) => {
     if (isMatchComplete) return;
     setHasGameStarted(true);
     setCurrentScore((prev) => ({
       ...prev,
-      [team]: prev[team] + 1,
+      [team]: increment ? prev[team] + 1 : Math.max(0, prev[team] - 1),
     }));
   };
 
