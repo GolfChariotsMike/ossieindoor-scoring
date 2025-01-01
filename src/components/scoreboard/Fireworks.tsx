@@ -6,10 +6,11 @@ export const Fireworks = () => {
   useEffect(() => {
     const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
     const createFirework = () => {
-      const startX = Math.random() * window.innerWidth;
-      const startY = window.innerHeight;
-      const endX = startX + (Math.random() - 0.5) * 200;
-      const endY = startY - Math.random() * 500;
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const spread = 300; // Area around center where fireworks will appear
+      const startX = centerX + (Math.random() - 0.5) * spread;
+      const startY = centerY + (Math.random() - 0.5) * spread;
       const color = colors[Math.floor(Math.random() * colors.length)];
       const id = Date.now() + Math.random();
       
@@ -19,9 +20,10 @@ export const Fireworks = () => {
           className="absolute w-4 h-4 rounded-full"
           style={{
             left: startX,
+            top: startY,
             backgroundColor: color,
             animation: `firework 1s ease-out forwards, fade-out 1s ease-out forwards`,
-            transform: `translate(${endX - startX}px, ${endY - startY}px)`,
+            zIndex: 0,
           }}
         />
       );
@@ -42,5 +44,5 @@ export const Fireworks = () => {
     };
   }, []);
 
-  return <div className="fixed inset-0 pointer-events-none overflow-hidden">{fireworks}</div>;
+  return <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">{fireworks}</div>;
 };
