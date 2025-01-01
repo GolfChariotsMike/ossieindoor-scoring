@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Score, SetScores } from "@/types/volleyball";
-import { handleTimerComplete as handleTimerLogic, isMatchCompleted } from "@/utils/scoringLogic";
+import { isMatchCompleted } from "@/utils/scoringLogic";
 import { saveMatchScores } from "@/utils/matchDatabase";
 import { toast } from "@/components/ui/use-toast";
 
@@ -11,7 +11,6 @@ export const useGameState = () => {
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
-  const [pendingScores, setPendingScores] = useState<SetScores | null>(null);
 
   const handleScore = (team: "home" | "away", increment: boolean) => {
     if (isMatchComplete) return;
@@ -28,35 +27,30 @@ export const useGameState = () => {
     }
 
     if (isBreak) {
-      // After break is complete, save the pending scores
-      if (pendingScores) {
-        setSetScores(pendingScores);
-        setPendingScores(null);
-      }
-      setIsBreak(false);
-      setCurrentScore({ home: 0, away: 0 });
-      handleSwitchTeams();
-      
-      toast({
-        title: "Break Time Over",
-        description: "Starting next set",
-      });
-    } else {
-      // When set ends, store scores as pending until break is complete
+      // After break, save the current scores to setScores
       const newSetScores = {
         home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
         away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
       };
       
-      setPendingScores(newSetScores);
-      setIsBreak(true);
+      setSetScores(newSetScores);
+      setIsBreak(false);
+      setCurrentScore({ home: 0, away: 0 });
+      handleSwitchTeams();
       
       const matchComplete = isMatchCompleted(newSetScores);
       setIsMatchComplete(matchComplete);
       
       toast({
-        title: matchComplete ? "Match Complete" : "Set Complete",
-        description: matchComplete ? "The match has ended" : "Starting 1 minute break",
+        title: matchComplete ? "Match Complete" : "Break Time Over",
+        description: matchComplete ? "The match has ended" : "Starting next set",
+      });
+    } else {
+      // When set ends, just start the break
+      setIsBreak(true);
+      toast({
+        title: "Set Complete",
+        description: "Starting 1 minute break",
       });
     }
   };
