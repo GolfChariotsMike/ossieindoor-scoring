@@ -104,13 +104,21 @@ export const Timer = ({
   // Effect to handle isBreak prop changes
   useEffect(() => {
     if (isBreak && matchPhase.includes('set')) {
-      const breakPhase = `break${matchPhase.charAt(3)}` as MatchPhase;
+      const currentSetNumber = parseInt(matchPhase.charAt(3));
+      const breakPhase = `break${currentSetNumber}` as MatchPhase;
       setMatchPhase(breakPhase);
       setTimeLeft(60);
-      setIsRunning(true); // Auto-start break timer
-      console.log('Auto-starting break timer');
+      setIsRunning(true);
+      console.log('Auto-starting break timer for set', currentSetNumber);
+    } else if (!isBreak && matchPhase.includes('break')) {
+      const nextSetNumber = parseInt(matchPhase.charAt(5)) + 1;
+      const nextPhase = `set${nextSetNumber}` as MatchPhase;
+      setMatchPhase(nextPhase);
+      setTimeLeft(initialMinutes * 60);
+      setIsRunning(true);
+      console.log('Starting set', nextSetNumber);
     }
-  }, [isBreak, matchPhase]);
+  }, [isBreak, matchPhase, initialMinutes]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
