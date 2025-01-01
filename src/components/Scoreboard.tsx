@@ -4,10 +4,10 @@ import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { useToast } from "@/components/ui/use-toast";
-import { BackButton } from "./BackButton";
-import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
-import { LoadingState } from "./LoadingState";
-import { ScoreboardLayout } from "./ScoreboardLayout";
+import { BackButton } from "@/components/scoreboard/BackButton";
+import { ExitConfirmationDialog } from "@/components/scoreboard/ExitConfirmationDialog";
+import { LoadingState } from "@/components/scoreboard/LoadingState";
+import { ScoreboardLayout } from "@/components/scoreboard/ScoreboardLayout";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
