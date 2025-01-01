@@ -29,20 +29,16 @@ export const Timer = ({
 
   // Handle what happens when timer reaches zero
   const handleTimerComplete = useCallback(() => {
+    setIsRunning(false);
+    
     if (isBreak) {
-      // When break ends, notify parent to handle state transitions
+      // When break ends, notify parent and switch teams
       onComplete();
-      // Switch teams
       onSwitchTeams();
       // Reset timer for next set
       resetTimer();
-      // Start the next set automatically after a short delay
-      setTimeout(() => {
-        setIsRunning(true);
-      }, 100);
     } else {
-      // When set ends, stop timer and notify parent
-      setIsRunning(false);
+      // When set ends, notify parent
       onComplete();
     }
   }, [isBreak, onComplete, onSwitchTeams, resetTimer]);
