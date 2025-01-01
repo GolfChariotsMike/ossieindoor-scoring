@@ -59,6 +59,59 @@ export type Database = {
           },
         ]
       }
+      match_results_simplified: {
+        Row: {
+          bonus_points: number | null
+          created_at: string | null
+          id: string
+          is_home_team: boolean
+          match_date: string | null
+          match_id: string | null
+          set1_points: number | null
+          set2_points: number | null
+          set3_points: number | null
+          team_name: string
+          total_points: number | null
+          total_set_points: number | null
+        }
+        Insert: {
+          bonus_points?: number | null
+          created_at?: string | null
+          id?: string
+          is_home_team: boolean
+          match_date?: string | null
+          match_id?: string | null
+          set1_points?: number | null
+          set2_points?: number | null
+          set3_points?: number | null
+          team_name: string
+          total_points?: number | null
+          total_set_points?: number | null
+        }
+        Update: {
+          bonus_points?: number | null
+          created_at?: string | null
+          id?: string
+          is_home_team?: boolean
+          match_date?: string | null
+          match_id?: string | null
+          set1_points?: number | null
+          set2_points?: number | null
+          set3_points?: number | null
+          team_name?: string
+          total_points?: number | null
+          total_set_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_results_simplified_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_scores: {
         Row: {
           away_score: number

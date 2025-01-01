@@ -69,9 +69,20 @@ export default {
           "50%": { transform: "scale(1.1)" },
           "100%": { transform: "scale(1)" },
         },
+        "firework": {
+          "0%": { transform: "translate(0, 0) scale(1)", opacity: "1" },
+          "50%": { transform: "translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.5)", opacity: "0.7" },
+          "100%": { transform: "translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0.1)", opacity: "0" }
+        },
+        "fade-out": {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" }
+        }
       },
       animation: {
         "score-update": "score-update 0.3s ease-in-out",
+        "firework": "firework 1s ease-out forwards",
+        "fade-out": "fade-out 1s ease-out forwards"
       },
     },
   },

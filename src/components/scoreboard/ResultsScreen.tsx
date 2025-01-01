@@ -1,4 +1,5 @@
 import { Match, SetScores } from "@/types/volleyball";
+import { Fireworks } from "./Fireworks";
 
 interface ResultsScreenProps {
   match: Match;
@@ -38,7 +39,6 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
-  // Use the correct scores based on whether teams are switched
   const homeResults = calculateTeamResults(
     isTeamsSwitched ? setScores.away : setScores.home,
     isTeamsSwitched ? setScores.home : setScores.away,
@@ -61,24 +61,27 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-volleyball-black bg-white w-4/5 mx-auto">
-      <h1 className="text-8xl font-sets mb-12 text-black">{getWinnerText()}</h1>
-      
-      <div className="grid grid-cols-2 gap-16 w-full">
-        {[homeResults, awayResults].map((result) => (
-          <div 
-            key={result.name}
-            className="bg-volleyball-black rounded-2xl p-8 flex flex-col items-center"
-          >
-            <h2 className="text-4xl font-sets mb-6 text-volleyball-cream">{result.name}</h2>
-            <div className="space-y-4 text-2xl font-score text-volleyball-cream">
-              <p>Set Points: {result.setPoints}</p>
-              <p>Bonus Points: {result.bonusPoints}</p>
-              <p className="text-3xl mt-6">Total: {result.totalPoints}</p>
+    <>
+      <Fireworks />
+      <div className="flex flex-col items-center justify-center h-full text-volleyball-black bg-white/90 w-4/5 mx-auto relative z-10">
+        <h1 className="text-8xl font-sets mb-12 text-black">{getWinnerText()}</h1>
+        
+        <div className="grid grid-cols-2 gap-16 w-full">
+          {[homeResults, awayResults].map((result) => (
+            <div 
+              key={result.name}
+              className="bg-volleyball-black rounded-2xl p-8 flex flex-col items-center"
+            >
+              <h2 className="text-4xl font-sets mb-6 text-volleyball-cream">{result.name}</h2>
+              <div className="space-y-4 text-2xl font-score text-volleyball-cream">
+                <p>Set Points: {result.setPoints}</p>
+                <p>Bonus Points: {result.bonusPoints}</p>
+                <p className="text-3xl mt-6">Total: {result.totalPoints}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
