@@ -9,6 +9,7 @@ interface TeamScoreProps {
 export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) => {
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
+  const decrementIntervalRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 500; // 500ms for long press detection
 
   const getTextSizeClass = (name: string) => {
@@ -18,13 +19,28 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
     return 'text-3xl';
   };
 
+  const startDecrementInterval = () => {
+    // Clear any existing interval
+    if (decrementIntervalRef.current) {
+      clearInterval(decrementIntervalRef.current);
+    }
+    
+    // Start new interval that decrements score every 150ms
+    decrementIntervalRef.current = setInterval(() => {
+      if (score > 0) { // Only decrement if score is greater than 0
+        onScoreUpdate(false);
+      }
+    }, 150);
+  };
+
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault(); // Prevent default touch behaviors
+    e.preventDefault();
     console.log('Touch start');
     timerRef.current = setTimeout(() => {
       console.log('Long press detected');
       setIsLongPress(true);
-      onScoreUpdate(false); // Decrement score
+      onScoreUpdate(false); // Initial decrement
+      startDecrementInterval(); // Start continuous decrements
     }, longPressDelay);
   };
 
@@ -32,13 +48,17 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
     e.preventDefault();
     console.log('Touch end, isLongPress:', isLongPress);
     
+    // Clear both timers
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+    }
+    if (decrementIntervalRef.current) {
+      clearInterval(decrementIntervalRef.current);
     }
     
     if (!isLongPress) {
       console.log('Short press - incrementing score');
-      onScoreUpdate(true); // Increment score
+      onScoreUpdate(true);
     }
     
     setIsLongPress(false);
@@ -49,6 +69,9 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
     console.log('Touch cancelled');
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+    }
+    if (decrementIntervalRef.current) {
+      clearInterval(decrementIntervalRef.current);
     }
     setIsLongPress(false);
   };
