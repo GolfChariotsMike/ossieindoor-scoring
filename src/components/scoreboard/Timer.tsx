@@ -26,8 +26,8 @@ export const Timer = ({
       return;
     }
     
-    // Reset timer when break status changes, but don't auto-start
     setTimeLeft(initialMinutes * 60);
+    setIsRunning(false);
   }, [initialMinutes, isBreak, isMatchComplete]);
 
   useEffect(() => {

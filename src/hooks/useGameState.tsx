@@ -20,11 +20,6 @@ export const useGameState = () => {
   };
 
   const saveMatchScores = async (matchId: string, homeScores: number[], awayScores: number[]) => {
-    // Only proceed if we have actual scores to save
-    if (!homeScores.length || !awayScores.length || (homeScores[0] === 0 && awayScores[0] === 0)) {
-      return;
-    }
-    
     try {
       const setScoresData = homeScores.map((homeScore, index) => ({
         match_id: matchId,
@@ -33,20 +28,13 @@ export const useGameState = () => {
         away_score: awayScores[index]
       }));
 
-      // Use upsert instead of insert to handle duplicate records
-      const { error: upsertError } = await supabase
+      const { error } = await supabase
         .from('match_scores')
         .upsert(setScoresData, {
-          onConflict: 'match_id,set_number',
-          ignoreDuplicates: false // This will update existing records
+          onConflict: 'match_id,set_number'
         });
 
-      if (upsertError) throw upsertError;
-
-      toast({
-        title: "Match scores saved",
-        description: "The match scores have been successfully recorded",
-      });
+      if (error) throw error;
 
     } catch (error) {
       console.error('Error saving match scores:', error);
@@ -59,7 +47,6 @@ export const useGameState = () => {
   };
 
   const handleTimerComplete = () => {
-    // Don't do anything if there are no scores yet
     if (currentScore.home === 0 && currentScore.away === 0) {
       return;
     }
@@ -117,6 +104,5 @@ export const useGameState = () => {
     handleScore,
     handleTimerComplete,
     handleSwitchTeams,
-    saveMatchScores,
   };
 };
