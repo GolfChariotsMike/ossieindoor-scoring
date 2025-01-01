@@ -4,7 +4,10 @@ import { XMLParser } from 'fast-xml-parser';
 import { Match } from "@/types/volleyball";
 
 const LEAGUE_URLS = {
-  Monday: ['https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=2&SeasonId=4'],
+  Monday: [
+    'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=2&SeasonId=4',
+    'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=3&SeasonId=4'
+  ],
   Tuesday: [
     'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=6&SeasonId=4',
     'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=5&SeasonId=4'
@@ -20,11 +23,19 @@ const LEAGUE_URLS = {
 };
 
 const fetchFromUrl = async (url: string, date: string) => {
-  const response = await fetch(`${url}&Date=${date}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch fixture data");
+  try {
+    console.log('Fetching from URL:', url, 'with date:', date);
+    const response = await fetch(`${url}&Date=${date}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch fixture data");
+    }
+    const text = await response.text();
+    console.log('Received response:', text.substring(0, 200) + '...'); // Log first 200 chars
+    return text;
+  } catch (error) {
+    console.error('Error fetching from URL:', url, error);
+    throw error;
   }
-  return response.text();
 };
 
 export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
@@ -42,12 +53,14 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     
     const urls = LEAGUE_URLS[dayOfWeek];
     if (!urls) {
+      console.error('No URLs configured for day:', dayOfWeek);
       throw new Error("No URLs configured for this day");
     }
 
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "",
+      parseAttributeValue: true,
     });
 
     // Fetch and parse data from all URLs for the day
@@ -56,7 +69,9 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
         try {
           const text = await fetchFromUrl(url, formattedDate);
           const result = parser.parse(text);
-          return result?.League?.Week?.[0]?.Fixture || [];
+          const fixtures = result?.League?.Week?.[0]?.Fixture || [];
+          console.log('Parsed fixtures from URL:', url, fixtures);
+          return fixtures;
         } catch (error) {
           console.error('Error fetching from URL:', url, error);
           return [];
@@ -66,26 +81,32 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
 
     // Combine and flatten fixtures from all sources
     let fixtures = allFixtures.flat();
+    console.log('Combined fixtures:', fixtures);
 
     // Filter fixtures by the selected date
     fixtures = fixtures.filter(fixture => {
       if (!fixture.DateTime) return false;
       
-      // Parse the fixture date from the XML format (dd/MM/yyyy HH:mm)
-      const fixtureDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-      const selectedDay = startOfDay(date);
-      const fixtureDay = startOfDay(fixtureDate);
-      
-      const isMatchingDate = isEqual(selectedDay, fixtureDay);
-      
-      console.log('Date comparison:', {
-        fixtureDateTime: fixture.DateTime,
-        parsedFixtureDate: format(fixtureDate, 'yyyy-MM-dd HH:mm'),
-        selectedDate: format(selectedDay, 'yyyy-MM-dd'),
-        isMatch: isMatchingDate
-      });
-      
-      return isMatchingDate;
+      try {
+        // Parse the fixture date from the XML format (dd/MM/yyyy HH:mm)
+        const fixtureDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+        const selectedDay = startOfDay(date);
+        const fixtureDay = startOfDay(fixtureDate);
+        
+        const isMatchingDate = isEqual(selectedDay, fixtureDay);
+        
+        console.log('Date comparison:', {
+          fixtureDateTime: fixture.DateTime,
+          parsedFixtureDate: format(fixtureDate, 'yyyy-MM-dd HH:mm'),
+          selectedDate: format(selectedDay, 'yyyy-MM-dd'),
+          isMatch: isMatchingDate
+        });
+        
+        return isMatchingDate;
+      } catch (error) {
+        console.error('Error parsing fixture date:', fixture.DateTime, error);
+        return false;
+      }
     });
 
     console.log('Final filtered fixtures:', fixtures);
