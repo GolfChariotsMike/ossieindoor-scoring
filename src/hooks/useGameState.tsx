@@ -9,10 +9,12 @@ export const useGameState = () => {
   const [isBreak, setIsBreak] = useState(false);
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
+  const [hasGameStarted, setHasGameStarted] = useState(false);
   const { toast } = useToast();
 
   const handleScore = (team: "home" | "away") => {
     if (isMatchComplete) return;
+    setHasGameStarted(true);
     setCurrentScore((prev) => ({
       ...prev,
       [team]: prev[team] + 1,
@@ -20,6 +22,10 @@ export const useGameState = () => {
   };
 
   const saveMatchScores = async (matchId: string, homeScores: number[], awayScores: number[]) => {
+    if (!hasGameStarted || !homeScores.length || !awayScores.length) {
+      return;
+    }
+
     try {
       const setScoresData = homeScores.map((homeScore, index) => ({
         match_id: matchId,
@@ -36,6 +42,11 @@ export const useGameState = () => {
 
       if (error) throw error;
 
+      toast({
+        title: "Match scores saved",
+        description: "The match scores have been successfully recorded",
+      });
+
     } catch (error) {
       console.error('Error saving match scores:', error);
       toast({
@@ -47,7 +58,7 @@ export const useGameState = () => {
   };
 
   const handleTimerComplete = () => {
-    if (currentScore.home === 0 && currentScore.away === 0) {
+    if (!hasGameStarted || (currentScore.home === 0 && currentScore.away === 0)) {
       return;
     }
 
@@ -101,8 +112,10 @@ export const useGameState = () => {
     isBreak,
     isTeamsSwitched,
     isMatchComplete,
+    hasGameStarted,
     handleScore,
     handleTimerComplete,
     handleSwitchTeams,
+    saveMatchScores,
   };
 };

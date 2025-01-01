@@ -7,7 +7,7 @@ import { GameScores } from "./scoreboard/GameScores";
 import { LoadingSpinner } from "./scoreboard/LoadingSpinner";
 import { useGameState } from "@/hooks/useGameState";
 import { useMatchData } from "@/hooks/useMatchData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -25,9 +25,17 @@ const Scoreboard = () => {
     handleScore,
     handleTimerComplete,
     handleSwitchTeams,
+    saveMatchScores,
+    hasGameStarted,
   } = useGameState();
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
+
+  useEffect(() => {
+    if (isMatchComplete && match && hasGameStarted) {
+      saveMatchScores(match.id, setScores.home, setScores.away);
+    }
+  }, [isMatchComplete, match, setScores, saveMatchScores, hasGameStarted]);
 
   const handleBack = () => {
     setShowExitConfirmation(true);
