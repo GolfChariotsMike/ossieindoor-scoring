@@ -14,20 +14,18 @@ interface TeamResult {
 }
 
 export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScreenProps) => {
-  const calculateTeamResults = (homeScores: number[], awayScores: number[], teamName: string, isHomeTeam: boolean): TeamResult => {
+  const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string): TeamResult => {
     let setPoints = 0;
-    const scores = isHomeTeam ? homeScores : awayScores;
-    const opposingScores = isHomeTeam ? awayScores : homeScores;
     
     // Calculate set points (2 points for each set won)
-    scores.forEach((score, index) => {
+    teamScores.forEach((score, index) => {
       if (score > opposingScores[index]) {
         setPoints += 2;
       }
     });
     
     // Calculate bonus points (1 point per 10 points scored)
-    const bonusPoints = scores.reduce((total, score) => total + Math.floor(score / 10), 0);
+    const bonusPoints = teamScores.reduce((total, score) => total + Math.floor(score / 10), 0);
     
     return {
       name: teamName,
@@ -40,8 +38,18 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
-  const homeResults = calculateTeamResults(setScores.home, setScores.away, homeTeam.name, true);
-  const awayResults = calculateTeamResults(setScores.home, setScores.away, awayTeam.name, false);
+  // Use the correct scores based on whether teams are switched
+  const homeResults = calculateTeamResults(
+    isTeamsSwitched ? setScores.away : setScores.home,
+    isTeamsSwitched ? setScores.home : setScores.away,
+    homeTeam.name
+  );
+  
+  const awayResults = calculateTeamResults(
+    isTeamsSwitched ? setScores.home : setScores.away,
+    isTeamsSwitched ? setScores.away : setScores.home,
+    awayTeam.name
+  );
 
   const getWinnerText = () => {
     if (homeResults.totalPoints > awayResults.totalPoints) {
