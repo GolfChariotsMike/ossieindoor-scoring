@@ -24,28 +24,22 @@ export const Timer = ({
   // Reset timer to initial state
   const resetTimer = useCallback(() => {
     setTimeLeft(initialMinutes * 60);
+    setIsRunning(false);
   }, [initialMinutes]);
 
   // Handle what happens when timer reaches zero
   const handleTimerComplete = useCallback(() => {
     if (isBreak) {
-      // When break ends:
-      // 1. Switch teams
-      onSwitchTeams();
-      // 2. Reset timer for next set
-      resetTimer();
-      // 3. Start the timer automatically
-      setIsRunning(true);
-      // 4. Tell parent component break is over
+      // When break ends, notify parent to handle state transitions
       onComplete();
+      // Switch teams
+      onSwitchTeams();
     } else {
-      // When set ends:
-      // 1. Stop the timer
+      // When set ends, stop timer and notify parent
       setIsRunning(false);
-      // 2. Tell parent component set is complete
       onComplete();
     }
-  }, [isBreak, onComplete, onSwitchTeams, resetTimer]);
+  }, [isBreak, onComplete, onSwitchTeams]);
 
   // Handle break transitions
   useEffect(() => {
@@ -57,7 +51,7 @@ export const Timer = ({
     // Reset timer when break status changes
     resetTimer();
     
-    // Auto-start timer if game has started
+    // Auto-start timer if game has started and it's break time
     if (hasGameStarted && isBreak) {
       setIsRunning(true);
     }
@@ -92,7 +86,6 @@ export const Timer = ({
 
   const handleReset = () => {
     if (isMatchComplete) return;
-    setIsRunning(false);
     resetTimer();
   };
 
