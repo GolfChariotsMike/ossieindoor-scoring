@@ -34,6 +34,8 @@ export const Timer = ({
       onComplete();
       // Switch teams
       onSwitchTeams();
+      // Start the next set automatically
+      setIsRunning(true);
     } else {
       // When set ends, stop timer and notify parent
       setIsRunning(false);
