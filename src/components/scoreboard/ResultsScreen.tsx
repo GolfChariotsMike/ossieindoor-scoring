@@ -54,7 +54,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
 
   return (
     <div className="flex flex-col items-center justify-center h-full text-volleyball-cream w-4/5 mx-auto">
-      <h1 className="text-[180px] font-sets mb-12">{getWinnerText()}</h1>
+      <h1 className="text-8xl font-sets mb-12">{getWinnerText()}</h1>
       
       <div className="grid grid-cols-2 gap-16 w-full">
         {[homeResults, awayResults].map((result) => (
