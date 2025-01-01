@@ -8,7 +8,7 @@ interface TeamScoreProps {
 
 export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) => {
   const [isLongPress, setIsLongPress] = useState(false);
-  const timerRef = useRef<number>();
+  const timerRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 500; // 500ms for long press detection
 
   const getTextSizeClass = (name: string) => {
@@ -18,24 +18,35 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
     return 'text-3xl';
   };
 
-  const handleTouchStart = () => {
-    timerRef.current = window.setTimeout(() => {
+  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault(); // Prevent default touch behaviors
+    console.log('Touch start');
+    timerRef.current = setTimeout(() => {
+      console.log('Long press detected');
       setIsLongPress(true);
       onScoreUpdate(false); // Decrement score
     }, longPressDelay);
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Touch end, isLongPress:', isLongPress);
+    
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
+    
     if (!isLongPress) {
+      console.log('Short press - incrementing score');
       onScoreUpdate(true); // Increment score
     }
+    
     setIsLongPress(false);
   };
 
-  const handleTouchCancel = () => {
+  const handleTouchCancel = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Touch cancelled');
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
