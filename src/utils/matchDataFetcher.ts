@@ -34,6 +34,8 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     const formattedDate = format(date, 'dd/MM/yyyy');
     const dayOfWeek = format(date, 'EEEE') as keyof typeof LEAGUE_URLS;
     
+    console.log('Fetching data for date:', formattedDate);
+    
     const urls = LEAGUE_URLS[dayOfWeek];
     if (!urls) {
       throw new Error("No URLs configured for this day");
@@ -70,11 +72,16 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       const selectedDay = startOfDay(date);
       const fixtureDay = startOfDay(fixtureDate);
       
+      console.log('Comparing dates:', {
+        fixtureDate: format(fixtureDate, 'yyyy-MM-dd HH:mm'),
+        selectedDate: format(selectedDay, 'yyyy-MM-dd'),
+        isMatch: isEqual(selectedDay, fixtureDay)
+      });
+      
       // Compare just the dates, ignoring time
       return isEqual(selectedDay, fixtureDay);
     });
 
-    console.log('Selected date:', formattedDate);
     console.log('Filtered fixtures:', fixtures);
     
     if (courtId) {

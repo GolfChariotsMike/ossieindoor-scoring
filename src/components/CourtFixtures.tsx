@@ -3,23 +3,29 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { Fixture } from "@/types/volleyball";
 
 const CourtFixtures = () => {
   const { courtId, date } = useParams();
   const navigate = useNavigate();
+  
   // Parse the date from YYYY-MM-DD format
-  const parsedDate = date ? new Date(date) : new Date();
+  const parsedDate = date ? parse(date, 'yyyy-MM-dd', new Date()) : new Date();
+  console.log('Parsed date in CourtFixtures:', parsedDate);
 
   const { data: matches = [], isLoading } = useQuery({
     queryKey: ["matches", parsedDate],
     queryFn: () => fetchMatchData(undefined, parsedDate),
   });
 
+  console.log('Received matches:', matches);
+
   const courtFixtures = Array.isArray(matches) 
     ? matches.filter((match: Fixture) => match.PlayingAreaName === `Court ${courtId}`)
     : [];
+
+  console.log('Filtered court fixtures:', courtFixtures);
 
   if (isLoading) {
     return (
