@@ -5,6 +5,7 @@ import { BackButton } from "./scoreboard/BackButton";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 import { GameScores } from "./scoreboard/GameScores";
 import { LoadingSpinner } from "./scoreboard/LoadingSpinner";
+import { ResultsScreen } from "./scoreboard/ResultsScreen";
 import { useGameState } from "@/hooks/useGameState";
 import { useMatchData } from "@/hooks/useMatchData";
 import { useState, useEffect } from "react";
@@ -46,13 +47,12 @@ const Scoreboard = () => {
   };
 
   const navigateToCourtSelection = () => {
-    // Get the date from the fixture if available, otherwise use current date
     const date = fixture 
       ? new Date(fixture.DateTime).toISOString().split('T')[0]
       : new Date().toISOString().split('T')[0];
     
     navigate(`/court/${courtId}/${date}`, {
-      replace: true // Use replace to prevent forward navigation when clicking back
+      replace: true
     });
   };
 
@@ -70,21 +70,31 @@ const Scoreboard = () => {
         <BackButton onClick={handleBack} />
 
         <div className="flex flex-col justify-between h-full">
-          <Timer
-            initialMinutes={1}
-            onComplete={handleTimerComplete}
-            onSwitchTeams={handleSwitchTeams}
-            isBreak={isBreak}
-            isMatchComplete={isMatchComplete}
-          />
+          {isMatchComplete ? (
+            <ResultsScreen
+              match={match}
+              setScores={setScores}
+              isTeamsSwitched={isTeamsSwitched}
+            />
+          ) : (
+            <>
+              <Timer
+                initialMinutes={1}
+                onComplete={handleTimerComplete}
+                onSwitchTeams={handleSwitchTeams}
+                isBreak={isBreak}
+                isMatchComplete={isMatchComplete}
+              />
 
-          <GameScores
-            currentScore={currentScore}
-            setScores={setScores}
-            match={match}
-            isTeamsSwitched={isTeamsSwitched}
-            onScoreUpdate={handleScore}
-          />
+              <GameScores
+                currentScore={currentScore}
+                setScores={setScores}
+                match={match}
+                isTeamsSwitched={isTeamsSwitched}
+                onScoreUpdate={handleScore}
+              />
+            </>
+          )}
         </div>
 
         <ExitConfirmationDialog

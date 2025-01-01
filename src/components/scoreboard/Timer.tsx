@@ -17,6 +17,7 @@ type MatchPhase =
   | "set2"
   | "break2"
   | "set3"
+  | "break3"
   | "complete";
 
 export const Timer = ({ 
@@ -39,7 +40,16 @@ export const Timer = ({
 
   // Progress to next match phase
   const progressToNextPhase = () => {
-    const phases: MatchPhase[] = ["not_started", "set1", "break1", "set2", "break2", "set3", "complete"];
+    const phases: MatchPhase[] = [
+      "not_started", 
+      "set1", 
+      "break1", 
+      "set2", 
+      "break2", 
+      "set3", 
+      "break3",
+      "complete"
+    ];
     const currentIndex = phases.indexOf(matchPhase);
     const nextPhase = phases[currentIndex + 1];
     
@@ -61,6 +71,7 @@ export const Timer = ({
         setIsRunning(true); // Auto-start set timer
       } else {
         console.log('Match complete');
+        onComplete(); // Notify parent match is complete
         setIsRunning(false);
       }
     }
