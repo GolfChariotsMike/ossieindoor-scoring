@@ -13,7 +13,7 @@ interface TimerProps {
 export const Timer = ({ 
   initialMinutes, 
   onComplete, 
-  onSwitchTeams, 
+  onSwitchTeams,
   isBreak,
   isMatchComplete 
 }: TimerProps) => {
@@ -21,27 +21,44 @@ export const Timer = ({
   const [isRunning, setIsRunning] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
 
+  // Reset timer to initial state
   const resetTimer = useCallback(() => {
     setTimeLeft(initialMinutes * 60);
   }, [initialMinutes]);
 
-  // Handle timer completion
-  const handleComplete = useCallback(() => {
-    setIsRunning(false);
-    onComplete();
-  }, [onComplete]);
+  // Handle what happens when timer reaches zero
+  const handleTimerComplete = useCallback(() => {
+    if (isBreak) {
+      // When break ends:
+      // 1. Switch teams
+      onSwitchTeams();
+      // 2. Reset timer for next set
+      resetTimer();
+      // 3. Start the timer automatically
+      setIsRunning(true);
+      // 4. Tell parent component break is over
+      onComplete();
+    } else {
+      // When set ends:
+      // 1. Stop the timer
+      setIsRunning(false);
+      // 2. Tell parent component set is complete
+      onComplete();
+    }
+  }, [isBreak, onComplete, onSwitchTeams, resetTimer]);
 
-  // Reset timer when break status changes
+  // Handle break transitions
   useEffect(() => {
     if (isMatchComplete) {
       setIsRunning(false);
       return;
     }
 
+    // Reset timer when break status changes
     resetTimer();
     
-    // Auto-start timer for breaks or if game has started
-    if (hasGameStarted) {
+    // Auto-start timer if game has started
+    if (hasGameStarted && isBreak) {
       setIsRunning(true);
     }
   }, [isBreak, isMatchComplete, resetTimer, hasGameStarted]);
@@ -55,7 +72,7 @@ export const Timer = ({
         setTimeLeft((prev) => {
           if (prev <= 1) {
             if (interval) clearInterval(interval);
-            handleComplete();
+            handleTimerComplete();
             return 0;
           }
           return prev - 1;
@@ -68,7 +85,7 @@ export const Timer = ({
         clearInterval(interval);
       }
     };
-  }, [isRunning, timeLeft, handleComplete, isMatchComplete]);
+  }, [isRunning, timeLeft, handleTimerComplete, isMatchComplete]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
