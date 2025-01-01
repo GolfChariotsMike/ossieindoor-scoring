@@ -1,5 +1,5 @@
 import { toast } from "@/components/ui/use-toast";
-import { format, parse } from "date-fns";
+import { format, parse, isEqual, startOfDay } from "date-fns";
 import { XMLParser } from 'fast-xml-parser';
 import { Match } from "@/types/volleyball";
 
@@ -60,22 +60,22 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
 
     // Combine and flatten fixtures from all sources
     let fixtures = allFixtures.flat();
-    
+
     // Filter fixtures by the selected date
     fixtures = fixtures.filter(fixture => {
       if (!fixture.DateTime) return false;
       
       // Parse the fixture date from the XML format (dd/MM/yyyy HH:mm)
       const fixtureDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-      const selectedDateStart = new Date(date);
-      selectedDateStart.setHours(0, 0, 0, 0);
-      const selectedDateEnd = new Date(date);
-      selectedDateEnd.setHours(23, 59, 59, 999);
+      const selectedDay = startOfDay(date);
+      const fixtureDay = startOfDay(fixtureDate);
       
-      return fixtureDate >= selectedDateStart && fixtureDate <= selectedDateEnd;
+      // Compare just the dates, ignoring time
+      return isEqual(selectedDay, fixtureDay);
     });
 
-    console.log('Filtered fixtures for date:', formattedDate, fixtures);
+    console.log('Selected date:', formattedDate);
+    console.log('Filtered fixtures:', fixtures);
     
     if (courtId) {
       const currentMatch = Array.isArray(fixtures) 
