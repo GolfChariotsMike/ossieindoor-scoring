@@ -23,12 +23,11 @@ export const useGameState = () => {
     console.log('Attempting to save scores:', { matchId, homeScores, awayScores });
     
     try {
-      // First, create or update the match record
       const { data: matchData, error: matchError } = await supabase
         .from('matches')
         .upsert({
           id: matchId,
-          court_number: 1, // Using default court number
+          court_number: 1,
           home_team_id: 'temp-home-id',
           home_team_name: 'Home Team',
           away_team_id: 'temp-away-id',
@@ -39,7 +38,6 @@ export const useGameState = () => {
 
       if (matchError) throw matchError;
 
-      // Then save each set's scores
       const setScoresPromises = homeScores.map(async (homeScore, index) => {
         const { error: scoreError } = await supabase
           .from('match_scores')
@@ -83,9 +81,10 @@ export const useGameState = () => {
         description: "Starting next set",
       });
     } else {
+      // When saving set scores, we need to account for whether teams are currently switched
       const updatedSetScores = {
-        home: [...setScores.home, currentScore.home],
-        away: [...setScores.away, currentScore.away],
+        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
+        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
       };
       
       console.log('Current scores being saved:', currentScore);
@@ -114,19 +113,14 @@ export const useGameState = () => {
     
     setIsTeamsSwitched(!isTeamsSwitched);
     
+    // Switch current scores
     setCurrentScore((prev) => ({
       home: prev.away,
       away: prev.home
     }));
     
-    setSetScores((prev) => {
-      const homeScores = [...prev.home];
-      const awayScores = [...prev.away];
-      return {
-        home: awayScores,
-        away: homeScores
-      };
-    });
+    // No need to switch set scores here anymore since we handle it when saving scores
+    // This ensures historical set scores stay with their original teams
   };
 
   return {
