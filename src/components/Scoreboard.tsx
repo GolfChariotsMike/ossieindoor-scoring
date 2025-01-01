@@ -41,15 +41,23 @@ const Scoreboard = () => {
     if (hasGameStarted) {
       setShowExitConfirmation(true);
     } else {
-      // Extract the date from the URL and navigate back to the court selection with that date
-      const dateFromUrl = location.pathname.split('/')[3];
-      navigate(`/court/${courtId}/${dateFromUrl}`);
+      navigateToCourtSelection();
     }
   };
 
+  const navigateToCourtSelection = () => {
+    // Get the date from the fixture if available, otherwise use current date
+    const date = fixture 
+      ? new Date(fixture.DateTime).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0];
+    
+    navigate(`/court/${courtId}/${date}`, {
+      replace: true // Use replace to prevent forward navigation when clicking back
+    });
+  };
+
   const confirmExit = () => {
-    const dateFromUrl = location.pathname.split('/')[3];
-    navigate(`/court/${courtId}/${dateFromUrl}`);
+    navigateToCourtSelection();
   };
 
   if (isLoading || !match) {
