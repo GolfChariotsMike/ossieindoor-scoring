@@ -32,14 +32,12 @@ export const Timer = ({
   const [isRunning, setIsRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
 
-  // Reset timer to initial state
   const resetTimer = () => {
     console.log('Timer reset for phase:', matchPhase);
     setTimeLeft(initialMinutes * 60);
     setIsRunning(false);
   };
 
-  // Progress to next match phase
   const progressToNextPhase = () => {
     const phases: MatchPhase[] = [
       "not_started", 
@@ -60,7 +58,6 @@ export const Timer = ({
     if (nextPhase) {
       setMatchPhase(nextPhase);
       
-      // Handle phase transitions
       if (nextPhase === 'final_break') {
         console.log('Starting final break timer');
         onComplete(); // Notify parent set is over
@@ -79,21 +76,18 @@ export const Timer = ({
         onComplete(); // Notify parent set is over
         setTimeLeft(60); // 1 minute regular break
         setIsRunning(true);
-      } else if (nextPhase === 'set3') {
-        console.log('Starting set 3');
-        onComplete(); // Notify parent break is over
-        setTimeLeft(initialMinutes * 60);
-        setIsRunning(true);
       } else {
-        console.log('Starting new set');
-        onComplete(); // Notify parent break is over
+        // This handles all sets (set1, set2, set3)
+        console.log('Starting new set:', nextPhase);
+        if (nextPhase !== 'set1') {
+          onComplete(); // Notify parent break is over for set2 and set3
+        }
         setTimeLeft(initialMinutes * 60);
         setIsRunning(true);
       }
     }
   };
 
-  // Timer countdown logic
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
@@ -117,7 +111,6 @@ export const Timer = ({
     };
   }, [isRunning, timeLeft, matchPhase]);
 
-  // Effect to handle isBreak prop changes
   useEffect(() => {
     if (isBreak && matchPhase.includes('set')) {
       if (matchPhase === 'set3') {
