@@ -77,12 +77,18 @@ export default {
         "fade-out": {
           "0%": { opacity: "1" },
           "100%": { opacity: "0" }
+        },
+        "scale": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.1)" },
+          "100%": { transform: "scale(1)" }
         }
       },
       animation: {
         "score-update": "score-update 0.3s ease-in-out",
         "firework": "firework 1s ease-out forwards",
-        "fade-out": "fade-out 1s ease-out forwards"
+        "fade-out": "fade-out 1s ease-out forwards",
+        "scale": "scale 2s ease-in-out infinite"
       },
     },
   },

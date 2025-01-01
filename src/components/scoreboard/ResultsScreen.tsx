@@ -64,7 +64,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
     <>
       <Fireworks />
       <div className="flex flex-col items-center justify-center h-full text-volleyball-black bg-white/90 w-4/5 mx-auto relative z-10">
-        <h1 className="text-8xl font-sets mb-12 text-black animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
+        <h1 className="text-8xl font-sets mb-12 text-black animate-[scale_2s_ease-in-out_infinite]">
           {getWinnerText()}
         </h1>
         
