@@ -7,7 +7,7 @@ interface GameScoresProps {
   setScores: SetScores;
   match: Match;
   isTeamsSwitched: boolean;
-  onScoreUpdate: (team: "home" | "away") => void;
+  onScoreUpdate: (team: "home" | "away", increment: boolean) => void;
 }
 
 export const GameScores = ({
@@ -25,7 +25,7 @@ export const GameScores = ({
       <TeamScore
         teamName={homeTeam.name}
         score={currentScore.home}
-        onScoreUpdate={() => onScoreUpdate("home")}
+        onScoreUpdate={(increment) => onScoreUpdate("home", increment)}
       />
 
       <div className="w-64">
@@ -39,7 +39,7 @@ export const GameScores = ({
       <TeamScore
         teamName={awayTeam.name}
         score={currentScore.away}
-        onScoreUpdate={() => onScoreUpdate("away")}
+        onScoreUpdate={(increment) => onScoreUpdate("away", increment)}
       />
     </div>
   );

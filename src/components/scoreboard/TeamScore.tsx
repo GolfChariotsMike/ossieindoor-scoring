@@ -1,15 +1,45 @@
+import { useState, useRef } from "react";
+
 interface TeamScoreProps {
   teamName: string;
   score: number;
-  onScoreUpdate: () => void;
+  onScoreUpdate: (increment: boolean) => void;
 }
 
 export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) => {
+  const [isLongPress, setIsLongPress] = useState(false);
+  const timerRef = useRef<number>();
+  const longPressDelay = 500; // 500ms for long press detection
+
   const getTextSizeClass = (name: string) => {
     if (name.length <= 10) return 'text-6xl';
     if (name.length <= 15) return 'text-5xl';
     if (name.length <= 20) return 'text-4xl';
     return 'text-3xl';
+  };
+
+  const handleTouchStart = () => {
+    timerRef.current = window.setTimeout(() => {
+      setIsLongPress(true);
+      onScoreUpdate(false); // Decrement score
+    }, longPressDelay);
+  };
+
+  const handleTouchEnd = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    if (!isLongPress) {
+      onScoreUpdate(true); // Increment score
+    }
+    setIsLongPress(false);
+  };
+
+  const handleTouchCancel = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    setIsLongPress(false);
   };
 
   return (
@@ -18,9 +48,14 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
         {teamName}
       </div>
       <button
-        className="w-full max-w-[400px] aspect-square text-[14rem] bg-volleyball-black hover:bg-volleyball-black/90 
-        text-volleyball-cream font-score rounded-3xl mb-8"
-        onClick={onScoreUpdate}
+        className={`w-full max-w-[400px] aspect-square text-[14rem] bg-volleyball-black hover:bg-volleyball-black/90 
+        text-volleyball-cream font-score rounded-3xl mb-8 select-none touch-none ${isLongPress ? 'bg-volleyball-black/80' : ''}`}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
+        onMouseDown={handleTouchStart}
+        onMouseUp={handleTouchEnd}
+        onMouseLeave={handleTouchCancel}
       >
         {score}
       </button>
