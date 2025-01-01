@@ -114,12 +114,13 @@ export const Timer = ({
   }, [isRunning, timeLeft, matchPhase]);
 
   useEffect(() => {
+    // Only handle break transitions when isBreak becomes true
     if (isBreak && matchPhase.includes('set')) {
       const currentSetNumber = parseInt(matchPhase.charAt(3));
       console.log('Current set number:', currentSetNumber);
       
-      // Only progress to break if we're in a valid set phase
-      if (currentSetNumber >= 1 && currentSetNumber <= 3) {
+      // Only progress to break if we're in a valid set phase and the timer has finished
+      if (currentSetNumber >= 1 && currentSetNumber <= 3 && timeLeft === 0) {
         if (currentSetNumber === 3) {
           console.log('Moving to final break from set 3');
           setMatchPhase('final_break');
@@ -133,7 +134,7 @@ export const Timer = ({
         setIsRunning(true);
       }
     }
-  }, [isBreak, matchPhase]);
+  }, [isBreak, matchPhase, timeLeft]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
