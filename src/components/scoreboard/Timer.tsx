@@ -58,34 +58,34 @@ export const Timer = ({
     if (nextPhase) {
       if (nextPhase.startsWith('set')) {
         console.log('Starting set:', nextPhase);
-        setMatchPhase(nextPhase);
         if (nextPhase !== 'set1') {
           onComplete(); // Notify parent break is over
         }
         setTimeLeft(initialMinutes * 60);
         setIsRunning(true);
+        setMatchPhase(nextPhase);
       } else if (nextPhase.startsWith('break')) {
         console.log('Starting break:', nextPhase);
-        setMatchPhase(nextPhase);
         onComplete(); // Notify parent set is over
         setTimeLeft(60); // 1 minute break
         setIsRunning(true);
+        setMatchPhase(nextPhase);
       } else if (nextPhase === 'final_break') {
         console.log('Starting final break');
-        setMatchPhase(nextPhase);
         onComplete(); // Notify parent set is over
         setTimeLeft(30); // 30 seconds final break
         setIsRunning(true);
+        setMatchPhase(nextPhase);
       } else if (nextPhase === 'results_display') {
         console.log('Starting results display');
-        setMatchPhase(nextPhase);
         setTimeLeft(30); // 30 seconds results display
         setIsRunning(true);
+        setMatchPhase(nextPhase);
       } else if (nextPhase === 'complete') {
         console.log('Match complete');
-        setMatchPhase(nextPhase);
         onComplete(); // Notify parent match is complete
         setIsRunning(false);
+        setMatchPhase(nextPhase);
       }
     }
   };
@@ -118,17 +118,20 @@ export const Timer = ({
       const currentSetNumber = parseInt(matchPhase.charAt(3));
       console.log('Current set number:', currentSetNumber);
       
-      if (currentSetNumber === 3) {
-        console.log('Moving to final break from set 3');
-        setMatchPhase('final_break');
-        setTimeLeft(30); // 30 seconds final break
-      } else {
-        console.log('Moving to break', currentSetNumber, 'from set', currentSetNumber);
-        const breakPhase = `break${currentSetNumber}` as MatchPhase;
-        setMatchPhase(breakPhase);
-        setTimeLeft(60); // 1 minute regular break
+      // Only progress to break if we're in a valid set phase
+      if (currentSetNumber >= 1 && currentSetNumber <= 3) {
+        if (currentSetNumber === 3) {
+          console.log('Moving to final break from set 3');
+          setMatchPhase('final_break');
+          setTimeLeft(30); // 30 seconds final break
+        } else {
+          console.log('Moving to break', currentSetNumber);
+          const breakPhase = `break${currentSetNumber}` as MatchPhase;
+          setMatchPhase(breakPhase);
+          setTimeLeft(60); // 1 minute regular break
+        }
+        setIsRunning(true);
       }
-      setIsRunning(true);
     }
   }, [isBreak, matchPhase]);
 
@@ -149,7 +152,6 @@ export const Timer = ({
 
   const handleReset = () => {
     if (!isMatchComplete) {
-      console.log('Manual timer reset');
       resetTimer();
     }
   };
