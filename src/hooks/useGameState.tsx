@@ -88,19 +88,23 @@ export const useGameState = () => {
         description: "Starting next set",
       });
     } else {
-      // When saving set scores, we need to account for whether teams are currently switched
-      const updatedSetScores = {
-        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
-        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
-      };
+      // Only save scores if at least one team has scored
+      if (currentScore.home > 0 || currentScore.away > 0) {
+        // When saving set scores, we need to account for whether teams are currently switched
+        const updatedSetScores = {
+          home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
+          away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
+        };
+        
+        console.log('Current scores being saved:', currentScore);
+        console.log('Updated set scores:', updatedSetScores);
+        
+        setSetScores(updatedSetScores);
+      }
       
-      console.log('Current scores being saved:', currentScore);
-      console.log('Updated set scores:', updatedSetScores);
-      
-      setSetScores(updatedSetScores);
       setIsBreak(true);
 
-      if (updatedSetScores.home.length >= 3) {
+      if (setScores.home.length >= 2) {
         setIsMatchComplete(true);
         toast({
           title: "Match Complete",
