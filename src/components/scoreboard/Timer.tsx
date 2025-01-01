@@ -34,14 +34,18 @@ export const Timer = ({
       onComplete();
       // Switch teams
       onSwitchTeams();
-      // Start the next set automatically
-      setIsRunning(true);
+      // Reset timer for next set
+      resetTimer();
+      // Start the next set automatically after a short delay
+      setTimeout(() => {
+        setIsRunning(true);
+      }, 100);
     } else {
       // When set ends, stop timer and notify parent
       setIsRunning(false);
       onComplete();
     }
-  }, [isBreak, onComplete, onSwitchTeams]);
+  }, [isBreak, onComplete, onSwitchTeams, resetTimer]);
 
   // Handle break transitions
   useEffect(() => {
