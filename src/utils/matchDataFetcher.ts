@@ -1,26 +1,8 @@
 import { toast } from "@/components/ui/use-toast";
-import { format, parse } from "date-fns";
-import { XMLParser } from 'fast-xml-parser';
-import { Match } from "@/types/volleyball";
-
-const LEAGUE_URLS = {
-  Monday: [
-    'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=2&SeasonId=4',
-    'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=3&SeasonId=4'
-  ],
-  Tuesday: [
-    'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=6&SeasonId=4',
-    'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=5&SeasonId=4'
-  ],
-  Wednesday: [
-    'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=8&SeasonId=4',
-    'https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=7&SeasonId=4'
-  ],
-  Thursday: ['https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=3&SeasonId=4'],
-  Friday: ['https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=6&SeasonId=4'],
-  Saturday: ['https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=7&SeasonId=4'],
-  Sunday: ['https://ossieindoorbeachvolleyball.spawtz.com/External/Fixtures/Feed.aspx?Type=Fixtures&LeagueId=8&SeasonId=4']
-};
+import { format } from "date-fns";
+import { Match, Fixture } from "@/types/volleyball";
+import { LEAGUE_URLS } from "@/config/leagueConfig";
+import { parseXMLResponse } from "@/utils/xmlParser";
 
 const fetchFromUrl = async (url: string, date: string) => {
   try {
@@ -58,46 +40,12 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       throw new Error("No URLs configured for this day");
     }
 
-    const parser = new XMLParser({
-      ignoreAttributes: false,
-      attributeNamePrefix: "",
-      parseAttributeValue: false,
-      trimValues: true,
-    });
-
     // Fetch and parse data from all URLs for the day
     const allFixtures = await Promise.all(
       urls.map(async (url) => {
         try {
           const text = await fetchFromUrl(url, formattedDate);
-          const result = parser.parse(text);
-          
-          console.log('Full parsed XML result for URL:', url);
-          console.log(JSON.stringify(result, null, 2));
-          
-          // Extract all weeks and their fixtures
-          const weeks = Array.isArray(result?.League?.Week) 
-            ? result.League.Week 
-            : [result?.League?.Week];
-            
-          const allWeekFixtures = weeks.flatMap(week => {
-            console.log('Processing week:', week?.Date);
-            const fixtures = Array.isArray(week?.Fixture) ? week.Fixture : [week?.Fixture];
-            return fixtures.filter(Boolean);
-          });
-
-          // Log each fixture in detail
-          console.log('Extracted fixtures for URL:', url);
-          allWeekFixtures.forEach((fixture, index) => {
-            console.log(`Fixture ${index + 1}:`, {
-              DateTime: fixture.DateTime,
-              Court: fixture.PlayingAreaName,
-              Division: fixture.DivisionName,
-              Teams: `${fixture.HomeTeam} vs ${fixture.AwayTeam}`
-            });
-          });
-
-          return allWeekFixtures;
+          return parseXMLResponse(text);
         } catch (error) {
           console.error('Error processing URL:', url, error);
           return [];
@@ -133,14 +81,6 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     });
 
     console.log('Fixtures after date filtering:', fixtures.length);
-    fixtures.forEach((fixture, index) => {
-      console.log(`Filtered Fixture ${index + 1}:`, {
-        DateTime: fixture.DateTime,
-        Court: fixture.PlayingAreaName,
-        Division: fixture.DivisionName,
-        Teams: `${fixture.HomeTeam} vs ${fixture.AwayTeam}`
-      });
-    });
 
     if (courtId) {
       const currentMatch = fixtures.find((match) => match.PlayingAreaName === `Court ${courtId}`);
