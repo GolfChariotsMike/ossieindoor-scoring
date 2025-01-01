@@ -23,29 +23,32 @@ export const Timer = ({
 
   // Reset timer to initial state
   const resetTimer = useCallback(() => {
+    console.log('Timer reset');
     setTimeLeft(initialMinutes * 60);
     setIsRunning(false);
   }, [initialMinutes]);
 
-  // Handle what happens when timer reaches zero
+  // Handle timer completion
   const handleTimerComplete = useCallback(() => {
+    console.log('Timer complete, isBreak:', isBreak);
     setIsRunning(false);
-    
+
     if (isBreak) {
-      // When break ends, notify parent and switch teams
-      onComplete();
-      onSwitchTeams();
-      // Reset timer for next set
-      resetTimer();
+      console.log('Break ended - switching teams and starting new set');
+      onComplete(); // Notify parent break is over
+      onSwitchTeams(); // Switch team positions
+      resetTimer(); // Reset timer for new set
     } else {
-      // When set ends, notify parent
-      onComplete();
+      console.log('Set ended - starting break');
+      onComplete(); // Notify parent set is over
     }
   }, [isBreak, onComplete, onSwitchTeams, resetTimer]);
 
   // Handle break transitions
   useEffect(() => {
+    console.log('Break status changed:', isBreak);
     if (isMatchComplete) {
+      console.log('Match is complete - stopping timer');
       setIsRunning(false);
       return;
     }
@@ -53,8 +56,9 @@ export const Timer = ({
     // Reset timer when break status changes
     resetTimer();
     
-    // Auto-start timer if game has started and it's break time
+    // Auto-start break timer if game has started
     if (hasGameStarted && isBreak) {
+      console.log('Auto-starting break timer');
       setIsRunning(true);
     }
   }, [isBreak, isMatchComplete, resetTimer, hasGameStarted]);
@@ -86,17 +90,23 @@ export const Timer = ({
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
-  const handleReset = () => {
-    if (isMatchComplete) return;
-    resetTimer();
-  };
-
   const handleStartStop = () => {
     if (isMatchComplete) return;
+    
+    console.log('Start/Stop clicked, current state:', { isRunning, hasGameStarted });
+    
     if (!hasGameStarted) {
+      console.log('Starting game for the first time');
       setHasGameStarted(true);
     }
+    
     setIsRunning(!isRunning);
+  };
+
+  const handleReset = () => {
+    if (isMatchComplete) return;
+    console.log('Manual timer reset');
+    resetTimer();
   };
 
   return (
