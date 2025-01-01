@@ -40,14 +40,20 @@ export const useGameState = () => {
         away_score: awayScores[index]
       }));
 
-      // Use upsert to either insert new scores or update existing ones
+      console.log('Upserting scores:', setScoresData);
+
+      // Use upsert with explicit conflict target
       const { error: scoreError } = await supabase
         .from('match_scores')
         .upsert(setScoresData, {
-          onConflict: 'match_id,set_number'
+          onConflict: 'match_id,set_number',
+          ignoreDuplicates: false
         });
 
-      if (scoreError) throw scoreError;
+      if (scoreError) {
+        console.error('Error in upsert:', scoreError);
+        throw scoreError;
+      }
 
       toast({
         title: "Match scores saved",
