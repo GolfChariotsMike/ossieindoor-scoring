@@ -12,9 +12,14 @@ const CourtFixtures = () => {
   
   // Parse the date from URL format (YYYY-MM-DD) to a Date object
   const parsedDate = date ? parse(date, 'yyyy-MM-dd', new Date()) : new Date();
+  console.log('CourtFixtures date parsing:', {
+    urlDate: date,
+    parsedDate: parsedDate.toISOString(),
+    formattedForDisplay: format(parsedDate, 'yyyy-MM-dd')
+  });
 
   const { data: matches = [], isLoading } = useQuery({
-    queryKey: ["matches", date], // Use the raw date string from URL as part of the query key
+    queryKey: ["matches", date],
     queryFn: () => fetchMatchData(undefined, parsedDate),
   });
 

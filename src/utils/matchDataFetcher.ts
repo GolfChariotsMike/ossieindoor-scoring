@@ -30,7 +30,7 @@ const fetchFromUrl = async (url: string, date: string) => {
       throw new Error("Failed to fetch fixture data");
     }
     const text = await response.text();
-    console.log('Received response:', text.substring(0, 200) + '...'); // Log first 200 chars
+    console.log('Raw API Response:', text);
     return text;
   } catch (error) {
     console.error('Error fetching from URL:', url, error);
@@ -49,7 +49,8 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       formattedDate,
       dayOfWeek,
       originalDate: date.toISOString(),
-      selectedDate: selectedDate?.toISOString()
+      selectedDate: selectedDate?.toISOString(),
+      targetDate: format(date, 'yyyy-MM-dd')
     });
     
     const urls = LEAGUE_URLS[dayOfWeek];
@@ -91,18 +92,18 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       try {
         // Parse the fixture date from the XML format (dd/MM/yyyy HH:mm)
         const fixtureDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-        const selectedDay = startOfDay(date);
-        const fixtureDay = startOfDay(fixtureDate);
+        const targetDateStr = format(date, 'yyyy-MM-dd');
+        const fixtureDateStr = format(fixtureDate, 'yyyy-MM-dd');
         
         console.log('Date comparison:', {
           fixtureDateTime: fixture.DateTime,
           parsedFixtureDate: fixtureDate.toISOString(),
-          selectedDate: selectedDay.toISOString(),
-          fixtureDay: fixtureDay.toISOString(),
-          isMatch: isEqual(selectedDay, fixtureDay)
+          targetDate: targetDateStr,
+          fixtureDate: fixtureDateStr,
+          isMatch: targetDateStr === fixtureDateStr
         });
         
-        return isEqual(selectedDay, fixtureDay);
+        return targetDateStr === fixtureDateStr;
       } catch (error) {
         console.error('Error parsing fixture date:', fixture.DateTime, error);
         return false;
