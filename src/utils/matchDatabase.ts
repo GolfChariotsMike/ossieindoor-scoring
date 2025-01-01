@@ -49,6 +49,48 @@ export const saveMatchScores = async (
 
     if (resultError) throw resultError;
 
+    // Calculate bonus points (1 point per 10 points scored)
+    const homeBonus = homeScores.reduce((total, score) => total + Math.floor(score / 10), 0);
+    const awayBonus = awayScores.reduce((total, score) => total + Math.floor(score / 10), 0);
+
+    // Calculate total set points (2 points per set won)
+    const homeSetPoints = homeSetsWon * 2;
+    const awaySetPoints = awaySetsWon * 2;
+
+    // Save home team results to match_results_simplified
+    const { error: homeSimplifiedError } = await supabase
+      .from('match_results_simplified')
+      .insert([{
+        match_id: matchId,
+        team_name: matchData.home_team_name,
+        is_home_team: true,
+        set1_points: homeScores[0] || 0,
+        set2_points: homeScores[1] || 0,
+        set3_points: homeScores[2] || 0,
+        total_set_points: homeSetPoints,
+        bonus_points: homeBonus,
+        total_points: homeSetPoints + homeBonus
+      }]);
+
+    if (homeSimplifiedError) throw homeSimplifiedError;
+
+    // Save away team results to match_results_simplified
+    const { error: awaySimplifiedError } = await supabase
+      .from('match_results_simplified')
+      .insert([{
+        match_id: matchId,
+        team_name: matchData.away_team_name,
+        is_home_team: false,
+        set1_points: awayScores[0] || 0,
+        set2_points: awayScores[1] || 0,
+        set3_points: awayScores[2] || 0,
+        total_set_points: awaySetPoints,
+        bonus_points: awayBonus,
+        total_points: awaySetPoints + awayBonus
+      }]);
+
+    if (awaySimplifiedError) throw awaySimplifiedError;
+
     // Also save individual set scores for backward compatibility
     for (const scoreData of homeScores.map((homeScore, index) => ({
       match_id: matchId,
