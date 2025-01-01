@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Play, RotateCcw, ArrowLeftRight } from "lucide-react";
+import { TimerDisplay } from "./TimerDisplay";
+import { TimerControls } from "./TimerControls";
 
 interface TimerProps {
   initialMinutes: number;
@@ -68,45 +68,19 @@ export const Timer = ({
 
   return (
     <div className="text-volleyball-cream text-center">
-      <div 
-        className={`font-score text-[12rem] tracking-[0.2em] leading-none mb-2 [text-shadow:_2px_2px_0_rgb(0_0_0)] ${
-          isBreak ? 'text-blue-400' : isMatchComplete ? 'text-green-400' : 'text-volleyball-cream'
-        }`}
-      >
-        {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
-      </div>
+      <TimerDisplay 
+        minutes={minutes}
+        seconds={seconds}
+        isBreak={isBreak}
+        isMatchComplete={isMatchComplete}
+      />
       
-      <div className="flex justify-center gap-4 mb-1">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleStartStop}
-          disabled={isMatchComplete}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
-        >
-          <Play />
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleReset}
-          disabled={isMatchComplete}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
-        >
-          <RotateCcw />
-        </Button>
-
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onSwitchTeams}
-          disabled={isMatchComplete}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
-        >
-          <ArrowLeftRight />
-        </Button>
-      </div>
+      <TimerControls 
+        isMatchComplete={isMatchComplete}
+        onStartStop={handleStartStop}
+        onReset={handleReset}
+        onSwitchTeams={onSwitchTeams}
+      />
     </div>
   );
 };
