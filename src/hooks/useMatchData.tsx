@@ -3,6 +3,15 @@ import { Match, Fixture } from "@/types/volleyball";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
+const generateMatchCode = (courtId: string, fixture?: Fixture): string => {
+  const now = fixture ? new Date(fixture.DateTime) : new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hour = String(now.getHours()).padStart(2, '0');
+  const minute = String(now.getMinutes()).padStart(2, '0');
+  return `${month}${day}${hour}${minute}${courtId.padStart(3, '0')}`;
+};
+
 export const useMatchData = (courtId: string, fixture?: Fixture) => {
   const { toast } = useToast();
 
@@ -10,12 +19,34 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
     queryKey: ["match", courtId],
     queryFn: async () => {
       if (fixture) {
-        const matchId = crypto.randomUUID();
+        const matchCode = generateMatchCode(courtId, fixture);
         
+        const { data: existingMatch, error: checkError } = await supabase
+          .from('matches_v2')
+          .select()
+          .eq('match_code', matchCode)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error('Error checking existing match:', checkError);
+          throw checkError;
+        }
+
+        if (existingMatch) {
+          return {
+            id: existingMatch.id,
+            court: existingMatch.court_number,
+            startTime: existingMatch.start_time,
+            division: existingMatch.division,
+            homeTeam: { id: existingMatch.home_team_id, name: existingMatch.home_team_name },
+            awayTeam: { id: existingMatch.away_team_id, name: existingMatch.away_team_name },
+          };
+        }
+
         const { data: matchData, error } = await supabase
-          .from('matches')
-          .upsert({
-            id: matchId,
+          .from('matches_v2')
+          .insert({
+            match_code: matchCode,
             court_number: parseInt(courtId),
             start_time: fixture.DateTime,
             division: fixture.DivisionName,
@@ -25,7 +56,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
             away_team_name: fixture.AwayTeam,
           })
           .select()
-          .maybeSingle();
+          .single();
 
         if (error) {
           console.error('Error creating match:', error);
@@ -38,23 +69,24 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         }
 
         return {
-          id: matchId,
-          court: parseInt(courtId),
-          startTime: fixture.DateTime,
-          division: fixture.DivisionName,
-          homeTeam: { id: fixture.HomeTeamId || 'unknown', name: fixture.HomeTeam },
-          awayTeam: { id: fixture.AwayTeamId || 'unknown', name: fixture.AwayTeam },
+          id: matchData.id,
+          court: matchData.court_number,
+          startTime: matchData.start_time,
+          division: matchData.division,
+          homeTeam: { id: matchData.home_team_id, name: matchData.home_team_name },
+          awayTeam: { id: matchData.away_team_id, name: matchData.away_team_name },
         };
       }
 
       const { data: existingMatch, error } = await supabase
-        .from('matches')
+        .from('matches_v2')
         .select()
         .eq('court_number', parseInt(courtId))
         .order('created_at', { ascending: false })
-        .maybeSingle();
+        .limit(1)
+        .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching match:', error);
         toast({
           title: "Error",
@@ -65,12 +97,32 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
       }
 
       if (!existingMatch) {
+        const matchCode = generateMatchCode(courtId);
+        const { data: newMatch, error: createError } = await supabase
+          .from('matches_v2')
+          .insert({
+            match_code: matchCode,
+            court_number: parseInt(courtId),
+            home_team_id: 'unknown',
+            home_team_name: 'Team A',
+            away_team_id: 'unknown',
+            away_team_name: 'Team B',
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating default match:', createError);
+          throw createError;
+        }
+
         return {
-          id: crypto.randomUUID(),
-          court: parseInt(courtId),
-          startTime: new Date().toISOString(),
-          homeTeam: { id: 'unknown', name: 'Team A' },
-          awayTeam: { id: 'unknown', name: 'Team B' },
+          id: newMatch.id,
+          court: newMatch.court_number,
+          startTime: newMatch.start_time,
+          division: newMatch.division,
+          homeTeam: { id: newMatch.home_team_id, name: newMatch.home_team_name },
+          awayTeam: { id: newMatch.away_team_id, name: newMatch.away_team_name },
         };
       }
 

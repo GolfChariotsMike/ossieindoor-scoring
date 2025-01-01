@@ -25,7 +25,7 @@ export const useGameState = () => {
     try {
       // First ensure the match exists
       const { data: matchData, error: matchError } = await supabase
-        .from('matches')
+        .from('matches_v2')
         .select()
         .eq('id', matchId)
         .single();
@@ -42,15 +42,18 @@ export const useGameState = () => {
 
       console.log('Upserting scores:', setScoresData);
 
-      const { error: upsertError } = await supabase
-        .from('match_scores')
-        .upsert(setScoresData, {
-          onConflict: 'match_id,set_number'
-        });
+      // Insert scores one by one to avoid conflicts
+      for (const scoreData of setScoresData) {
+        const { error: upsertError } = await supabase
+          .from('match_scores_v2')
+          .upsert(scoreData, {
+            onConflict: 'match_id,set_number'
+          });
 
-      if (upsertError) {
-        console.error('Error upserting scores:', upsertError);
-        throw upsertError;
+        if (upsertError) {
+          console.error('Error upserting score:', upsertError);
+          throw upsertError;
+        }
       }
 
       toast({

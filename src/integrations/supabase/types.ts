@@ -44,6 +44,41 @@ export type Database = {
           },
         ]
       }
+      match_scores_v2: {
+        Row: {
+          away_score: number | null
+          created_at: string | null
+          home_score: number | null
+          id: string
+          match_id: string | null
+          set_number: number
+        }
+        Insert: {
+          away_score?: number | null
+          created_at?: string | null
+          home_score?: number | null
+          id?: string
+          match_id?: string | null
+          set_number: number
+        }
+        Update: {
+          away_score?: number | null
+          created_at?: string | null
+          home_score?: number | null
+          id?: string
+          match_id?: string | null
+          set_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_scores_v2_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           away_team_id: string
@@ -76,6 +111,45 @@ export type Database = {
           home_team_id?: string
           home_team_name?: string
           id?: string
+          start_time?: string | null
+        }
+        Relationships: []
+      }
+      matches_v2: {
+        Row: {
+          away_team_id: string
+          away_team_name: string
+          court_number: number
+          created_at: string | null
+          division: string | null
+          home_team_id: string
+          home_team_name: string
+          id: string
+          match_code: string
+          start_time: string | null
+        }
+        Insert: {
+          away_team_id: string
+          away_team_name: string
+          court_number: number
+          created_at?: string | null
+          division?: string | null
+          home_team_id: string
+          home_team_name: string
+          id?: string
+          match_code: string
+          start_time?: string | null
+        }
+        Update: {
+          away_team_id?: string
+          away_team_name?: string
+          court_number?: number
+          created_at?: string | null
+          division?: string | null
+          home_team_id?: string
+          home_team_name?: string
+          id?: string
+          match_code?: string
           start_time?: string | null
         }
         Relationships: []
