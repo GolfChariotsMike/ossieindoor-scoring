@@ -64,7 +64,9 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
     <>
       <Fireworks />
       <div className="flex flex-col items-center justify-center h-full text-volleyball-black bg-white/90 w-4/5 mx-auto relative z-10">
-        <h1 className="text-8xl font-sets mb-12 text-black">{getWinnerText()}</h1>
+        <h1 className="text-8xl font-sets mb-12 text-black animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
+          {getWinnerText()}
+        </h1>
         
         <div className="grid grid-cols-2 gap-16 w-full">
           {[homeResults, awayResults].map((result) => (
@@ -72,11 +74,11 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
               key={result.name}
               className="bg-volleyball-black rounded-2xl p-8 flex flex-col items-center"
             >
-              <h2 className="text-4xl font-sets mb-6 text-volleyball-cream">{result.name}</h2>
-              <div className="space-y-4 text-2xl font-score text-volleyball-cream">
-                <p>Set Points: {result.setPoints}</p>
-                <p>Bonus Points: {result.bonusPoints}</p>
-                <p className="text-3xl mt-6">Total: {result.totalPoints}</p>
+              <h2 className="text-5xl font-sets mb-8 text-volleyball-cream">{result.name}</h2>
+              <div className="space-y-6 text-3xl font-score text-volleyball-cream">
+                <p className="text-4xl">Set Points: {result.setPoints}</p>
+                <p className="text-4xl">Bonus Points: {result.bonusPoints}</p>
+                <p className="text-5xl mt-8">Total: {result.totalPoints}</p>
               </div>
             </div>
           ))}
