@@ -64,15 +64,15 @@ export const Timer = ({
         onComplete(); // Notify parent set is over
         setTimeLeft(60); // 1 minute break
         setIsRunning(true); // Auto-start break timer
-      } else if (nextPhase !== 'complete') {
+      } else if (nextPhase === 'complete') {
+        console.log('Match complete');
+        onComplete(); // Notify parent match is complete
+        setIsRunning(false);
+      } else {
         console.log('Starting new set');
         onComplete(); // Notify parent break is over
         setTimeLeft(initialMinutes * 60);
         setIsRunning(true); // Auto-start set timer
-      } else {
-        console.log('Match complete');
-        onComplete(); // Notify parent match is complete
-        setIsRunning(false);
       }
     }
   };
@@ -140,11 +140,11 @@ export const Timer = ({
         minutes={minutes}
         seconds={seconds}
         isBreak={isBreak}
-        isMatchComplete={matchPhase === "complete"}
+        isMatchComplete={isMatchComplete}
       />
       
       <TimerControls 
-        isMatchComplete={matchPhase === "complete"}
+        isMatchComplete={isMatchComplete}
         onStartStop={handleStartStop}
         onReset={handleReset}
         onSwitchTeams={onSwitchTeams}
