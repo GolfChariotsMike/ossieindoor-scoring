@@ -23,35 +23,31 @@ export const useGameState = () => {
     console.log('Attempting to save scores:', { matchId, homeScores, awayScores });
     
     try {
+      // First ensure the match exists
       const { data: matchData, error: matchError } = await supabase
         .from('matches')
-        .upsert({
-          id: matchId,
-          court_number: 1,
-          home_team_id: 'temp-home-id',
-          home_team_name: 'Home Team',
-          away_team_id: 'temp-away-id',
-          away_team_name: 'Away Team'
-        })
         .select()
+        .eq('id', matchId)
         .single();
 
       if (matchError) throw matchError;
 
-      const setScoresPromises = homeScores.map(async (homeScore, index) => {
-        const { error: scoreError } = await supabase
-          .from('match_scores')
-          .upsert({
-            match_id: matchId,
-            set_number: index + 1,
-            home_score: homeScore,
-            away_score: awayScores[index]
-          });
+      // Prepare all set scores for upsert
+      const setScoresData = homeScores.map((homeScore, index) => ({
+        match_id: matchId,
+        set_number: index + 1,
+        home_score: homeScore,
+        away_score: awayScores[index]
+      }));
 
-        if (scoreError) throw scoreError;
-      });
+      // Use upsert to either insert new scores or update existing ones
+      const { error: scoreError } = await supabase
+        .from('match_scores')
+        .upsert(setScoresData, {
+          onConflict: 'match_id,set_number'
+        });
 
-      await Promise.all(setScoresPromises);
+      if (scoreError) throw scoreError;
 
       toast({
         title: "Match scores saved",
@@ -118,9 +114,6 @@ export const useGameState = () => {
       home: prev.away,
       away: prev.home
     }));
-    
-    // No need to switch set scores here anymore since we handle it when saving scores
-    // This ensures historical set scores stay with their original teams
   };
 
   return {
