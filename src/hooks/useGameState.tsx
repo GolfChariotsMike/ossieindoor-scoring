@@ -20,6 +20,12 @@ export const useGameState = () => {
   };
 
   const saveMatchScores = async (matchId: string, homeScores: number[], awayScores: number[]) => {
+    // Only proceed if we have scores to save
+    if (!homeScores.length || !awayScores.length) {
+      console.log('No scores to save yet');
+      return;
+    }
+    
     console.log('Attempting to save scores:', { matchId, homeScores, awayScores });
     
     try {
