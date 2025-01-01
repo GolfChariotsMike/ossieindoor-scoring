@@ -59,31 +59,32 @@ export const useGameState = () => {
   };
 
   const handleTimerComplete = () => {
-    if (isMatchComplete) return;
+    // Don't do anything if there are no scores yet
+    if (currentScore.home === 0 && currentScore.away === 0) {
+      return;
+    }
 
     if (isBreak) {
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 });
       handleSwitchTeams();
-      toast({
-        title: "Break Time Over",
-        description: "Starting next set",
-      });
-    } else {
-      // Only proceed if there are actual scores
-      if (currentScore.home === 0 && currentScore.away === 0) {
-        return;
+      
+      if (!isMatchComplete) {
+        toast({
+          title: "Break Time Over",
+          description: "Starting next set",
+        });
       }
-
-      const updatedSetScores = {
+    } else {
+      const newSetScores = {
         home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
         away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
       };
       
-      setSetScores(updatedSetScores);
+      setSetScores(newSetScores);
       setIsBreak(true);
-
-      if (setScores.home.length >= 2) {
+      
+      if (newSetScores.home.length >= 3) {
         setIsMatchComplete(true);
         toast({
           title: "Match Complete",

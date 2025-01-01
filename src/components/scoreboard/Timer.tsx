@@ -19,7 +19,6 @@ export const Timer = ({
 }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
-  const [isFirstSet, setIsFirstSet] = useState(true);
 
   useEffect(() => {
     if (isMatchComplete) {
@@ -27,12 +26,8 @@ export const Timer = ({
       return;
     }
     
+    // Reset timer when break status changes, but don't auto-start
     setTimeLeft(initialMinutes * 60);
-    setIsRunning(isBreak || !isFirstSet);
-    
-    if (isBreak) {
-      setIsFirstSet(false);
-    }
   }, [initialMinutes, isBreak, isMatchComplete]);
 
   useEffect(() => {
