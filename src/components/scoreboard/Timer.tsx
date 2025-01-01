@@ -53,13 +53,12 @@ export const Timer = ({
         console.log('Starting break timer');
         onComplete(); // Notify parent set is over
         setTimeLeft(60); // 1 minute break
-        setIsRunning(true);
+        setIsRunning(true); // Auto-start break timer
       } else if (nextPhase !== 'complete') {
         console.log('Starting new set');
         onComplete(); // Notify parent break is over
-        onSwitchTeams();
         setTimeLeft(initialMinutes * 60);
-        setIsRunning(false);
+        setIsRunning(true); // Auto-start set timer
       } else {
         console.log('Match complete');
         setIsRunning(false);
@@ -100,9 +99,8 @@ export const Timer = ({
     if (matchPhase === "not_started") {
       console.log('Starting first set');
       setMatchPhase("set1");
-    }
-    
-    if (!isMatchComplete) {
+      setIsRunning(true);
+    } else if (!isMatchComplete) {
       setIsRunning(!isRunning);
     }
   };
@@ -114,15 +112,12 @@ export const Timer = ({
     }
   };
 
-  // Determine if we're in a break phase
-  const isInBreak = matchPhase === "break1" || matchPhase === "break2";
-
   return (
     <div className="text-volleyball-cream text-center">
       <TimerDisplay 
         minutes={minutes}
         seconds={seconds}
-        isBreak={isInBreak}
+        isBreak={isBreak}
         isMatchComplete={matchPhase === "complete"}
       />
       
