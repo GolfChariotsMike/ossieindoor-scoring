@@ -1,5 +1,5 @@
 import { toast } from "@/components/ui/use-toast";
-import { format, parse, isEqual, startOfDay } from "date-fns";
+import { format, parse } from "date-fns";
 import { XMLParser } from 'fast-xml-parser';
 import { Match } from "@/types/volleyball";
 
@@ -30,7 +30,7 @@ const fetchFromUrl = async (url: string, date: string) => {
       throw new Error("Failed to fetch fixture data");
     }
     const text = await response.text();
-    console.log('Raw API Response:', text);
+    console.log('Raw XML Response:', text);
     return text;
   } catch (error) {
     console.error('Error fetching from URL:', url, error);
@@ -62,7 +62,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "",
-      parseAttributeValue: true,
+      parseAttributeValue: false, // Changed to false to prevent automatic parsing
     });
 
     // Fetch and parse data from all URLs for the day
@@ -71,8 +71,9 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
         try {
           const text = await fetchFromUrl(url, formattedDate);
           const result = parser.parse(text);
+          console.log('Parsed XML result:', JSON.stringify(result, null, 2));
           const fixtures = result?.League?.Week?.[0]?.Fixture || [];
-          console.log('Parsed fixtures from URL:', url, fixtures);
+          console.log('Extracted fixtures:', fixtures);
           return fixtures;
         } catch (error) {
           console.error('Error fetching from URL:', url, error);
@@ -90,22 +91,20 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       if (!fixture.DateTime) return false;
       
       try {
-        // Parse the fixture date from the XML format (dd/MM/yyyy HH:mm)
-        const fixtureDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-        const targetDateStr = format(date, 'yyyy-MM-dd');
-        const fixtureDateStr = format(fixtureDate, 'yyyy-MM-dd');
+        // Extract just the date part from the fixture DateTime (before the space)
+        const fixtureDatePart = fixture.DateTime.split(' ')[0];
+        const targetDateStr = format(date, 'dd/MM/yyyy');
         
         console.log('Date comparison:', {
           fixtureDateTime: fixture.DateTime,
-          parsedFixtureDate: fixtureDate.toISOString(),
+          fixtureDatePart,
           targetDate: targetDateStr,
-          fixtureDate: fixtureDateStr,
-          isMatch: targetDateStr === fixtureDateStr
+          isMatch: fixtureDatePart === targetDateStr
         });
         
-        return targetDateStr === fixtureDateStr;
+        return fixtureDatePart === targetDateStr;
       } catch (error) {
-        console.error('Error parsing fixture date:', fixture.DateTime, error);
+        console.error('Error comparing fixture date:', fixture.DateTime, error);
         return false;
       }
     });
@@ -130,7 +129,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       return {
         id: currentMatch.Id,
         court: parseInt(courtId),
-        startTime: parse(currentMatch.DateTime, 'dd/MM/yyyy HH:mm', new Date()).toISOString(),
+        startTime: currentMatch.DateTime,
         division: currentMatch.DivisionName,
         homeTeam: { id: currentMatch.HomeTeamId, name: currentMatch.HomeTeam },
         awayTeam: { id: currentMatch.AwayTeamId, name: currentMatch.AwayTeam },
