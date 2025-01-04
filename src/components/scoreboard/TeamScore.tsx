@@ -10,7 +10,7 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
   const decrementIntervalRef = useRef<NodeJS.Timeout>();
-  const longPressDelay = 500;
+  const longPressDelay = 500; // 500ms for long press detection
 
   const getTextSizeClass = (name: string) => {
     if (name.length <= 10) return 'text-7xl';
@@ -20,12 +20,14 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
   };
 
   const startDecrementInterval = () => {
+    // Clear any existing interval
     if (decrementIntervalRef.current) {
       clearInterval(decrementIntervalRef.current);
     }
     
+    // Start new interval that decrements score every 150ms
     decrementIntervalRef.current = setInterval(() => {
-      if (score > 0) {
+      if (score > 0) { // Only decrement if score is greater than 0
         onScoreUpdate(false);
       }
     }, 150);
@@ -37,8 +39,8 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
     timerRef.current = setTimeout(() => {
       console.log('Long press detected');
       setIsLongPress(true);
-      onScoreUpdate(false);
-      startDecrementInterval();
+      onScoreUpdate(false); // Initial decrement
+      startDecrementInterval(); // Start continuous decrements
     }, longPressDelay);
   };
 
@@ -46,6 +48,7 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
     e.preventDefault();
     console.log('Touch end, isLongPress:', isLongPress);
     
+    // Clear both timers
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
@@ -79,7 +82,7 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
         {teamName}
       </div>
       <button
-        className={`w-full max-w-[400px] aspect-square text-[16rem] ${isLongPress ? 'bg-volleyball-black/70' : 'bg-volleyball-black'} 
+        className={`w-full max-w-[400px] aspect-square text-[14rem] ${isLongPress ? 'bg-volleyball-black/70' : 'bg-volleyball-black'} 
         text-volleyball-cream font-score rounded-3xl mb-8 select-none touch-none transition-colors`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
