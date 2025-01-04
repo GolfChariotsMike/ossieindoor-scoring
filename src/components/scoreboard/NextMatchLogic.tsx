@@ -50,7 +50,7 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
     navigate(`/court/${courtId}/${date}`);
   };
 
-  const handleStartNextMatch = (nextMatch: Fixture | null) => {
+  const handleStartNextMatch = (nextMatch: Fixture) => {
     console.log('Starting next match:', nextMatch);
     
     if (nextMatch) {

@@ -44,7 +44,7 @@ const ScoreboardContainer = () => {
   } = useGameState();
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
-  const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
+  const { findNextMatch, handleStartNextMatch, navigateToCourtSelection } = useNextMatch(courtId!, fixture);
 
   // Reset game state only when fixture ID changes
   useEffect(() => {
@@ -75,7 +75,9 @@ const ScoreboardContainer = () => {
         console.log('Results display time complete, checking for next match');
         const nextMatch = findNextMatch();
         if (nextMatch) {
-          handleStartNextMatch(nextMatch.Id);
+          handleStartNextMatch(nextMatch);
+        } else {
+          navigateToCourtSelection();
         }
       }, 30000);
 
@@ -85,7 +87,7 @@ const ScoreboardContainer = () => {
         }
       };
     }
-  }, [resultsDisplayStartTime, findNextMatch, handleStartNextMatch]);
+  }, [resultsDisplayStartTime, findNextMatch, handleStartNextMatch, navigateToCourtSelection]);
 
   const handleBack = () => {
     if (hasGameStarted) {
@@ -116,7 +118,9 @@ const ScoreboardContainer = () => {
               onClick={() => {
                 const nextMatch = findNextMatch();
                 if (nextMatch) {
-                  handleStartNextMatch(nextMatch.Id);
+                  handleStartNextMatch(nextMatch);
+                } else {
+                  navigateToCourtSelection();
                 }
               }}
               className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
