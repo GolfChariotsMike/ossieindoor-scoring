@@ -25,7 +25,7 @@ const CourtSelection = () => {
     <div className="min-h-screen bg-volleyball-red">
       <div className="max-w-4xl mx-auto p-8">
         <h1 className="text-4xl font-bold text-volleyball-cream mb-8 text-center">
-          Volleyball Scoreboard
+          Ossie Indoor Beach Volleyball
         </h1>
 
         <div className="bg-volleyball-black/80 rounded-lg p-6 mb-8">
