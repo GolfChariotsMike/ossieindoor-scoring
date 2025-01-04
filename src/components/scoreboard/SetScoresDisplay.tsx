@@ -28,12 +28,12 @@ export const SetScoresDisplay = ({ setScores, isTeamsSwitched }: SetScoresDispla
           className="grid grid-cols-2 gap-4 w-full mb-4"
         >
           <div className="bg-volleyball-black rounded-2xl p-10 flex items-center justify-center">
-            <span className="text-volleyball-cream text-8xl font-score">
+            <span className="text-volleyball-cream text-6xl font-score">
               {set.home}
             </span>
           </div>
           <div className="bg-volleyball-black rounded-2xl p-10 flex items-center justify-center">
-            <span className="text-volleyball-cream text-8xl font-score">
+            <span className="text-volleyball-cream text-6xl font-score">
               {set.away}
             </span>
           </div>
