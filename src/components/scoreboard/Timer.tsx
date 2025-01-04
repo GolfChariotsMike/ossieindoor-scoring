@@ -78,6 +78,7 @@ export const Timer = ({
         setMatchPhase(nextPhase);
       } else if (nextPhase === 'results_display') {
         console.log('Starting results display');
+        onComplete(); // Notify parent final break is over
         setTimeLeft(30); // 30 seconds results display
         setIsRunning(true);
         setMatchPhase(nextPhase);
