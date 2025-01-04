@@ -21,7 +21,7 @@ export const GameScores = ({
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center mb-8">
+    <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
       <TeamScore
         teamName={homeTeam.name}
         score={currentScore.home}
