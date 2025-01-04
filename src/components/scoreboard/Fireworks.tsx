@@ -19,9 +19,9 @@ export const Fireworks = () => {
 
     const createParticle = (x: number, y: number, color: string) => {
       const angle = Math.random() * Math.PI * 2;
-      const velocity = Math.random() * 30 + 20;
+      const velocity = Math.random() * 20 + 15; // Reduced velocity for slower movement
       const size = Math.random() * 6 + 3;
-      const duration = Math.random() * 1.5 + 4;
+      const duration = Math.random() * 1 + 7; // Base duration 7s + up to 1s random
       const spread = Math.random() * 150 + 100;
       const id = Date.now() + Math.random();
 
