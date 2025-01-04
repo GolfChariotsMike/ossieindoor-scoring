@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface BackButtonProps {
   onClick: () => void;
@@ -8,12 +8,12 @@ interface BackButtonProps {
 export const BackButton = ({ onClick }: BackButtonProps) => {
   return (
     <Button
-      variant="outline"
+      variant="ghost"
       size="icon"
       onClick={onClick}
-      className="absolute left-8 top-8 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
+      className="absolute top-6 left-6 z-10 bg-volleyball-black hover:bg-volleyball-black/90 text-volleyball-cream"
     >
-      <ArrowLeft />
+      <ArrowLeft className="h-6 w-6" />
     </Button>
   );
 };
