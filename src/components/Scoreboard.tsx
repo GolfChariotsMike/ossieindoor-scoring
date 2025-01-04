@@ -11,7 +11,7 @@ import { useMatchData } from "@/hooks/useMatchData";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
-import { format, parseISO } from "date-fns";
+import { parse, format } from "date-fns";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -36,11 +36,21 @@ const Scoreboard = () => {
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
 
+  // Parse the fixture date from "DD/MM/YYYY HH:mm" format
+  const parseFixtureDate = (dateStr: string) => {
+    try {
+      return parse(dateStr, 'dd/MM/yyyy HH:mm', new Date());
+    } catch (error) {
+      console.error('Error parsing date:', dateStr, error);
+      return new Date();
+    }
+  };
+
   // Query to get next match using the fixture date
   const { data: nextMatches = [] } = useQuery({
-    queryKey: ["matches", fixture?.DateTime ? format(parseISO(fixture.DateTime), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')],
+    queryKey: ["matches", fixture?.DateTime ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')],
     queryFn: async () => {
-      const queryDate = fixture?.DateTime ? parseISO(fixture.DateTime) : new Date();
+      const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
       const result = await fetchMatchData(undefined, queryDate);
       return Array.isArray(result) ? result : [];
     },
@@ -51,7 +61,7 @@ const Scoreboard = () => {
     
     // Sort matches by DateTime to ensure correct sequence
     const sortedMatches = [...nextMatches].sort((a, b) => 
-      new Date(a.DateTime).getTime() - new Date(b.DateTime).getTime()
+      parseFixtureDate(a.DateTime).getTime() - parseFixtureDate(b.DateTime).getTime()
     );
     
     const currentMatchIndex = sortedMatches.findIndex(
@@ -65,7 +75,7 @@ const Scoreboard = () => {
       .slice(currentMatchIndex + 1)
       .find((m: Fixture) => 
         m.PlayingAreaName === `Court ${courtId}` && 
-        new Date(m.DateTime) > new Date(fixture.DateTime)
+        parseFixtureDate(m.DateTime) > parseFixtureDate(fixture.DateTime)
       );
     
     console.log('Next match found:', nextMatch);
@@ -107,7 +117,7 @@ const Scoreboard = () => {
 
   const navigateToCourtSelection = () => {
     const date = fixture 
-      ? format(parseISO(fixture.DateTime), 'yyyy-MM-dd')
+      ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd')
       : format(new Date(), 'yyyy-MM-dd');
     
     navigate(`/court/${courtId}/${date}`, {
