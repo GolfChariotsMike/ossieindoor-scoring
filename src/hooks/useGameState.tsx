@@ -21,6 +21,11 @@ export const useGameState = () => {
     setHasGameStarted(false);
   };
 
+  const startMatch = () => {
+    console.log('Starting match automatically');
+    setHasGameStarted(true);
+  };
+
   const handleScore = (team: "home" | "away", increment: boolean) => {
     if (isMatchComplete) return;
     setHasGameStarted(true);
@@ -85,5 +90,6 @@ export const useGameState = () => {
     handleSwitchTeams,
     saveMatchScores,
     resetGameState,
+    startMatch
   };
 };
