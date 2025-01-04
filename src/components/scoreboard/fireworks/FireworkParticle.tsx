@@ -8,7 +8,7 @@ interface FireworkParticleProps {
 }
 
 export const FireworkParticle = ({ x, y, color }: FireworkParticleProps) => {
-  const createParticleStyle = (): CSSProperties => {
+  const createParticleStyle = (): FireworkStyles => {
     const angle = Math.random() * Math.PI * 2;
     const velocity = Math.random() * 7 + 5;
     const size = Math.random() * 6 + 4;
@@ -25,13 +25,13 @@ export const FireworkParticle = ({ x, y, color }: FireworkParticleProps) => {
       borderRadius: '50%',
       boxShadow: `0 0 ${size * 4}px ${size}px ${color}`,
       animation: `particle ${duration}s ease-out forwards`,
+      transform: 'translate(0, 0)',
       ['--angle' as string]: `${angle}rad`,
       ['--velocity' as string]: `${velocity}`,
       ['--spread' as string]: `${spread}px`,
-      transform: 'translate(0, 0)',
       zIndex: 9999,
       pointerEvents: 'none',
-    } as FireworkStyles;
+    };
   };
 
   return <div key={Date.now() + Math.random()} style={createParticleStyle()} />;

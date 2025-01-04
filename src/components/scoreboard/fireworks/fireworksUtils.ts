@@ -21,7 +21,7 @@ export interface FireworkStyles {
   borderRadius: string;
   boxShadow: string;
   animation: string;
-  transform: string;
+  transform?: string;
   zIndex: number;
   pointerEvents: 'none';
   '--angle'?: string;

@@ -9,7 +9,7 @@ interface FireworkLaunchProps {
 }
 
 export const FireworkLaunch = ({ x, y, targetY, onExplode }: FireworkLaunchProps) => {
-  const launchStyle: CSSProperties = {
+  const launchStyle: FireworkStyles = {
     position: 'absolute',
     left: x,
     top: y,
@@ -19,10 +19,11 @@ export const FireworkLaunch = ({ x, y, targetY, onExplode }: FireworkLaunchProps
     borderRadius: '50%',
     boxShadow: '0 0 8px 4px rgba(255, 255, 255, 0.8)',
     animation: 'launch 1.5s ease-out forwards',
+    transform: 'translate(0, 0)',
     ['--target-y' as string]: `${targetY}px`,
     zIndex: 9999,
     pointerEvents: 'none',
-  } as FireworkStyles;
+  };
 
   return (
     <div
