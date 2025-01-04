@@ -1,31 +1,25 @@
 import { Match, SetScores } from "@/types/volleyball";
 import { Fireworks } from "./Fireworks";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 interface ResultsScreenProps {
   match: Match;
   setScores: SetScores;
   isTeamsSwitched: boolean;
+  onStartNextMatch?: () => void;
 }
 
-interface TeamResult {
-  name: string;
-  totalPoints: number;
-  setPoints: number;
-  bonusPoints: number;
-}
-
-export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScreenProps) => {
-  const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string): TeamResult => {
+export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch }: ResultsScreenProps) => {
+  const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
     let setPoints = 0;
     
-    // Calculate set points (2 points for each set won)
     teamScores.forEach((score, index) => {
       if (score > opposingScores[index]) {
         setPoints += 2;
       }
     });
     
-    // Calculate bonus points (1 point per 10 points scored)
     const bonusPoints = teamScores.reduce((total, score) => total + Math.floor(score / 10), 0);
     
     return {
@@ -68,7 +62,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
           {getWinnerText()}
         </h1>
         
-        <div className="grid grid-cols-2 gap-16 w-full">
+        <div className="grid grid-cols-2 gap-16 w-full mb-8">
           {[homeResults, awayResults].map((result) => (
             <div 
               key={result.name}
@@ -87,6 +81,18 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
             </div>
           ))}
         </div>
+
+        {onStartNextMatch && (
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={onStartNextMatch}
+            className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream mt-4"
+          >
+            <ArrowRight className="w-6 h-6 mr-2" />
+            Start Next Match
+          </Button>
+        )}
       </div>
     </>
   );

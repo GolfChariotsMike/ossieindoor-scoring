@@ -154,6 +154,13 @@ const Scoreboard = () => {
               match={match}
               setScores={setScores}
               isTeamsSwitched={isTeamsSwitched}
+              onStartNextMatch={() => {
+                const nextMatch = findNextMatch(nextMatches);
+                if (nextMatch) {
+                  console.log('Manually transitioning to next match:', nextMatch.Id);
+                  handleStartNextMatch(nextMatch);
+                }
+              }}
             />
           ) : (
             <>
