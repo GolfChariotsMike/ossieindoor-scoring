@@ -12,6 +12,8 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { parse, format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { FastForward } from "lucide-react";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -82,6 +84,21 @@ const Scoreboard = () => {
     return nextMatch;
   };
 
+  const handleStartNextMatch = () => {
+    console.log('Starting next match manually');
+    const nextMatch = findNextMatch();
+    if (nextMatch) {
+      console.log('Navigating to next match:', nextMatch);
+      navigate(`/scoreboard/${courtId}`, {
+        state: { fixture: nextMatch },
+        replace: true
+      });
+    } else {
+      console.log('No next match found, returning to court selection');
+      navigateToCourtSelection();
+    }
+  };
+
   useEffect(() => {
     if (isMatchComplete && match && hasGameStarted) {
       console.log('Match complete, saving scores');
@@ -91,21 +108,16 @@ const Scoreboard = () => {
   }, [isMatchComplete, match, setScores, saveMatchScores, hasGameStarted]);
 
   useEffect(() => {
-    if (resultsDisplayStartTime && Date.now() - resultsDisplayStartTime >= 30000) {
-      console.log('Results display time complete, checking for next match');
-      const nextMatch = findNextMatch();
-      if (nextMatch) {
-        console.log('Navigating to next match:', nextMatch);
-        navigate(`/scoreboard/${courtId}`, {
-          state: { fixture: nextMatch },
-          replace: true
-        });
-      } else {
-        console.log('No next match found, returning to court selection');
-        navigateToCourtSelection();
+    const checkResultsDisplayTime = () => {
+      if (resultsDisplayStartTime && Date.now() - resultsDisplayStartTime >= 30000) {
+        console.log('Results display time complete, checking for next match');
+        handleStartNextMatch();
       }
-    }
-  }, [resultsDisplayStartTime, courtId, navigate]);
+    };
+
+    const timer = setInterval(checkResultsDisplayTime, 1000);
+    return () => clearInterval(timer);
+  }, [resultsDisplayStartTime]);
 
   const handleBack = () => {
     if (hasGameStarted) {
@@ -137,6 +149,20 @@ const Scoreboard = () => {
     <div className={`min-h-screen ${isMatchComplete ? 'bg-white' : 'bg-volleyball-red'}`}>
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
         <BackButton onClick={handleBack} />
+        
+        {isMatchComplete && (
+          <div className="absolute top-6 right-6 z-10">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleStartNextMatch}
+              className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
+            >
+              <FastForward className="w-4 h-4 mr-1" />
+              Next Match
+            </Button>
+          </div>
+        )}
 
         <div className="flex flex-col justify-between h-full">
           {isMatchComplete ? (
