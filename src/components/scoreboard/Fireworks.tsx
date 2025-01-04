@@ -17,52 +17,90 @@ export const Fireworks = () => {
       '#ff69b4', // Hot Pink
     ];
 
-    const createFirework = () => {
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      const spread = Math.min(window.innerWidth, window.innerHeight) * 1.2;
-      const startX = centerX + (Math.random() - 0.5) * spread;
-      const startY = centerY + (Math.random() - 0.5) * spread;
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      const size = Math.random() * 8 + 4;
-      const duration = Math.random() * 0.5 + 0.8;
+    const createParticle = (x: number, y: number, color: string) => {
+      const angle = Math.random() * Math.PI * 2;
+      const velocity = Math.random() * 30 + 20;
+      const size = Math.random() * 4 + 2;
+      const duration = Math.random() * 0.5 + 1;
+      const spread = Math.random() * 100 + 50;
       const id = Date.now() + Math.random();
-      
-      const translateX = (Math.random() - 0.5) * 400;
-      const translateY = (Math.random() - 0.5) * 400;
-      
+
       const style: CSSProperties = {
         position: 'absolute',
-        left: startX,
-        top: startY,
+        left: x,
+        top: y,
         width: `${size}px`,
         height: `${size}px`,
         backgroundColor: color,
-        boxShadow: `0 0 ${size * 4}px ${size * 2}px ${color}`,
-        animation: `firework ${duration}s ease-out forwards, fade-out ${duration}s ease-out forwards`,
-        ['--tw-translate-x' as string]: `${translateX}px`,
-        ['--tw-translate-y' as string]: `${translateY}px`,
-        zIndex: 20, // Higher z-index but still below the black cards (which have a parent with z-10)
-        transform: `translate(var(--tw-translate-x), var(--tw-translate-y))`,
+        borderRadius: '50%',
+        boxShadow: `0 0 ${size * 3}px ${size}px ${color}`,
+        animation: `particle ${duration}s ease-out forwards`,
+        ['--angle' as string]: `${angle}rad`,
+        ['--velocity' as string]: `${velocity}`,
+        ['--spread' as string]: `${spread}px`,
+        transform: 'translate(0, 0)',
+        zIndex: 15,
         pointerEvents: 'none',
       };
-      
+
       return (
         <div
           key={id}
-          className="rounded-full opacity-80"
           style={style}
         />
       );
     };
 
+    const createFirework = () => {
+      const particles: JSX.Element[] = [];
+      const centerX = Math.random() * window.innerWidth;
+      const centerY = window.innerHeight;
+      const targetY = Math.random() * (window.innerHeight * 0.3) + window.innerHeight * 0.2;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const id = Date.now();
+
+      // Create launch particle
+      const launchStyle: CSSProperties = {
+        position: 'absolute',
+        left: centerX,
+        top: centerY,
+        width: '4px',
+        height: '4px',
+        backgroundColor: 'white',
+        borderRadius: '50%',
+        boxShadow: '0 0 6px 3px rgba(255, 255, 255, 0.6)',
+        animation: `launch 1s ease-out forwards`,
+        ['--target-y' as string]: `${targetY}px`,
+        zIndex: 15,
+        pointerEvents: 'none',
+      };
+
+      particles.push(
+        <div
+          key={`launch-${id}`}
+          style={launchStyle}
+          onAnimationEnd={(e) => {
+            if (e.animationName === 'launch') {
+              // Create explosion particles when launch completes
+              const newParticles = Array.from({ length: 40 }, () =>
+                createParticle(centerX, targetY, color)
+              );
+              setFireworks(prev => [...prev, ...newParticles]);
+            }
+          }}
+        />
+      );
+
+      return particles;
+    };
+
     const interval = setInterval(() => {
-      setFireworks(prev => [...prev, createFirework(), createFirework()]);
-    }, 200);
+      setFireworks(prev => [...prev, ...createFirework()]);
+    }, 1000);
 
     const cleanup = setInterval(() => {
-      setFireworks(prev => prev.slice(-30));
-    }, 1000);
+      setFireworks(prev => prev.slice(-200));
+    }, 2000);
 
     return () => {
       clearInterval(interval);
@@ -71,17 +109,35 @@ export const Fireworks = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ zIndex: 20 }}>
+    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 15 }}>
       <style>
         {`
-          @keyframes firework {
-            0% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0); }
-            50% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.5); }
-            100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.2); }
+          @keyframes launch {
+            0% {
+              transform: translateY(0);
+              opacity: 1;
+            }
+            50% {
+              opacity: 1;
+            }
+            100% {
+              transform: translateY(calc(-1 * var(--target-y)));
+              opacity: 0;
+            }
           }
-          @keyframes fade-out {
-            0% { opacity: 0.8; }
-            100% { opacity: 0; }
+
+          @keyframes particle {
+            0% {
+              transform: translate(0, 0);
+              opacity: 1;
+            }
+            100% {
+              transform: translate(
+                calc(cos(var(--angle)) * var(--velocity) * var(--spread)),
+                calc(sin(var(--angle)) * var(--velocity) * var(--spread) + 100px)
+              );
+              opacity: 0;
+            }
           }
         `}
       </style>
