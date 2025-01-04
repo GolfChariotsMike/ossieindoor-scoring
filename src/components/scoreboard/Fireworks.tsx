@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, CSSProperties } from 'react';
 
 export const Fireworks = () => {
   const [fireworks, setFireworks] = useState<JSX.Element[]>([]);
@@ -31,22 +31,24 @@ export const Fireworks = () => {
       const translateX = (Math.random() - 0.5) * 200;
       const translateY = (Math.random() - 0.5) * 200;
       
+      const style: CSSProperties = {
+        left: startX,
+        top: startY,
+        width: `${size}px`,
+        height: `${size}px`,
+        backgroundColor: color,
+        boxShadow: `0 0 ${size * 2}px ${size}px ${color}`,
+        animation: `firework ${duration}s ease-out forwards, fade-out ${duration}s ease-out forwards`,
+        ['--tw-translate-x' as string]: `${translateX}px`,
+        ['--tw-translate-y' as string]: `${translateY}px`,
+        zIndex: 0,
+      };
+      
       return (
         <div
           key={id}
           className="absolute rounded-full opacity-80"
-          style={{
-            left: startX,
-            top: startY,
-            width: `${size}px`,
-            height: `${size}px`,
-            backgroundColor: color,
-            boxShadow: `0 0 ${size * 2}px ${size}px ${color}`,
-            animation: `firework ${duration}s ease-out forwards, fade-out ${duration}s ease-out forwards`,
-            '--tw-translate-x': `${translateX}px`,
-            '--tw-translate-y': `${translateY}px`,
-            zIndex: 0,
-          }}
+          style={style}
         />
       );
     };
