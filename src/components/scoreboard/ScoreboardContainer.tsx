@@ -74,7 +74,9 @@ const ScoreboardContainer = () => {
       transitionTimeoutRef.current = setTimeout(() => {
         console.log('Results display time complete, checking for next match');
         const nextMatch = findNextMatch();
-        handleStartNextMatch(nextMatch);
+        if (nextMatch) {
+          handleStartNextMatch(nextMatch.Id);
+        }
       }, 30000);
 
       return () => {
@@ -113,7 +115,9 @@ const ScoreboardContainer = () => {
               size="sm"
               onClick={() => {
                 const nextMatch = findNextMatch();
-                handleStartNextMatch(nextMatch);
+                if (nextMatch) {
+                  handleStartNextMatch(nextMatch.Id);
+                }
               }}
               className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
             >
