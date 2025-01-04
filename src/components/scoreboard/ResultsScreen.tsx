@@ -59,49 +59,51 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   };
 
   return (
-    <div className="relative min-h-screen">
-      <Fireworks />
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-50">
-        <div className="bg-white/90 p-12 rounded-3xl shadow-2xl w-[90%] max-w-7xl">
-          <h1 className="text-8xl font-sets mb-16 text-black text-center animate-[scale_2s_ease-in-out_infinite]">
-            {getWinnerText()}
-          </h1>
-          
-          <div className="grid grid-cols-2 gap-16 mb-12">
-            {[homeResults, awayResults].map((result) => (
-              <div 
-                key={result.name}
-                className="bg-volleyball-black rounded-2xl p-10 flex flex-col items-center transition-transform hover:scale-105 duration-300"
-              >
-                <h2 className="text-6xl font-sets mb-10 text-white animate-fade-in">
-                  {result.name}
-                </h2>
-                <div className="space-y-8 text-4xl font-score text-white">
-                  <p className="animate-scale-in">Set Points: {result.setPoints}</p>
-                  <p className="animate-scale-in delay-75">Draw Points: {result.drawPoints}</p>
-                  <p className="animate-scale-in delay-150">Bonus Points: {result.bonusPoints}</p>
-                  <div className="w-full h-px bg-white/20 my-8"></div>
-                  <p className="text-5xl animate-[pulse_3s_ease-in-out_infinite]">
-                    Total: {result.totalPoints}
-                  </p>
+    <div className="fixed inset-0 overflow-hidden">
+      <div className="relative w-full h-full">
+        <Fireworks />
+        <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 9999 }}>
+          <div className="bg-white/90 p-12 rounded-3xl shadow-2xl w-[90%] max-w-7xl backdrop-blur-sm">
+            <h1 className="text-8xl font-sets mb-16 text-black text-center animate-[scale_2s_ease-in-out_infinite]">
+              {getWinnerText()}
+            </h1>
+            
+            <div className="grid grid-cols-2 gap-16 mb-12">
+              {[homeResults, awayResults].map((result) => (
+                <div 
+                  key={result.name}
+                  className="bg-volleyball-black rounded-2xl p-10 flex flex-col items-center transition-transform hover:scale-105 duration-300"
+                >
+                  <h2 className="text-6xl font-sets mb-10 text-white animate-fade-in">
+                    {result.name}
+                  </h2>
+                  <div className="space-y-8 text-4xl font-score text-white">
+                    <p className="animate-scale-in">Set Points: {result.setPoints}</p>
+                    <p className="animate-scale-in delay-75">Draw Points: {result.drawPoints}</p>
+                    <p className="animate-scale-in delay-150">Bonus Points: {result.bonusPoints}</p>
+                    <div className="w-full h-px bg-white/20 my-8"></div>
+                    <p className="text-5xl animate-[pulse_3s_ease-in-out_infinite]">
+                      Total: {result.totalPoints}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {onStartNextMatch && (
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={onStartNextMatch}
-                className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream text-xl py-6 px-8"
-              >
-                <ArrowRight className="w-6 h-6 mr-2" />
-                Start Next Match
-              </Button>
+              ))}
             </div>
-          )}
+
+            {onStartNextMatch && (
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={onStartNextMatch}
+                  className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream text-xl py-6 px-8"
+                >
+                  <ArrowRight className="w-6 h-6 mr-2" />
+                  Start Next Match
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
