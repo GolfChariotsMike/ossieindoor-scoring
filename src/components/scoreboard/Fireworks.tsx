@@ -20,15 +20,15 @@ export const Fireworks = () => {
     const createFirework = () => {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
-      const spread = Math.min(window.innerWidth, window.innerHeight) * 1.2; // Increased spread
+      const spread = Math.min(window.innerWidth, window.innerHeight) * 1.2;
       const startX = centerX + (Math.random() - 0.5) * spread;
       const startY = centerY + (Math.random() - 0.5) * spread;
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const size = Math.random() * 8 + 4; // Increased size between 4-12px
+      const size = Math.random() * 8 + 4;
       const duration = Math.random() * 0.5 + 0.8;
       const id = Date.now() + Math.random();
       
-      const translateX = (Math.random() - 0.5) * 400; // Increased translation range
+      const translateX = (Math.random() - 0.5) * 400;
       const translateY = (Math.random() - 0.5) * 400;
       
       const style: CSSProperties = {
@@ -38,11 +38,11 @@ export const Fireworks = () => {
         width: `${size}px`,
         height: `${size}px`,
         backgroundColor: color,
-        boxShadow: `0 0 ${size * 4}px ${size * 2}px ${color}`, // Increased glow effect
+        boxShadow: `0 0 ${size * 4}px ${size * 2}px ${color}`,
         animation: `firework ${duration}s ease-out forwards, fade-out ${duration}s ease-out forwards`,
         ['--tw-translate-x' as string]: `${translateX}px`,
         ['--tw-translate-y' as string]: `${translateY}px`,
-        zIndex: 1, // Lower z-index to appear behind content
+        zIndex: 20, // Higher z-index but still below the black cards (which have a parent with z-10)
         transform: `translate(var(--tw-translate-x), var(--tw-translate-y))`,
         pointerEvents: 'none',
       };
@@ -57,11 +57,11 @@ export const Fireworks = () => {
     };
 
     const interval = setInterval(() => {
-      setFireworks(prev => [...prev, createFirework(), createFirework()]); // Create two fireworks at once
+      setFireworks(prev => [...prev, createFirework(), createFirework()]);
     }, 200);
 
     const cleanup = setInterval(() => {
-      setFireworks(prev => prev.slice(-30)); // Keep last 30 fireworks
+      setFireworks(prev => prev.slice(-30));
     }, 1000);
 
     return () => {
@@ -71,12 +71,12 @@ export const Fireworks = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ zIndex: 1 }}>
+    <div className="fixed inset-0 overflow-hidden" style={{ zIndex: 20 }}>
       <style>
         {`
           @keyframes firework {
             0% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0); }
-            50% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.5); } /* Increased scale */
+            50% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.5); }
             100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1.2); }
           }
           @keyframes fade-out {
