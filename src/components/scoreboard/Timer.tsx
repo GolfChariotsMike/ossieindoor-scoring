@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
+import { Button } from "@/components/ui/button";
+import { FastForward } from "lucide-react";
 
 interface TimerProps {
   initialMinutes: number;
@@ -115,12 +117,10 @@ export const Timer = ({
   }, [isRunning, timeLeft, matchPhase]);
 
   useEffect(() => {
-    // Only handle break transitions when isBreak becomes true
     if (isBreak && matchPhase.includes('set')) {
       const currentSetNumber = parseInt(matchPhase.charAt(3));
       console.log('Current set number:', currentSetNumber);
       
-      // Only progress to break if we're in a valid set phase and the timer has finished
       if (currentSetNumber >= 1 && currentSetNumber <= 3 && timeLeft === 0) {
         if (currentSetNumber === 3) {
           console.log('Moving to final break from set 3');
@@ -158,8 +158,27 @@ export const Timer = ({
     }
   };
 
+  const handleSkipPhase = () => {
+    console.log('Skipping current phase:', matchPhase);
+    setTimeLeft(0);
+    progressToNextPhase();
+  };
+
   return (
-    <div className="text-volleyball-cream text-center">
+    <div className="text-volleyball-cream text-center relative">
+      <div className="absolute top-0 right-0">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSkipPhase}
+          disabled={isMatchComplete || matchPhase === "complete"}
+          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+        >
+          <FastForward className="w-4 h-4 mr-1" />
+          Skip Phase
+        </Button>
+      </div>
+      
       <TimerDisplay 
         minutes={minutes}
         seconds={seconds}
