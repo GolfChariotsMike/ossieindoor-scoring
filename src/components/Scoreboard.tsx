@@ -48,7 +48,7 @@ const Scoreboard = () => {
   } = useGameState();
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
-  const { findNextMatch, handleStartNextMatch, navigateToCourtSelection } = useNextMatch(courtId!, fixture);
+  const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
 
   const { data: nextMatches = [] } = useQuery({
     queryKey: ["matches", fixture?.DateTime ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')],
