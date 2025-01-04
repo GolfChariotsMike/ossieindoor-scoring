@@ -72,14 +72,13 @@ export const useTimer = (
         setIsRunning(true);
         setMatchPhase(nextPhase);
       } else if (nextPhase === 'complete') {
-        console.log('Match complete');
+        console.log('Match complete, transitioning to next match');
         onComplete(); // Notify parent match is complete
+        setMatchPhase(nextPhase);
         if (onNextMatch) {
           console.log('Starting next match automatically');
           onNextMatch();
         }
-        setIsRunning(false);
-        setMatchPhase(nextPhase);
       }
     }
   };
