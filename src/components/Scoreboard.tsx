@@ -40,6 +40,7 @@ const Scoreboard = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousFixtureIdRef = useRef<string | null>(null);
 
   const {
     currentScore,
@@ -70,11 +71,12 @@ const Scoreboard = () => {
     },
   });
 
-  // Reset game state when fixture changes
+  // Reset game state only when fixture ID changes
   useEffect(() => {
-    if (fixture) {
+    if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
       resetGameState();
+      previousFixtureIdRef.current = fixture.Id;
     }
   }, [fixture?.Id, resetGameState]);
 
