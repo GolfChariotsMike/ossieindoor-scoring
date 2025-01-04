@@ -139,11 +139,11 @@ const Scoreboard = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleStartNextMatch(findNextMatch(nextMatches))}
+              onClick={() => navigate('/')}
               className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
             >
               <FastForward className="w-4 h-4 mr-1" />
-              Next Match
+              Return to Courts
             </Button>
           </div>
         )}
@@ -163,6 +163,7 @@ const Scoreboard = () => {
                 onSwitchTeams={handleSwitchTeams}
                 isBreak={isBreak}
                 isMatchComplete={isMatchComplete}
+                fixture={fixture}
               />
 
               <GameScores

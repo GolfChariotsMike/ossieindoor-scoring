@@ -10,6 +10,7 @@ interface TimerProps {
   onSwitchTeams: () => void;
   isBreak: boolean;
   isMatchComplete: boolean;
+  fixture?: { Id: string };
 }
 
 type MatchPhase = 
@@ -28,11 +29,22 @@ export const Timer = ({
   onComplete, 
   onSwitchTeams,
   isBreak,
-  isMatchComplete 
+  isMatchComplete,
+  fixture
 }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
+
+  // Initialize phase to "set1" when a new fixture is loaded
+  useEffect(() => {
+    if (fixture?.Id) {
+      console.log('New fixture detected, initializing phase to set1');
+      setMatchPhase("set1");
+      setTimeLeft(initialMinutes * 60);
+      setIsRunning(true);
+    }
+  }, [fixture?.Id, initialMinutes]);
 
   const resetTimer = () => {
     setTimeLeft(initialMinutes * 60);
