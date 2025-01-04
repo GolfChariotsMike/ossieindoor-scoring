@@ -50,10 +50,10 @@ const ScoreboardContainer = () => {
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
-      resetGameState(fixture.Id); // Pass the fixture ID
+      resetGameState(fixture.Id);
       previousFixtureIdRef.current = fixture.Id;
       // Auto-start the timer for the first set
-      startMatch(fixture.Id); // Pass the fixture ID
+      startMatch(fixture.Id);
     }
   }, [fixture?.Id, resetGameState, startMatch]);
 
@@ -116,7 +116,12 @@ const ScoreboardContainer = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleStartNextMatch(findNextMatch())}
+              onClick={() => {
+                const nextMatch = findNextMatch();
+                if (nextMatch) {
+                  handleStartNextMatch(nextMatch);
+                }
+              }}
               className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
             >
               <FastForward className="w-4 h-4 mr-1" />
