@@ -19,7 +19,6 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
       if (score > opposingScores[index]) {
         setPoints += 2;
       } else if (score === opposingScores[index]) {
-        // Add 1 point for a draw
         drawPoints += 1;
       }
     });
@@ -67,21 +66,31 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
           {getWinnerText()}
         </h1>
         
-        <div className="grid grid-cols-2 gap-16 w-full mb-8">
+        <div className="grid grid-cols-2 gap-16 w-full max-w-[1600px] mb-8">
           {[homeResults, awayResults].map((result) => (
             <div 
               key={result.name}
-              className="bg-volleyball-black rounded-2xl p-8 flex flex-col items-center transition-transform hover:scale-105 duration-300 z-50"
+              className="bg-volleyball-black rounded-2xl p-12 flex flex-col items-center transition-transform hover:scale-105 duration-300 z-50 shadow-2xl min-h-[600px]"
             >
-              <h2 className="text-5xl font-sets mb-8 text-white animate-fade-in">
+              <h2 className="text-6xl font-sets mb-12 text-white animate-fade-in">
                 {result.name}
               </h2>
-              <div className="space-y-6 text-3xl font-score text-white">
-                <p className="text-4xl animate-scale-in">Set Points: {result.setPoints}</p>
-                <p className="text-4xl animate-scale-in delay-75">Draw Points: {result.drawPoints}</p>
-                <p className="text-4xl animate-scale-in delay-150">Bonus Points: {result.bonusPoints}</p>
-                <p className="text-5xl mt-8 animate-[pulse_3s_ease-in-out_infinite]">
-                  Total: {result.totalPoints}
+              <div className="space-y-8 text-4xl font-score text-white w-full">
+                <p className="text-5xl animate-scale-in flex justify-between">
+                  <span>Set Points:</span>
+                  <span>{result.setPoints}</span>
+                </p>
+                <p className="text-5xl animate-scale-in delay-75 flex justify-between">
+                  <span>Draw Points:</span>
+                  <span>{result.drawPoints}</span>
+                </p>
+                <p className="text-5xl animate-scale-in delay-150 flex justify-between">
+                  <span>Bonus Points:</span>
+                  <span>{result.bonusPoints}</span>
+                </p>
+                <p className="text-7xl mt-12 animate-[pulse_3s_ease-in-out_infinite] flex justify-between border-t-4 border-white/20 pt-8">
+                  <span>Total:</span>
+                  <span>{result.totalPoints}</span>
                 </p>
               </div>
             </div>
