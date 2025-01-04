@@ -19,10 +19,10 @@ export const Fireworks = () => {
 
     const createParticle = (x: number, y: number, color: string) => {
       const angle = Math.random() * Math.PI * 2;
-      const velocity = Math.random() * 20 + 15; // Reduced velocity for slower movement
-      const size = Math.random() * 6 + 3;
-      const duration = Math.random() * 1 + 7; // Base duration 7s + up to 1s random
-      const spread = Math.random() * 150 + 100;
+      const velocity = Math.random() * 15 + 10; // Reduced velocity for smaller spread
+      const size = Math.random() * 4 + 2; // Slightly smaller particles
+      const duration = Math.random() * 1 + 8; // Increased base duration to 8s + up to 1s random
+      const spread = Math.random() * 80 + 60; // Reduced spread distance
       const id = Date.now() + Math.random();
 
       const style: CSSProperties = {
@@ -39,7 +39,7 @@ export const Fireworks = () => {
         ['--velocity' as string]: `${velocity}`,
         ['--spread' as string]: `${spread}px`,
         transform: 'translate(0, 0)',
-        zIndex: 15,
+        zIndex: 9999,
         pointerEvents: 'none',
       };
 
@@ -68,9 +68,9 @@ export const Fireworks = () => {
         backgroundColor: 'white',
         borderRadius: '50%',
         boxShadow: '0 0 8px 4px rgba(255, 255, 255, 0.8)',
-        animation: `launch 2s ease-out forwards`,
+        animation: `launch 1.5s ease-out forwards`,
         ['--target-y' as string]: `${targetY}px`,
-        zIndex: 15,
+        zIndex: 9999,
         pointerEvents: 'none',
       };
 
@@ -80,7 +80,7 @@ export const Fireworks = () => {
           style={launchStyle}
           onAnimationEnd={(e) => {
             if (e.animationName === 'launch') {
-              const newParticles = Array.from({ length: 60 }, () =>
+              const newParticles = Array.from({ length: 50 }, () =>
                 createParticle(centerX, targetY, color)
               );
               setFireworks(prev => [...prev, ...newParticles]);
@@ -97,7 +97,7 @@ export const Fireworks = () => {
     }, 800);
 
     const cleanup = setInterval(() => {
-      setFireworks(prev => prev.slice(-300));
+      setFireworks(prev => prev.slice(-200));
     }, 2000);
 
     return () => {
@@ -107,7 +107,7 @@ export const Fireworks = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 15 }}>
+    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 9999 }}>
       <style>
         {`
           @keyframes launch {
@@ -129,7 +129,7 @@ export const Fireworks = () => {
               transform: translate(0, 0);
               opacity: 1;
             }
-            40% {
+            15% {
               transform: translate(
                 calc(cos(var(--angle)) * var(--velocity) * var(--spread)),
                 calc(sin(var(--angle)) * var(--velocity) * var(--spread))
@@ -139,7 +139,7 @@ export const Fireworks = () => {
             100% {
               transform: translate(
                 calc(cos(var(--angle)) * var(--velocity) * var(--spread)),
-                calc(100vh + 100px)
+                calc(sin(var(--angle)) * var(--velocity) * var(--spread) + 1000px)
               );
               opacity: 0;
             }
