@@ -82,7 +82,7 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
         {teamName}
       </div>
       <button
-        className={`w-[450px] aspect-square text-[14rem] ${isLongPress ? 'bg-volleyball-black/70' : 'bg-volleyball-black'} 
+        className={`w-[450px] h-[400px] text-[14rem] ${isLongPress ? 'bg-volleyball-black/70' : 'bg-volleyball-black'} 
         text-volleyball-cream font-score rounded-3xl mb-8 select-none touch-none transition-colors`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
