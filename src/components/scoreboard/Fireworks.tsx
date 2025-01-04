@@ -20,8 +20,8 @@ export const Fireworks = () => {
     const createParticle = (x: number, y: number, color: string) => {
       const angle = Math.random() * Math.PI * 2;
       const velocity = Math.random() * 15 + 10; // Reduced velocity for smaller spread
-      const size = Math.random() * 4 + 2; // Slightly smaller particles
-      const duration = Math.random() * 2 + 13; // Increased base duration to 13s + up to 2s random for total of 13-15s
+      const size = Math.random() * 6 + 4; // Increased particle size (4-10px)
+      const duration = Math.random() * 2 + 18; // Increased base duration to 18s + up to 2s random for total of 18-20s
       const spread = Math.random() * 80 + 60; // Reduced spread distance
       const id = Date.now() + Math.random();
 
@@ -33,7 +33,7 @@ export const Fireworks = () => {
         height: `${size}px`,
         backgroundColor: color,
         borderRadius: '50%',
-        boxShadow: `0 0 ${size * 4}px ${size}px ${color}`,
+        boxShadow: `0 0 ${size * 4}px ${size}px ${color}`, // Increased glow effect
         animation: `particle ${duration}s ease-out forwards`,
         ['--angle' as string]: `${angle}rad`,
         ['--velocity' as string]: `${velocity}`,
