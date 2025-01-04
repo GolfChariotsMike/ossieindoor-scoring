@@ -13,10 +13,14 @@ interface ResultsScreenProps {
 export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch }: ResultsScreenProps) => {
   const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
     let setPoints = 0;
+    let drawPoints = 0;
     
     teamScores.forEach((score, index) => {
       if (score > opposingScores[index]) {
         setPoints += 2;
+      } else if (score === opposingScores[index]) {
+        // Add 1 point for a draw
+        drawPoints += 1;
       }
     });
     
@@ -25,8 +29,9 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
     return {
       name: teamName,
       setPoints,
+      drawPoints,
       bonusPoints,
-      totalPoints: setPoints + bonusPoints
+      totalPoints: setPoints + drawPoints + bonusPoints
     };
   };
 
@@ -73,6 +78,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
               </h2>
               <div className="space-y-6 text-3xl font-score text-volleyball-cream">
                 <p className="text-4xl animate-scale-in">Set Points: {result.setPoints}</p>
+                <p className="text-4xl animate-scale-in delay-75">Draw Points: {result.drawPoints}</p>
                 <p className="text-4xl animate-scale-in delay-150">Bonus Points: {result.bonusPoints}</p>
                 <p className="text-5xl mt-8 animate-[pulse_3s_ease-in-out_infinite]">
                   Total: {result.totalPoints}
