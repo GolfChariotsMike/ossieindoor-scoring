@@ -11,10 +11,19 @@ import { useMatchData } from "@/hooks/useMatchData";
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useNextMatch } from "./scoreboard/NextMatchLogic";
+
+const parseFixtureDate = (dateStr: string) => {
+  try {
+    return parse(dateStr, 'dd/MM/yyyy HH:mm', new Date());
+  } catch (error) {
+    console.error('Error parsing date:', dateStr, error);
+    return new Date();
+  }
+};
 
 const Scoreboard = () => {
   const { courtId } = useParams();
