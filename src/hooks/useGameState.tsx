@@ -31,10 +31,6 @@ export const useGameState = () => {
   };
 
   const handleTimerComplete = () => {
-    if (!hasGameStarted || (currentScore.home === 0 && currentScore.away === 0)) {
-      return;
-    }
-
     if (isBreak) {
       // After break, save the current scores to setScores
       const newSetScores = {
@@ -57,6 +53,7 @@ export const useGameState = () => {
     } else {
       // When set ends, just start the break
       setIsBreak(true);
+      setHasGameStarted(true); // Set game as started when first set ends
       toast({
         title: "Set Complete",
         description: "Starting 1 minute break",
