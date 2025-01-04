@@ -25,11 +25,13 @@ export const useGameState = () => {
   };
 
   const startMatch = (fixtureId: string) => {
-    console.log('Starting match automatically for fixture:', fixtureId);
+    console.log('Starting match for fixture:', fixtureId);
     if (fixtureId === currentFixtureId) {
       setHasGameStarted(true);
     } else {
       console.warn('Fixture ID mismatch when starting match');
+      resetGameState(fixtureId);
+      setHasGameStarted(true);
     }
   };
 

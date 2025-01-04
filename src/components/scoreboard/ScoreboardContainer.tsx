@@ -74,12 +74,7 @@ const ScoreboardContainer = () => {
       transitionTimeoutRef.current = setTimeout(() => {
         console.log('Results display time complete, checking for next match');
         const nextMatch = findNextMatch();
-        if (nextMatch) {
-          console.log('Auto-transitioning to next match:', nextMatch.Id);
-          handleStartNextMatch(nextMatch);
-        } else {
-          console.log('No next match found for auto-transition');
-        }
+        handleStartNextMatch(nextMatch);
       }, 30000);
 
       return () => {
@@ -118,9 +113,7 @@ const ScoreboardContainer = () => {
               size="sm"
               onClick={() => {
                 const nextMatch = findNextMatch();
-                if (nextMatch) {
-                  handleStartNextMatch(nextMatch);
-                }
+                handleStartNextMatch(nextMatch);
               }}
               className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
             >
