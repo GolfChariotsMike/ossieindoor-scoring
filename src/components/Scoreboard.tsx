@@ -45,7 +45,11 @@ const Scoreboard = () => {
     queryFn: async () => {
       const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
       const result = await fetchMatchData(undefined, queryDate);
-      return result as Fixture[];
+      // Convert XMLFixture[] to Fixture[] by ensuring all required properties are present
+      return (Array.isArray(result) ? result : []).map(item => ({
+        ...item,
+        Id: item.Id || item.id || `${item.DateTime}-${item.PlayingAreaName}`, // Ensure Id exists
+      })) as Fixture[];
     },
   });
 
@@ -59,19 +63,16 @@ const Scoreboard = () => {
 
   useEffect(() => {
     if (resultsDisplayStartTime) {
-      // Clear any existing timeout
       if (transitionTimeoutRef.current) {
         clearTimeout(transitionTimeoutRef.current);
       }
 
-      // Set new timeout
       transitionTimeoutRef.current = setTimeout(() => {
         console.log('Results display time complete, checking for next match');
         const nextMatch = findNextMatch(nextMatches);
         handleStartNextMatch(nextMatch);
       }, 30000);
 
-      // Cleanup
       return () => {
         if (transitionTimeoutRef.current) {
           clearTimeout(transitionTimeoutRef.current);

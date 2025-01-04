@@ -4,6 +4,7 @@ export interface XMLWeek {
 }
 
 export interface XMLFixture {
+  Id: string;  // Changed from DateTime to match Fixture type
   DateTime: string;
   PlayingAreaName: string;
   DivisionName: string;
