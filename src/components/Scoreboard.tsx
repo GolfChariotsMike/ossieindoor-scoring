@@ -79,7 +79,12 @@ const Scoreboard = () => {
       transitionTimeoutRef.current = setTimeout(() => {
         console.log('Results display time complete, checking for next match');
         const nextMatch = findNextMatch(nextMatches);
-        handleStartNextMatch(nextMatch);
+        if (nextMatch) {
+          console.log('Auto-transitioning to next match:', nextMatch.Id);
+          handleStartNextMatch(nextMatch);
+        } else {
+          console.log('No next match found for auto-transition');
+        }
       }, 30000);
 
       return () => {

@@ -17,24 +17,27 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
   const findNextMatch = (matches: Fixture[]) => {
     if (!fixture || matches.length === 0) return null;
     
+    const currentFixtureDate = parseFixtureDate(fixture.DateTime);
+    
+    // Sort matches by date
     const sortedMatches = [...matches].sort((a, b) => 
       parseFixtureDate(a.DateTime).getTime() - parseFixtureDate(b.DateTime).getTime()
     );
     
-    const currentMatchIndex = sortedMatches.findIndex(
-      (m: Fixture) => m.Id === fixture.Id
+    // Find matches on the same court that start after the current match
+    const nextMatch = sortedMatches.find((m: Fixture) => 
+      m.Id !== fixture.Id && 
+      m.PlayingAreaName === `Court ${courtId}` && 
+      parseFixtureDate(m.DateTime) > currentFixtureDate
     );
     
-    if (currentMatchIndex === -1) return null;
+    console.log('Next match search:', {
+      currentFixture: fixture.Id,
+      currentTime: currentFixtureDate,
+      nextMatch: nextMatch?.Id,
+      nextMatchTime: nextMatch ? parseFixtureDate(nextMatch.DateTime) : null
+    });
     
-    const nextMatch = sortedMatches
-      .slice(currentMatchIndex + 1)
-      .find((m: Fixture) => 
-        m.PlayingAreaName === `Court ${courtId}` && 
-        parseFixtureDate(m.DateTime) > parseFixtureDate(fixture.DateTime)
-      );
-    
-    console.log('Next match found:', nextMatch);
     return nextMatch;
   };
 
@@ -43,15 +46,20 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
       ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd')
       : format(new Date(), 'yyyy-MM-dd');
     
-    navigate(`/court/${courtId}/${date}`, {
-      replace: true
-    });
+    console.log('Navigating to court selection with date:', date);
+    navigate(`/court/${courtId}/${date}`);
   };
 
   const handleStartNextMatch = (nextMatch: Fixture | null) => {
-    console.log('Starting next match manually');
+    console.log('Starting next match:', nextMatch);
+    
     if (nextMatch) {
-      console.log('Navigating to next match:', nextMatch);
+      console.log('Navigating to next match:', {
+        courtId,
+        nextMatchId: nextMatch.Id,
+        nextMatchTime: nextMatch.DateTime
+      });
+      
       navigate(`/scoreboard/${courtId}`, {
         state: { fixture: nextMatch },
         replace: true
