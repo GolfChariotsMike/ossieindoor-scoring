@@ -1,13 +1,16 @@
 import { Match, SetScores } from "@/types/volleyball";
 import { Fireworks } from "./Fireworks";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 interface ResultsScreenProps {
   match: Match;
   setScores: SetScores;
   isTeamsSwitched: boolean;
+  onStartNextMatch?: () => void;
 }
 
-export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScreenProps) => {
+export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch }: ResultsScreenProps) => {
   const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
     let setPoints = 0;
     
@@ -78,6 +81,18 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched }: ResultsScre
             </div>
           ))}
         </div>
+
+        {onStartNextMatch && (
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={onStartNextMatch}
+            className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream mt-4"
+          >
+            <ArrowRight className="w-6 h-6 mr-2" />
+            Start Next Match
+          </Button>
+        )}
       </div>
     </>
   );
