@@ -13,10 +13,10 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
   const longPressDelay = 500; // 500ms for long press detection
 
   const getTextSizeClass = (name: string) => {
-    if (name.length <= 10) return 'text-6xl';
-    if (name.length <= 15) return 'text-5xl';
-    if (name.length <= 20) return 'text-4xl';
-    return 'text-3xl';
+    if (name.length <= 10) return 'text-7xl';
+    if (name.length <= 15) return 'text-6xl';
+    if (name.length <= 20) return 'text-5xl';
+    return 'text-4xl';
   };
 
   const startDecrementInterval = () => {
