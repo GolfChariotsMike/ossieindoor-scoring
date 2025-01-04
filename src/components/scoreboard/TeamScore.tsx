@@ -13,10 +13,10 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
   const longPressDelay = 500;
 
   const getTextSizeClass = (name: string) => {
-    if (name.length <= 10) return 'text-8xl';
-    if (name.length <= 15) return 'text-7xl';
-    if (name.length <= 20) return 'text-6xl';
-    return 'text-5xl';
+    if (name.length <= 10) return 'text-7xl';
+    if (name.length <= 15) return 'text-6xl';
+    if (name.length <= 20) return 'text-5xl';
+    return 'text-4xl';
   };
 
   const startDecrementInterval = () => {
@@ -74,13 +74,13 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
   };
 
   return (
-    <div className="text-center flex flex-col items-center relative z-50">
-      <div className={`font-display text-white uppercase tracking-[0.2em] mb-8 w-[500px] h-28 flex items-center justify-center [text-shadow:_4px_4px_0_rgb(0_0_0)] ${getTextSizeClass(teamName)}`}>
+    <div className="text-center flex flex-col items-center">
+      <div className={`font-display text-white uppercase tracking-[0.2em] mb-8 w-[450px] h-24 flex items-center justify-center [text-shadow:_4px_4px_0_rgb(0_0_0)] ${getTextSizeClass(teamName)}`}>
         {teamName}
       </div>
       <button
-        className={`w-[500px] h-[450px] text-[18rem] ${isLongPress ? 'bg-volleyball-black/70' : 'bg-volleyball-black'} 
-        text-white font-score rounded-3xl mb-8 select-none touch-none transition-colors shadow-2xl`}
+        className={`w-[450px] h-[400px] text-[16rem] ${isLongPress ? 'bg-volleyball-black/70' : 'bg-volleyball-black'} 
+        text-white font-score rounded-3xl mb-8 select-none touch-none transition-colors`}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchCancel}
