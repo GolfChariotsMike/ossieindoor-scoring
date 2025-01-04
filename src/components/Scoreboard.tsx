@@ -11,7 +11,7 @@ import { useMatchData } from "@/hooks/useMatchData";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 const Scoreboard = () => {
   const { courtId } = useParams();
@@ -36,11 +36,12 @@ const Scoreboard = () => {
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
 
-  // Query to get next match
+  // Query to get next match using the fixture date
   const { data: nextMatches = [] } = useQuery({
-    queryKey: ["matches", format(new Date(), 'yyyy-MM-dd')],
+    queryKey: ["matches", fixture?.DateTime ? format(parseISO(fixture.DateTime), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')],
     queryFn: async () => {
-      const result = await fetchMatchData(undefined, new Date());
+      const queryDate = fixture?.DateTime ? parseISO(fixture.DateTime) : new Date();
+      const result = await fetchMatchData(undefined, queryDate);
       return Array.isArray(result) ? result : [];
     },
   });
@@ -48,16 +49,26 @@ const Scoreboard = () => {
   const findNextMatch = () => {
     if (!fixture || nextMatches.length === 0) return null;
     
-    const currentMatchIndex = nextMatches.findIndex(
+    // Sort matches by DateTime to ensure correct sequence
+    const sortedMatches = [...nextMatches].sort((a, b) => 
+      new Date(a.DateTime).getTime() - new Date(b.DateTime).getTime()
+    );
+    
+    const currentMatchIndex = sortedMatches.findIndex(
       (m: Fixture) => m.Id === fixture.Id
     );
     
     if (currentMatchIndex === -1) return null;
     
-    const nextMatch = nextMatches
+    // Find the next match on the same court after the current match time
+    const nextMatch = sortedMatches
       .slice(currentMatchIndex + 1)
-      .find((m: Fixture) => m.PlayingAreaName === `Court ${courtId}`);
+      .find((m: Fixture) => 
+        m.PlayingAreaName === `Court ${courtId}` && 
+        new Date(m.DateTime) > new Date(fixture.DateTime)
+      );
     
+    console.log('Next match found:', nextMatch);
     return nextMatch;
   };
 
@@ -80,7 +91,7 @@ const Scoreboard = () => {
           replace: true
         });
       } else {
-        console.log('No next match found');
+        console.log('No next match found, returning to court selection');
         navigateToCourtSelection();
       }
     }
@@ -96,8 +107,8 @@ const Scoreboard = () => {
 
   const navigateToCourtSelection = () => {
     const date = fixture 
-      ? new Date(fixture.DateTime).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0];
+      ? format(parseISO(fixture.DateTime), 'yyyy-MM-dd')
+      : format(new Date(), 'yyyy-MM-dd');
     
     navigate(`/court/${courtId}/${date}`, {
       replace: true
