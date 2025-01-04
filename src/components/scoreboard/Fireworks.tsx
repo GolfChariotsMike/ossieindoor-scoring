@@ -20,9 +20,9 @@ export const Fireworks = () => {
     const createParticle = (x: number, y: number, color: string) => {
       const angle = Math.random() * Math.PI * 2;
       const velocity = Math.random() * 30 + 20;
-      const size = Math.random() * 4 + 2;
-      const duration = Math.random() * 0.5 + 1;
-      const spread = Math.random() * 100 + 50;
+      const size = Math.random() * 6 + 3; // Increased particle size
+      const duration = Math.random() * 1 + 1.5; // Slower particle animation
+      const spread = Math.random() * 150 + 100; // Increased spread
       const id = Date.now() + Math.random();
 
       const style: CSSProperties = {
@@ -33,7 +33,7 @@ export const Fireworks = () => {
         height: `${size}px`,
         backgroundColor: color,
         borderRadius: '50%',
-        boxShadow: `0 0 ${size * 3}px ${size}px ${color}`,
+        boxShadow: `0 0 ${size * 4}px ${size}px ${color}`,
         animation: `particle ${duration}s ease-out forwards`,
         ['--angle' as string]: `${angle}rad`,
         ['--velocity' as string]: `${velocity}`,
@@ -55,21 +55,21 @@ export const Fireworks = () => {
       const particles: JSX.Element[] = [];
       const centerX = Math.random() * window.innerWidth;
       const centerY = window.innerHeight;
-      const targetY = Math.random() * (window.innerHeight * 0.3) + window.innerHeight * 0.2;
+      const targetY = Math.random() * (window.innerHeight * 0.4) + window.innerHeight * 0.2;
       const color = colors[Math.floor(Math.random() * colors.length)];
       const id = Date.now();
 
-      // Create launch particle
+      // Create launch particle with slower animation
       const launchStyle: CSSProperties = {
         position: 'absolute',
         left: centerX,
         top: centerY,
-        width: '4px',
-        height: '4px',
+        width: '6px', // Slightly larger launch particle
+        height: '6px',
         backgroundColor: 'white',
         borderRadius: '50%',
-        boxShadow: '0 0 6px 3px rgba(255, 255, 255, 0.6)',
-        animation: `launch 1s ease-out forwards`,
+        boxShadow: '0 0 8px 4px rgba(255, 255, 255, 0.8)',
+        animation: `launch 2s ease-out forwards`, // Slower launch animation
         ['--target-y' as string]: `${targetY}px`,
         zIndex: 15,
         pointerEvents: 'none',
@@ -81,8 +81,8 @@ export const Fireworks = () => {
           style={launchStyle}
           onAnimationEnd={(e) => {
             if (e.animationName === 'launch') {
-              // Create explosion particles when launch completes
-              const newParticles = Array.from({ length: 40 }, () =>
+              // Create more particles in the explosion
+              const newParticles = Array.from({ length: 60 }, () =>
                 createParticle(centerX, targetY, color)
               );
               setFireworks(prev => [...prev, ...newParticles]);
@@ -94,12 +94,13 @@ export const Fireworks = () => {
       return particles;
     };
 
+    // Launch fireworks more frequently
     const interval = setInterval(() => {
       setFireworks(prev => [...prev, ...createFirework()]);
-    }, 1000);
+    }, 800); // Reduced interval for more frequent launches
 
     const cleanup = setInterval(() => {
-      setFireworks(prev => prev.slice(-200));
+      setFireworks(prev => prev.slice(-300)); // Increased limit for more particles
     }, 2000);
 
     return () => {
