@@ -39,7 +39,7 @@ export const Fireworks = () => {
         ['--velocity' as string]: `${velocity}`,
         ['--spread' as string]: `${spread}px`,
         transform: 'translate(0, 0)',
-        zIndex: 15,
+        zIndex: 9999,
         pointerEvents: 'none',
       };
 
@@ -70,7 +70,7 @@ export const Fireworks = () => {
         boxShadow: '0 0 8px 4px rgba(255, 255, 255, 0.8)',
         animation: `launch 2s ease-out forwards`,
         ['--target-y' as string]: `${targetY}px`,
-        zIndex: 15,
+        zIndex: 9999,
         pointerEvents: 'none',
       };
 
@@ -107,7 +107,7 @@ export const Fireworks = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 15 }}>
+    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 9999 }}>
       <style>
         {`
           @keyframes launch {
