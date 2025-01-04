@@ -71,7 +71,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
           {[homeResults, awayResults].map((result) => (
             <div 
               key={result.name}
-              className="bg-volleyball-black rounded-2xl p-8 flex flex-col items-center transition-transform hover:scale-105 duration-300"
+              className="bg-volleyball-black rounded-2xl p-8 flex flex-col items-center transition-transform hover:scale-105 duration-300 z-50"
             >
               <h2 className="text-5xl font-sets mb-8 text-volleyball-cream animate-fade-in">
                 {result.name}
