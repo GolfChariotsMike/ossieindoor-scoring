@@ -12,6 +12,15 @@ export const useGameState = () => {
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
 
+  const resetGameState = () => {
+    setCurrentScore({ home: 0, away: 0 });
+    setSetScores({ home: [], away: [] });
+    setIsBreak(false);
+    setIsTeamsSwitched(false);
+    setIsMatchComplete(false);
+    setHasGameStarted(false);
+  };
+
   const handleScore = (team: "home" | "away", increment: boolean) => {
     if (isMatchComplete) return;
     setHasGameStarted(true);
@@ -75,5 +84,6 @@ export const useGameState = () => {
     handleTimerComplete,
     handleSwitchTeams,
     saveMatchScores,
+    resetGameState,
   };
 };
