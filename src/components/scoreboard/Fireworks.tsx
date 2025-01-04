@@ -32,6 +32,7 @@ export const Fireworks = () => {
       const translateY = (Math.random() - 0.5) * 200;
       
       const style: CSSProperties = {
+        position: 'absolute',
         left: startX,
         top: startY,
         width: `${size}px`,
@@ -41,13 +42,15 @@ export const Fireworks = () => {
         animation: `firework ${duration}s ease-out forwards, fade-out ${duration}s ease-out forwards`,
         ['--tw-translate-x' as string]: `${translateX}px`,
         ['--tw-translate-y' as string]: `${translateY}px`,
-        zIndex: 0,
+        zIndex: 50,
+        transform: `translate(var(--tw-translate-x), var(--tw-translate-y))`,
+        pointerEvents: 'none',
       };
       
       return (
         <div
           key={id}
-          className="absolute rounded-full opacity-80"
+          className="rounded-full opacity-80"
           style={style}
         />
       );
@@ -69,5 +72,22 @@ export const Fireworks = () => {
     };
   }, []);
 
-  return <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">{fireworks}</div>;
+  return (
+    <div className="fixed inset-0 overflow-hidden" style={{ zIndex: 40 }}>
+      <style>
+        {`
+          @keyframes firework {
+            0% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0); }
+            50% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(1); }
+            100% { transform: translate(var(--tw-translate-x), var(--tw-translate-y)) scale(0.8); }
+          }
+          @keyframes fade-out {
+            0% { opacity: 0.8; }
+            100% { opacity: 0; }
+          }
+        `}
+      </style>
+      {fireworks}
+    </div>
+  );
 };
