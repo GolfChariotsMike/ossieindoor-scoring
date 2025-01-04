@@ -21,7 +21,7 @@ export const Fireworks = () => {
       const angle = Math.random() * Math.PI * 2;
       const velocity = Math.random() * 15 + 10; // Reduced velocity for smaller spread
       const size = Math.random() * 4 + 2; // Slightly smaller particles
-      const duration = Math.random() * 1 + 8; // Increased base duration to 8s + up to 1s random
+      const duration = Math.random() * 2 + 13; // Increased base duration to 13s + up to 2s random for total of 13-15s
       const spread = Math.random() * 80 + 60; // Reduced spread distance
       const id = Date.now() + Math.random();
 
