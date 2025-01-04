@@ -60,10 +60,10 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 z-50">
         <Fireworks />
       </div>
-      <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 50 }}>
+      <div className="fixed inset-0 flex items-center justify-center z-40">
         <div className="w-[90%] max-w-7xl">
           <div className="bg-white/90 p-12 rounded-3xl shadow-2xl backdrop-blur-sm">
             <h1 className="text-8xl font-sets mb-16 text-black text-center animate-[scale_2s_ease-in-out_infinite]">
