@@ -19,7 +19,7 @@ export const SetScoresDisplay = ({ setScores, isTeamsSwitched }: SetScoresDispla
 
   return (
     <div className="flex flex-col items-center">
-      <div className="text-volleyball-cream font-sets text-4xl uppercase tracking-[0.2em] mb-6">
+      <div className="text-white font-sets text-4xl uppercase tracking-[0.2em] mb-6">
         SETS
       </div>
       {sets.map((set) => (
@@ -28,12 +28,12 @@ export const SetScoresDisplay = ({ setScores, isTeamsSwitched }: SetScoresDispla
           className="grid grid-cols-2 gap-3 w-[110%] mb-4"
         >
           <div className="bg-volleyball-black rounded-2xl p-8 flex items-center justify-center">
-            <span className="text-volleyball-cream text-7xl font-score">
+            <span className="text-white text-7xl font-score">
               {set.home}
             </span>
           </div>
           <div className="bg-volleyball-black rounded-2xl p-8 flex items-center justify-center">
-            <span className="text-volleyball-cream text-7xl font-score">
+            <span className="text-white text-7xl font-score">
               {set.away}
             </span>
           </div>
