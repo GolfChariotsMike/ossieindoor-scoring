@@ -25,7 +25,7 @@ export const SetScoresDisplay = ({ setScores, isTeamsSwitched }: SetScoresDispla
       {sets.map((set) => (
         <div 
           key={set.number}
-          className="grid grid-cols-2 gap-4 w-full mb-4"
+          className="grid grid-cols-2 gap-3 w-[110%] mb-4"
         >
           <div className="bg-volleyball-black rounded-2xl p-8 flex items-center justify-center">
             <span className="text-volleyball-cream text-7xl font-score">
