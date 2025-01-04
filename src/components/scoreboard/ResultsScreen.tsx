@@ -62,8 +62,8 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   return (
     <>
       <Fireworks />
-      <div className="flex flex-col items-center justify-center h-full text-volleyball-cream bg-black w-4/5 mx-auto relative z-50">
-        <h1 className="text-8xl font-sets mb-12 text-white animate-[scale_2s_ease-in-out_infinite]">
+      <div className="flex flex-col items-center justify-center h-full text-volleyball-black bg-white/90 w-4/5 mx-auto relative z-10">
+        <h1 className="text-8xl font-sets mb-12 text-black animate-[scale_2s_ease-in-out_infinite]">
           {getWinnerText()}
         </h1>
         
@@ -71,12 +71,12 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
           {[homeResults, awayResults].map((result) => (
             <div 
               key={result.name}
-              className="bg-white rounded-2xl p-8 flex flex-col items-center transition-transform hover:scale-105 duration-300 z-50"
+              className="bg-volleyball-black rounded-2xl p-8 flex flex-col items-center transition-transform hover:scale-105 duration-300 z-50"
             >
-              <h2 className="text-5xl font-sets mb-8 text-volleyball-black animate-fade-in">
+              <h2 className="text-5xl font-sets mb-8 text-volleyball-cream animate-fade-in">
                 {result.name}
               </h2>
-              <div className="space-y-6 text-3xl font-score text-volleyball-black">
+              <div className="space-y-6 text-3xl font-score text-volleyball-cream">
                 <p className="text-4xl animate-scale-in">Set Points: {result.setPoints}</p>
                 <p className="text-4xl animate-scale-in delay-75">Draw Points: {result.drawPoints}</p>
                 <p className="text-4xl animate-scale-in delay-150">Bonus Points: {result.bonusPoints}</p>
@@ -93,7 +93,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
             variant="outline"
             size="lg"
             onClick={onStartNextMatch}
-            className="bg-white text-volleyball-black hover:bg-white/90 border-volleyball-cream mt-4"
+            className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream mt-4"
           >
             <ArrowRight className="w-6 h-6 mr-2" />
             Start Next Match
