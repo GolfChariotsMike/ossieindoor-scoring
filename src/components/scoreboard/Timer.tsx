@@ -20,7 +20,8 @@ export const Timer = ({
     matchPhase,
     resetTimer,
     setIsRunning,
-    progressToNextPhase
+    progressToNextPhase,
+    progressToNextMatch
   } = useTimer(initialMinutes, onComplete, fixture, onNextMatch);
 
   const minutes = Math.floor(timeLeft / 60);
@@ -48,9 +49,14 @@ export const Timer = ({
     progressToNextPhase();
   };
 
+  const handleNextMatch = () => {
+    console.log('Manual next match clicked');
+    progressToNextMatch();
+  };
+
   return (
     <div className="text-volleyball-cream text-center relative">
-      <div className="absolute top-0 right-0">
+      <div className="absolute top-0 right-0 space-x-2">
         <Button
           variant="outline"
           size="sm"
@@ -61,6 +67,17 @@ export const Timer = ({
           <FastForward className="w-4 h-4 mr-1" />
           Skip Phase
         </Button>
+        {isMatchComplete && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextMatch}
+            className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
+          >
+            <FastForward className="w-4 h-4 mr-1" />
+            Next Match
+          </Button>
+        )}
       </div>
       
       <TimerDisplay 

@@ -75,10 +75,15 @@ export const useTimer = (
         console.log('Match complete, transitioning to next match');
         onComplete(); // Notify parent match is complete
         setMatchPhase(nextPhase);
-        if (onNextMatch) {
-          onNextMatch(); // This will handle both automatic and manual transitions
-        }
+        progressToNextMatch();
       }
+    }
+  };
+
+  const progressToNextMatch = () => {
+    console.log('Progressing to next match');
+    if (onNextMatch) {
+      onNextMatch();
     }
   };
 
@@ -112,6 +117,7 @@ export const useTimer = (
     resetTimer,
     setIsRunning,
     progressToNextPhase,
+    progressToNextMatch,
     setMatchPhase
   };
 };
