@@ -8,7 +8,7 @@ import { LoadingSpinner } from "./scoreboard/LoadingSpinner";
 import { ResultsScreen } from "./scoreboard/ResultsScreen";
 import { useGameState } from "@/hooks/useGameState";
 import { useMatchData } from "@/hooks/useMatchData";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { format } from "date-fns";
@@ -22,6 +22,7 @@ const Scoreboard = () => {
   const fixture = location.state?.fixture as Fixture | undefined;
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     currentScore,
@@ -44,7 +45,7 @@ const Scoreboard = () => {
     queryFn: async () => {
       const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
       const result = await fetchMatchData(undefined, queryDate);
-      return Array.isArray(result) ? result : [];
+      return result as Fixture[];
     },
   });
 
@@ -57,17 +58,27 @@ const Scoreboard = () => {
   }, [isMatchComplete, match, setScores, saveMatchScores, hasGameStarted]);
 
   useEffect(() => {
-    const checkResultsDisplayTime = () => {
-      if (resultsDisplayStartTime && Date.now() - resultsDisplayStartTime >= 30000) {
+    if (resultsDisplayStartTime) {
+      // Clear any existing timeout
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+
+      // Set new timeout
+      transitionTimeoutRef.current = setTimeout(() => {
         console.log('Results display time complete, checking for next match');
         const nextMatch = findNextMatch(nextMatches);
         handleStartNextMatch(nextMatch);
-      }
-    };
+      }, 30000);
 
-    const timer = setInterval(checkResultsDisplayTime, 1000);
-    return () => clearInterval(timer);
-  }, [resultsDisplayStartTime, nextMatches]);
+      // Cleanup
+      return () => {
+        if (transitionTimeoutRef.current) {
+          clearTimeout(transitionTimeoutRef.current);
+        }
+      };
+    }
+  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch]);
 
   const handleBack = () => {
     if (hasGameStarted) {
