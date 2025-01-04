@@ -19,6 +19,7 @@ import { useNextMatch } from "./scoreboard/NextMatchLogic";
 const Scoreboard = () => {
   const { courtId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const fixture = location.state?.fixture as Fixture | undefined;
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
@@ -38,17 +39,16 @@ const Scoreboard = () => {
   } = useGameState();
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
-  const { findNextMatch, handleStartNextMatch, navigateToCourtSelection, parseFixtureDate } = useNextMatch(courtId!, fixture);
+  const { findNextMatch, handleStartNextMatch, navigateToCourtSelection } = useNextMatch(courtId!, fixture);
 
   const { data: nextMatches = [] } = useQuery({
     queryKey: ["matches", fixture?.DateTime ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')],
     queryFn: async () => {
       const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
       const result = await fetchMatchData(undefined, queryDate);
-      // Convert XMLFixture[] to Fixture[] by ensuring all required properties are present
       return (Array.isArray(result) ? result : []).map(item => ({
         ...item,
-        Id: item.Id || item.id || `${item.DateTime}-${item.PlayingAreaName}`, // Ensure Id exists
+        Id: item.Id || item.id || `${item.DateTime}-${item.PlayingAreaName}`,
       })) as Fixture[];
     },
   });
@@ -85,12 +85,12 @@ const Scoreboard = () => {
     if (hasGameStarted) {
       setShowExitConfirmation(true);
     } else {
-      navigateToCourtSelection();
+      navigate('/');
     }
   };
 
   const confirmExit = () => {
-    navigateToCourtSelection();
+    navigate('/');
   };
 
   if (isLoading || !match) {
