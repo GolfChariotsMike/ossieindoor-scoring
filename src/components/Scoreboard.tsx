@@ -159,6 +159,7 @@ const Scoreboard = () => {
                 isBreak={isBreak}
                 isMatchComplete={isMatchComplete}
                 fixture={fixture}
+                onNextMatch={() => handleStartNextMatch(findNextMatch(nextMatches))}
               />
 
               <GameScores
