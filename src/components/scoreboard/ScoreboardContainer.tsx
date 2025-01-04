@@ -50,10 +50,10 @@ const ScoreboardContainer = () => {
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
-      resetGameState();
+      resetGameState(fixture.Id); // Pass the fixture ID
       previousFixtureIdRef.current = fixture.Id;
       // Auto-start the timer for the first set
-      startMatch();
+      startMatch(fixture.Id); // Pass the fixture ID
     }
   }, [fixture?.Id, resetGameState, startMatch]);
 

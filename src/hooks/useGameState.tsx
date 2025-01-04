@@ -12,7 +12,8 @@ export const useGameState = () => {
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
 
-  const resetGameState = () => {
+  const resetGameState = (fixtureId: string) => {
+    console.log('Resetting game state for fixture:', fixtureId);
     setCurrentScore({ home: 0, away: 0 });
     setSetScores({ home: [], away: [] });
     setIsBreak(false);
@@ -21,8 +22,8 @@ export const useGameState = () => {
     setHasGameStarted(false);
   };
 
-  const startMatch = () => {
-    console.log('Starting match automatically');
+  const startMatch = (fixtureId: string) => {
+    console.log('Starting match automatically for fixture:', fixtureId);
     setHasGameStarted(true);
   };
 
