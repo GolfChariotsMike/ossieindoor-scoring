@@ -19,6 +19,7 @@ const Scoreboard = () => {
   const navigate = useNavigate();
   const fixture = location.state?.fixture as Fixture | undefined;
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
 
   const {
     currentScore,
@@ -40,7 +41,6 @@ const Scoreboard = () => {
     queryKey: ["matches", format(new Date(), 'yyyy-MM-dd')],
     queryFn: async () => {
       const result = await fetchMatchData(undefined, new Date());
-      // Ensure we always return an array
       return Array.isArray(result) ? result : [];
     },
   });
@@ -63,22 +63,28 @@ const Scoreboard = () => {
 
   useEffect(() => {
     if (isMatchComplete && match && hasGameStarted) {
+      console.log('Match complete, saving scores');
       saveMatchScores(match.id, setScores.home, setScores.away);
-      
-      // After 30 seconds, navigate to next match if available
-      const timer = setTimeout(() => {
-        const nextMatch = findNextMatch();
-        if (nextMatch) {
-          navigate(`/scoreboard/${courtId}`, {
-            state: { fixture: nextMatch },
-            replace: true
-          });
-        }
-      }, 30000); // 30 seconds
-
-      return () => clearTimeout(timer);
+      setResultsDisplayStartTime(Date.now());
     }
   }, [isMatchComplete, match, setScores, saveMatchScores, hasGameStarted]);
+
+  useEffect(() => {
+    if (resultsDisplayStartTime && Date.now() - resultsDisplayStartTime >= 30000) {
+      console.log('Results display time complete, checking for next match');
+      const nextMatch = findNextMatch();
+      if (nextMatch) {
+        console.log('Navigating to next match:', nextMatch);
+        navigate(`/scoreboard/${courtId}`, {
+          state: { fixture: nextMatch },
+          replace: true
+        });
+      } else {
+        console.log('No next match found');
+        navigateToCourtSelection();
+      }
+    }
+  }, [resultsDisplayStartTime, courtId, navigate]);
 
   const handleBack = () => {
     if (hasGameStarted) {
