@@ -11,28 +11,14 @@ export const useGameState = () => {
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
-  const [currentFixtureId, setCurrentFixtureId] = useState<string | null>(null);
 
-  const resetGameState = (fixtureId: string) => {
-    console.log('Resetting game state for fixture:', fixtureId);
-    setCurrentFixtureId(fixtureId);
+  const resetGameState = () => {
     setCurrentScore({ home: 0, away: 0 });
     setSetScores({ home: [], away: [] });
     setIsBreak(false);
     setIsTeamsSwitched(false);
     setIsMatchComplete(false);
     setHasGameStarted(false);
-  };
-
-  const startMatch = (fixtureId: string) => {
-    console.log('Starting match for fixture:', fixtureId);
-    if (fixtureId === currentFixtureId) {
-      setHasGameStarted(true);
-    } else {
-      console.warn('Fixture ID mismatch when starting match');
-      resetGameState(fixtureId);
-      setHasGameStarted(true);
-    }
   };
 
   const handleScore = (team: "home" | "away", increment: boolean) => {
@@ -50,6 +36,7 @@ export const useGameState = () => {
     }
 
     if (isBreak) {
+      // After break, save the current scores to setScores
       const newSetScores = {
         home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
         away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
@@ -68,6 +55,7 @@ export const useGameState = () => {
         description: matchComplete ? "The match has ended" : "Starting next set",
       });
     } else {
+      // When set ends, just start the break
       setIsBreak(true);
       toast({
         title: "Set Complete",
@@ -97,6 +85,5 @@ export const useGameState = () => {
     handleSwitchTeams,
     saveMatchScores,
     resetGameState,
-    startMatch
   };
 };
