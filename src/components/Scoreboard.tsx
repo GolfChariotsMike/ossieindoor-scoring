@@ -29,7 +29,14 @@ const Scoreboard = () => {
   const { courtId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const fixture = location.state?.fixture as Fixture | undefined;
+  const searchParams = new URLSearchParams(location.search);
+  const fixtureParam = searchParams.get('fixture');
+  
+  // Try to get fixture from URL params first, then location state
+  const fixture = fixtureParam 
+    ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
+    : location.state?.fixture as Fixture | undefined;
+
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,6 +52,7 @@ const Scoreboard = () => {
     handleSwitchTeams,
     saveMatchScores,
     hasGameStarted,
+    resetGameState
   } = useGameState();
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
@@ -61,6 +69,14 @@ const Scoreboard = () => {
       })) as Fixture[];
     },
   });
+
+  // Reset game state when fixture changes
+  useEffect(() => {
+    if (fixture) {
+      console.log('New fixture detected, resetting game state:', fixture.Id);
+      resetGameState();
+    }
+  }, [fixture?.Id, resetGameState]);
 
   useEffect(() => {
     if (isMatchComplete && match && hasGameStarted) {

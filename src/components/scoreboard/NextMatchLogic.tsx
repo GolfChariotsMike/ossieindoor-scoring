@@ -60,10 +60,8 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
         nextMatchTime: nextMatch.DateTime
       });
       
-      navigate(`/scoreboard/${courtId}`, {
-        state: { fixture: nextMatch },
-        replace: true
-      });
+      // Force a full page reload to reset all state
+      window.location.href = `/scoreboard/${courtId}?fixture=${encodeURIComponent(JSON.stringify(nextMatch))}`;
     } else {
       console.log('No next match found, returning to court selection');
       navigateToCourtSelection();
