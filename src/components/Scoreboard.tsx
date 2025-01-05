@@ -165,7 +165,7 @@ const Scoreboard = () => {
           ) : (
             <>
               <Timer
-                initialMinutes={1}
+                initialMinutes={14} // Updated to 14 minutes
                 onComplete={handleTimerComplete}
                 onSwitchTeams={handleSwitchTeams}
                 isBreak={isBreak}
