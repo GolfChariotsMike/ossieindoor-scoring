@@ -22,21 +22,23 @@ export const TimerControls = ({
       <div className="absolute -translate-x-[250px] flex gap-2">
         <Button
           variant="outline"
-          size="icon"
+          size="sm"
           onClick={() => onRecordStat?.('home', 'block')}
           disabled={isMatchComplete}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+          className="h-10 w-24 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
-          <Plus className="mr-1" />B
+          <Plus className="h-4 w-4" />
+          Block
         </Button>
         <Button
           variant="outline"
-          size="icon"
+          size="sm"
           onClick={() => onRecordStat?.('home', 'ace')}
           disabled={isMatchComplete}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+          className="h-10 w-24 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
-          <Plus className="mr-1" />A
+          <Plus className="h-4 w-4" />
+          ACE
         </Button>
       </div>
 
@@ -75,21 +77,23 @@ export const TimerControls = ({
       <div className="absolute translate-x-[250px] flex gap-2">
         <Button
           variant="outline"
-          size="icon"
+          size="sm"
           onClick={() => onRecordStat?.('away', 'block')}
           disabled={isMatchComplete}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+          className="h-10 w-24 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
-          <Plus className="mr-1" />B
+          <Plus className="h-4 w-4" />
+          Block
         </Button>
         <Button
           variant="outline"
-          size="icon"
+          size="sm"
           onClick={() => onRecordStat?.('away', 'ace')}
           disabled={isMatchComplete}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+          className="h-10 w-24 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
-          <Plus className="mr-1" />A
+          <Plus className="h-4 w-4" />
+          ACE
         </Button>
       </div>
     </div>
