@@ -23,9 +23,9 @@ export const GameScores = ({
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex gap-2">
+    <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-start mb-8">
+      <div className="flex flex-col items-center gap-8">
+        <div className="flex gap-2 mb-1">
           <Button
             variant="outline"
             size="icon"
@@ -58,8 +58,8 @@ export const GameScores = ({
         />
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex gap-2">
+      <div className="flex flex-col items-center gap-8">
+        <div className="flex gap-2 mb-1">
           <Button
             variant="outline"
             size="icon"
