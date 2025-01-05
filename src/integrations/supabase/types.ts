@@ -61,9 +61,6 @@ export type Database = {
       }
       match_results_simplified: {
         Row: {
-          aces: number | null
-          blocks: number | null
-          blocks_against: number | null
           bonus_points: number | null
           created_at: string | null
           division: string | null
@@ -71,8 +68,6 @@ export type Database = {
           is_home_team: boolean
           match_date: string | null
           match_id: string | null
-          points_against: number | null
-          points_for: number | null
           set1_points: number | null
           set2_points: number | null
           set3_points: number | null
@@ -81,9 +76,6 @@ export type Database = {
           total_set_points: number | null
         }
         Insert: {
-          aces?: number | null
-          blocks?: number | null
-          blocks_against?: number | null
           bonus_points?: number | null
           created_at?: string | null
           division?: string | null
@@ -91,8 +83,6 @@ export type Database = {
           is_home_team: boolean
           match_date?: string | null
           match_id?: string | null
-          points_against?: number | null
-          points_for?: number | null
           set1_points?: number | null
           set2_points?: number | null
           set3_points?: number | null
@@ -101,9 +91,6 @@ export type Database = {
           total_set_points?: number | null
         }
         Update: {
-          aces?: number | null
-          blocks?: number | null
-          blocks_against?: number | null
           bonus_points?: number | null
           created_at?: string | null
           division?: string | null
@@ -111,8 +98,6 @@ export type Database = {
           is_home_team?: boolean
           match_date?: string | null
           match_id?: string | null
-          points_against?: number | null
-          points_for?: number | null
           set1_points?: number | null
           set2_points?: number | null
           set3_points?: number | null

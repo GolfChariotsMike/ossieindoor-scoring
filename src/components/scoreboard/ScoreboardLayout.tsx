@@ -2,7 +2,6 @@ import { Timer } from "./Timer";
 import { TeamScore } from "./TeamScore";
 import { SetScoresDisplay } from "./SetScoresDisplay";
 import { Match, Score, SetScores } from "@/types/volleyball";
-import { TimerControls } from "./TimerControls";
 
 interface ScoreboardLayoutProps {
   isBreak: boolean;
@@ -13,8 +12,7 @@ interface ScoreboardLayoutProps {
   isMatchComplete: boolean;
   onTimerComplete: () => void;
   onSwitchTeams: () => void;
-  onScoreUpdate: (team: "home" | "away", increment: boolean) => void;
-  onRecordStat?: (team: "home" | "away", type: "block" | "ace") => void;
+  onScoreUpdate: (team: "home" | "away") => void;
 }
 
 export const ScoreboardLayout = ({
@@ -27,7 +25,6 @@ export const ScoreboardLayout = ({
   onTimerComplete,
   onSwitchTeams,
   onScoreUpdate,
-  onRecordStat,
 }: ScoreboardLayoutProps) => {
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
@@ -35,7 +32,7 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={14}
+        initialMinutes={1}
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
@@ -46,7 +43,7 @@ export const ScoreboardLayout = ({
         <TeamScore
           teamName={homeTeam.name}
           score={currentScore.home}
-          onScoreUpdate={(increment) => onScoreUpdate("home", increment)}
+          onScoreUpdate={() => onScoreUpdate("home")}
         />
 
         <div className="w-64">
@@ -60,17 +57,9 @@ export const ScoreboardLayout = ({
         <TeamScore
           teamName={awayTeam.name}
           score={currentScore.away}
-          onScoreUpdate={(increment) => onScoreUpdate("away", increment)}
+          onScoreUpdate={() => onScoreUpdate("away")}
         />
       </div>
-
-      <TimerControls
-        isMatchComplete={isMatchComplete}
-        onStartStop={() => {}}
-        onReset={() => {}}
-        onSwitchTeams={onSwitchTeams}
-        onRecordStat={onRecordStat}
-      />
     </div>
   );
 };
