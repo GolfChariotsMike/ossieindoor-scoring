@@ -1,15 +1,12 @@
 import { useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 interface TeamScoreProps {
   teamName: string;
   score: number;
   onScoreUpdate: (increment: boolean) => void;
-  onStatUpdate: (type: "block" | "ace") => void;
 }
 
-export const TeamScore = ({ teamName, score, onScoreUpdate, onStatUpdate }: TeamScoreProps) => {
+export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) => {
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
   const decrementIntervalRef = useRef<NodeJS.Timeout>();
@@ -80,26 +77,6 @@ export const TeamScore = ({ teamName, score, onScoreUpdate, onStatUpdate }: Team
     <div className="text-center flex flex-col items-center">
       <div className={`font-display text-white uppercase tracking-[0.2em] mb-8 w-[450px] h-24 flex items-center justify-center [text-shadow:_4px_4px_0_rgb(0_0_0)] ${getTextSizeClass(teamName)}`}>
         {teamName}
-      </div>
-      <div className="flex gap-2 mb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onStatUpdate("block")}
-          className="h-10 w-32 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Block
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onStatUpdate("ace")}
-          className="h-10 w-32 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          ACE
-        </Button>
       </div>
       <button
         className={`w-[450px] h-[400px] text-[16rem] ${isLongPress ? 'bg-volleyball-black/70' : 'bg-volleyball-black'} 

@@ -22,10 +22,6 @@ const Scoreboard = () => {
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
-  const [stats, setStats] = useState({
-    home: { blocks: 0, aces: 0, blocksAgainst: 0 },
-    away: { blocks: 0, aces: 0, blocksAgainst: 0 }
-  });
 
   const { data: match, isLoading } = useQuery({
     queryKey: ["match", courtId],
@@ -54,20 +50,6 @@ const Scoreboard = () => {
       ...prev,
       [team]: prev[team] + 1,
     }));
-  };
-
-  const handleStat = (team: "home" | "away", type: "block" | "ace") => {
-    if (isMatchComplete) return;
-    setStats(prev => {
-      const newStats = { ...prev };
-      if (type === "block") {
-        newStats[team].blocks += 1;
-        newStats[team === "home" ? "away" : "home"].blocksAgainst += 1;
-      } else {
-        newStats[team].aces += 1;
-      }
-      return newStats;
-    });
   };
 
   const handleTimerComplete = () => {
@@ -118,10 +100,6 @@ const Scoreboard = () => {
       home: prev.away,
       away: prev.home
     }));
-    setStats(prev => ({
-      home: prev.away,
-      away: prev.home
-    }));
   };
 
   const handleBack = () => {
@@ -151,7 +129,6 @@ const Scoreboard = () => {
           onTimerComplete={handleTimerComplete}
           onSwitchTeams={handleSwitchTeams}
           onScoreUpdate={handleScore}
-          onStatUpdate={handleStat}
         />
 
         <ExitConfirmationDialog

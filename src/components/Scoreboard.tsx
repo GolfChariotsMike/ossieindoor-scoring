@@ -1,28 +1,38 @@
-import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
+import { Timer } from "./scoreboard/Timer";
 import { BackButton } from "./scoreboard/BackButton";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 import { GameScores } from "./scoreboard/GameScores";
 import { LoadingSpinner } from "./scoreboard/LoadingSpinner";
 import { ResultsScreen } from "./scoreboard/ResultsScreen";
+import { useGameState } from "@/hooks/useGameState";
 import { useMatchData } from "@/hooks/useMatchData";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { format, parse } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useNextMatch } from "./scoreboard/NextMatchLogic";
-import { GameStateProvider } from "./scoreboard/GameStateProvider";
-import { useGameStateContext } from "./scoreboard/GameStateProvider";
 
-const ScoreboardContent = () => {
+const parseFixtureDate = (dateStr: string) => {
+  try {
+    return parse(dateStr, 'dd/MM/yyyy HH:mm', new Date());
+  } catch (error) {
+    console.error('Error parsing date:', dateStr, error);
+    return new Date();
+  }
+};
+
+const Scoreboard = () => {
   const { courtId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const fixtureParam = searchParams.get('fixture');
   
+  // Try to get fixture from URL params first, then location state
   const fixture = fixtureParam 
     ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
     : location.state?.fixture as Fixture | undefined;
@@ -43,10 +53,8 @@ const ScoreboardContent = () => {
     handleSwitchTeams,
     saveMatchScores,
     hasGameStarted,
-    resetGameState,
-    stats,
-    handleStat
-  } = useGameStateContext();
+    resetGameState
+  } = useGameState();
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
@@ -63,6 +71,7 @@ const ScoreboardContent = () => {
     },
   });
 
+  // Reset game state only when fixture ID changes
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
@@ -74,16 +83,10 @@ const ScoreboardContent = () => {
   useEffect(() => {
     if (isMatchComplete && match && hasGameStarted) {
       console.log('Match complete, saving scores');
-      saveMatchScores(
-        match.id, 
-        setScores.home, 
-        setScores.away,
-        isTeamsSwitched ? stats.away : stats.home,
-        isTeamsSwitched ? stats.home : stats.away
-      );
+      saveMatchScores(match.id, setScores.home, setScores.away);
       setResultsDisplayStartTime(Date.now());
     }
-  }, [isMatchComplete, match, setScores, stats, saveMatchScores, hasGameStarted, isTeamsSwitched]);
+  }, [isMatchComplete, match, setScores, saveMatchScores, hasGameStarted]);
 
   useEffect(() => {
     if (resultsDisplayStartTime) {
@@ -118,6 +121,10 @@ const ScoreboardContent = () => {
     }
   };
 
+  const confirmExit = () => {
+    navigate('/');
+  };
+
   if (isLoading || !match) {
     return <LoadingSpinner />;
   }
@@ -146,7 +153,6 @@ const ScoreboardContent = () => {
             <ResultsScreen
               match={match}
               setScores={setScores}
-              stats={stats}
               isTeamsSwitched={isTeamsSwitched}
               onStartNextMatch={() => {
                 const nextMatch = findNextMatch(nextMatches);
@@ -157,41 +163,34 @@ const ScoreboardContent = () => {
               }}
             />
           ) : (
-            <GameScores
-              currentScore={currentScore}
-              setScores={setScores}
-              match={match}
-              isTeamsSwitched={isTeamsSwitched}
-              onScoreUpdate={handleScore}
-              onStatUpdate={handleStat}
-            />
+            <>
+              <Timer
+                initialMinutes={14} // Updated to 14 minutes
+                onComplete={handleTimerComplete}
+                onSwitchTeams={handleSwitchTeams}
+                isBreak={isBreak}
+                isMatchComplete={isMatchComplete}
+                fixture={fixture}
+              />
+
+              <GameScores
+                currentScore={currentScore}
+                setScores={setScores}
+                match={match}
+                isTeamsSwitched={isTeamsSwitched}
+                onScoreUpdate={handleScore}
+              />
+            </>
           )}
         </div>
 
         <ExitConfirmationDialog
           open={showExitConfirmation}
           onOpenChange={setShowExitConfirmation}
-          onConfirm={() => navigate('/')}
+          onConfirm={confirmExit}
         />
       </div>
     </div>
-  );
-};
-
-const parseFixtureDate = (dateStr: string) => {
-  try {
-    return parse(dateStr, 'dd/MM/yyyy HH:mm', new Date());
-  } catch (error) {
-    console.error('Error parsing date:', dateStr, error);
-    return new Date();
-  }
-};
-
-const Scoreboard = () => {
-  return (
-    <GameStateProvider>
-      <ScoreboardContent />
-    </GameStateProvider>
   );
 };
 
