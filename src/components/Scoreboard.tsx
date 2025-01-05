@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { Timer } from "./scoreboard/Timer";
@@ -8,7 +9,6 @@ import { LoadingSpinner } from "./scoreboard/LoadingSpinner";
 import { ResultsScreen } from "./scoreboard/ResultsScreen";
 import { useGameState } from "@/hooks/useGameState";
 import { useMatchData } from "@/hooks/useMatchData";
-import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { format, parse } from "date-fns";
@@ -32,7 +32,6 @@ const Scoreboard = () => {
   const searchParams = new URLSearchParams(location.search);
   const fixtureParam = searchParams.get('fixture');
   
-  // Try to get fixture from URL params first, then location state
   const fixture = fixtureParam 
     ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
     : location.state?.fixture as Fixture | undefined;
@@ -53,7 +52,9 @@ const Scoreboard = () => {
     handleSwitchTeams,
     saveMatchScores,
     hasGameStarted,
-    resetGameState
+    resetGameState,
+    stats,
+    handleStat
   } = useGameState();
 
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
@@ -71,7 +72,6 @@ const Scoreboard = () => {
     },
   });
 
-  // Reset game state only when fixture ID changes
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
@@ -83,10 +83,16 @@ const Scoreboard = () => {
   useEffect(() => {
     if (isMatchComplete && match && hasGameStarted) {
       console.log('Match complete, saving scores');
-      saveMatchScores(match.id, setScores.home, setScores.away);
+      saveMatchScores(
+        match.id, 
+        setScores.home, 
+        setScores.away,
+        isTeamsSwitched ? stats.away : stats.home,
+        isTeamsSwitched ? stats.home : stats.away
+      );
       setResultsDisplayStartTime(Date.now());
     }
-  }, [isMatchComplete, match, setScores, saveMatchScores, hasGameStarted]);
+  }, [isMatchComplete, match, setScores, stats, saveMatchScores, hasGameStarted, isTeamsSwitched]);
 
   useEffect(() => {
     if (resultsDisplayStartTime) {
@@ -153,6 +159,7 @@ const Scoreboard = () => {
             <ResultsScreen
               match={match}
               setScores={setScores}
+              stats={stats}
               isTeamsSwitched={isTeamsSwitched}
               onStartNextMatch={() => {
                 const nextMatch = findNextMatch(nextMatches);
@@ -165,7 +172,7 @@ const Scoreboard = () => {
           ) : (
             <>
               <Timer
-                initialMinutes={14} // Updated to 14 minutes
+                initialMinutes={14}
                 onComplete={handleTimerComplete}
                 onSwitchTeams={handleSwitchTeams}
                 isBreak={isBreak}
@@ -179,6 +186,7 @@ const Scoreboard = () => {
                 match={match}
                 isTeamsSwitched={isTeamsSwitched}
                 onScoreUpdate={handleScore}
+                onStatUpdate={handleStat}
               />
             </>
           )}

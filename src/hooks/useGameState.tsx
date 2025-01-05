@@ -11,6 +11,10 @@ export const useGameState = () => {
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
+  const [stats, setStats] = useState({
+    home: { blocks: 0, aces: 0, blocksAgainst: 0 },
+    away: { blocks: 0, aces: 0, blocksAgainst: 0 }
+  });
 
   const resetGameState = () => {
     setCurrentScore({ home: 0, away: 0 });
@@ -19,9 +23,13 @@ export const useGameState = () => {
     setIsTeamsSwitched(false);
     setIsMatchComplete(false);
     setHasGameStarted(false);
+    setStats({
+      home: { blocks: 0, aces: 0, blocksAgainst: 0 },
+      away: { blocks: 0, aces: 0, blocksAgainst: 0 }
+    });
   };
 
-  const handleScore = (team: "home" | "away", increment: boolean) => {
+  const handleScore = (team: "home" | "away", increment: boolean = true) => {
     if (isMatchComplete) return;
     setHasGameStarted(true);
     setCurrentScore((prev) => ({
@@ -30,34 +38,60 @@ export const useGameState = () => {
     }));
   };
 
+  const handleStat = (team: "home" | "away", type: "block" | "ace") => {
+    if (isMatchComplete) return;
+    setHasGameStarted(true);
+    
+    setStats(prev => {
+      const newStats = { ...prev };
+      if (type === "block") {
+        newStats[team].blocks += 1;
+        newStats[team === "home" ? "away" : "home"].blocksAgainst += 1;
+      } else {
+        newStats[team].aces += 1;
+      }
+      return newStats;
+    });
+  };
+
   const handleTimerComplete = () => {
     if (isBreak) {
-      // After break, save the current scores to setScores
+      setIsBreak(false);
+      setCurrentScore({ home: 0, away: 0 });
+      handleSwitchTeams();
+      
+      if (!isMatchComplete) {
+        toast({
+          title: "Break Time Over",
+          description: "Starting next set",
+        });
+      }
+    } else {
+      // Only proceed if there are actual scores
+      if (currentScore.home === 0 && currentScore.away === 0) {
+        return;
+      }
+
       const newSetScores = {
         home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
         away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
       };
       
       setSetScores(newSetScores);
-      setIsBreak(false);
-      setCurrentScore({ home: 0, away: 0 });
-      handleSwitchTeams();
-      
-      const matchComplete = isMatchCompleted(newSetScores);
-      setIsMatchComplete(matchComplete);
-      
-      toast({
-        title: matchComplete ? "Match Complete" : "Break Time Over",
-        description: matchComplete ? "The match has ended" : "Starting next set",
-      });
-    } else {
-      // When set ends, just start the break
       setIsBreak(true);
-      setHasGameStarted(true); // Set game as started when first set ends
-      toast({
-        title: "Set Complete",
-        description: "Starting 1 minute break",
-      });
+      
+      if (newSetScores.home.length >= 3) {
+        setIsMatchComplete(true);
+        toast({
+          title: "Match Complete",
+          description: "The match has ended",
+        });
+      } else {
+        toast({
+          title: "Set Complete",
+          description: "Starting 1 minute break",
+        });
+      }
     }
   };
 
@@ -65,6 +99,10 @@ export const useGameState = () => {
     if (isMatchComplete) return;
     setIsTeamsSwitched(!isTeamsSwitched);
     setCurrentScore((prev) => ({
+      home: prev.away,
+      away: prev.home
+    }));
+    setStats(prev => ({
       home: prev.away,
       away: prev.home
     }));
@@ -77,10 +115,12 @@ export const useGameState = () => {
     isTeamsSwitched,
     isMatchComplete,
     hasGameStarted,
+    stats,
     handleScore,
+    handleStat,
     handleTimerComplete,
     handleSwitchTeams,
     saveMatchScores,
-    resetGameState,
+    resetGameState
   };
 };

@@ -5,7 +5,9 @@ import { toast } from "@/components/ui/use-toast";
 export const saveMatchScores = async (
   matchId: string, 
   homeScores: number[], 
-  awayScores: number[]
+  awayScores: number[],
+  homeStats: { blocks: number; aces: number; blocksAgainst: number },
+  awayStats: { blocks: number; aces: number; blocksAgainst: number }
 ) => {
   if (!homeScores.length || !awayScores.length) {
     return;
@@ -32,6 +34,12 @@ export const saveMatchScores = async (
       acc + (score > awayScores[index] ? 1 : 0), 0);
     const awaySetsWon = homeScores.reduce((acc, score, index) => 
       acc + (score < awayScores[index] ? 1 : 0), 0);
+
+    // Calculate total points for and against for each team
+    const homePointsFor = homeScores.reduce((sum, score) => sum + score, 0);
+    const homePointsAgainst = awayScores.reduce((sum, score) => sum + score, 0);
+    const awayPointsFor = homePointsAgainst;
+    const awayPointsAgainst = homePointsFor;
 
     // Save to match_results table
     const { error: resultError } = await supabase
@@ -64,13 +72,18 @@ export const saveMatchScores = async (
         match_id: matchId,
         team_name: matchData.home_team_name,
         is_home_team: true,
-        division: matchData.division,  // Added division field
+        division: matchData.division,
         set1_points: homeScores[0] || 0,
         set2_points: homeScores[1] || 0,
         set3_points: homeScores[2] || 0,
         total_set_points: homeSetPoints,
         bonus_points: homeBonus,
-        total_points: homeSetPoints + homeBonus
+        total_points: homeSetPoints + homeBonus,
+        blocks: homeStats.blocks,
+        aces: homeStats.aces,
+        blocks_against: homeStats.blocksAgainst,
+        points_for: homePointsFor,
+        points_against: homePointsAgainst
       }]);
 
     if (homeSimplifiedError) throw homeSimplifiedError;
@@ -82,13 +95,18 @@ export const saveMatchScores = async (
         match_id: matchId,
         team_name: matchData.away_team_name,
         is_home_team: false,
-        division: matchData.division,  // Added division field
+        division: matchData.division,
         set1_points: awayScores[0] || 0,
         set2_points: awayScores[1] || 0,
         set3_points: awayScores[2] || 0,
         total_set_points: awaySetPoints,
         bonus_points: awayBonus,
-        total_points: awaySetPoints + awayBonus
+        total_points: awaySetPoints + awayBonus,
+        blocks: awayStats.blocks,
+        aces: awayStats.aces,
+        blocks_against: awayStats.blocksAgainst,
+        points_for: awayPointsFor,
+        points_against: awayPointsAgainst
       }]);
 
     if (awaySimplifiedError) throw awaySimplifiedError;

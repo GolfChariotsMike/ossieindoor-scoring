@@ -8,6 +8,7 @@ interface GameScoresProps {
   match: Match;
   isTeamsSwitched: boolean;
   onScoreUpdate: (team: "home" | "away", increment: boolean) => void;
+  onStatUpdate: (team: "home" | "away", type: "block" | "ace") => void;
 }
 
 export const GameScores = ({
@@ -16,6 +17,7 @@ export const GameScores = ({
   match,
   isTeamsSwitched,
   onScoreUpdate,
+  onStatUpdate,
 }: GameScoresProps) => {
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
@@ -26,6 +28,7 @@ export const GameScores = ({
         teamName={homeTeam.name}
         score={currentScore.home}
         onScoreUpdate={(increment) => onScoreUpdate("home", increment)}
+        onStatUpdate={(type) => onStatUpdate("home", type)}
       />
 
       <div className="w-64">
@@ -40,6 +43,7 @@ export const GameScores = ({
         teamName={awayTeam.name}
         score={currentScore.away}
         onScoreUpdate={(increment) => onScoreUpdate("away", increment)}
+        onStatUpdate={(type) => onStatUpdate("away", type)}
       />
     </div>
   );
