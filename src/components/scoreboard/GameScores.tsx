@@ -1,6 +1,8 @@
 import { Score, SetScores, Match } from "@/types/volleyball";
 import { TeamScore } from "./TeamScore";
 import { SetScoresDisplay } from "./SetScoresDisplay";
+import { Button } from "@/components/ui/button";
+import { Award, Shield } from "lucide-react";
 
 interface GameScoresProps {
   currentScore: Score;
@@ -22,11 +24,31 @@ export const GameScores = ({
 
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
-      <TeamScore
-        teamName={homeTeam.name}
-        score={currentScore.home}
-        onScoreUpdate={(increment) => onScoreUpdate("home", increment)}
-      />
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => console.log('Home team block')}
+            className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream h-9 w-9"
+          >
+            <Shield className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => console.log('Home team ace')}
+            className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream h-9 w-9"
+          >
+            <Award className="h-4 w-4" />
+          </Button>
+        </div>
+        <TeamScore
+          teamName={homeTeam.name}
+          score={currentScore.home}
+          onScoreUpdate={(increment) => onScoreUpdate("home", increment)}
+        />
+      </div>
 
       <div className="w-64">
         <SetScoresDisplay 
@@ -36,11 +58,31 @@ export const GameScores = ({
         />
       </div>
 
-      <TeamScore
-        teamName={awayTeam.name}
-        score={currentScore.away}
-        onScoreUpdate={(increment) => onScoreUpdate("away", increment)}
-      />
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => console.log('Away team block')}
+            className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream h-9 w-9"
+          >
+            <Shield className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => console.log('Away team ace')}
+            className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream h-9 w-9"
+          >
+            <Award className="h-4 w-4" />
+          </Button>
+        </div>
+        <TeamScore
+          teamName={awayTeam.name}
+          score={currentScore.away}
+          onScoreUpdate={(increment) => onScoreUpdate("away", increment)}
+        />
+      </div>
     </div>
   );
 };
