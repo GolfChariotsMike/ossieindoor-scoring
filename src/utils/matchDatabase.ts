@@ -33,6 +33,10 @@ export const saveMatchScores = async (
     const awaySetsWon = homeScores.reduce((acc, score, index) => 
       acc + (score < awayScores[index] ? 1 : 0), 0);
 
+    // Calculate total points for and against
+    const homePointsFor = homeScores.reduce((acc, score) => acc + score, 0);
+    const awayPointsFor = awayScores.reduce((acc, score) => acc + score, 0);
+
     // Save to match_results table
     const { error: resultError } = await supabase
       .from('match_results')
@@ -64,13 +68,15 @@ export const saveMatchScores = async (
         match_id: matchId,
         team_name: matchData.home_team_name,
         is_home_team: true,
-        division: matchData.division,  // Added division field
+        division: matchData.division,
         set1_points: homeScores[0] || 0,
         set2_points: homeScores[1] || 0,
         set3_points: homeScores[2] || 0,
         total_set_points: homeSetPoints,
         bonus_points: homeBonus,
-        total_points: homeSetPoints + homeBonus
+        total_points: homeSetPoints + homeBonus,
+        points_for: homePointsFor,
+        points_against: awayPointsFor
       }]);
 
     if (homeSimplifiedError) throw homeSimplifiedError;
@@ -82,13 +88,15 @@ export const saveMatchScores = async (
         match_id: matchId,
         team_name: matchData.away_team_name,
         is_home_team: false,
-        division: matchData.division,  // Added division field
+        division: matchData.division,
         set1_points: awayScores[0] || 0,
         set2_points: awayScores[1] || 0,
         set3_points: awayScores[2] || 0,
         total_set_points: awaySetPoints,
         bonus_points: awayBonus,
-        total_points: awaySetPoints + awayBonus
+        total_points: awaySetPoints + awayBonus,
+        points_for: awayPointsFor,
+        points_against: homePointsFor
       }]);
 
     if (awaySimplifiedError) throw awaySimplifiedError;
