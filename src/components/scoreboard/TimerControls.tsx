@@ -27,7 +27,7 @@ export const TimerControls = ({
           disabled={isMatchComplete}
           className="h-10 w-24 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 mr-1" />
           Block
         </Button>
         <Button
@@ -37,7 +37,7 @@ export const TimerControls = ({
           disabled={isMatchComplete}
           className="h-10 w-24 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 mr-1" />
           ACE
         </Button>
       </div>
@@ -82,7 +82,7 @@ export const TimerControls = ({
           disabled={isMatchComplete}
           className="h-10 w-24 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 mr-1" />
           Block
         </Button>
         <Button
@@ -92,7 +92,7 @@ export const TimerControls = ({
           disabled={isMatchComplete}
           className="h-10 w-24 bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 mr-1" />
           ACE
         </Button>
       </div>

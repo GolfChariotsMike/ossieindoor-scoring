@@ -2,6 +2,7 @@ import { Timer } from "./Timer";
 import { TeamScore } from "./TeamScore";
 import { SetScoresDisplay } from "./SetScoresDisplay";
 import { Match, Score, SetScores } from "@/types/volleyball";
+import { TimerControls } from "./TimerControls";
 
 interface ScoreboardLayoutProps {
   isBreak: boolean;
@@ -13,6 +14,7 @@ interface ScoreboardLayoutProps {
   onTimerComplete: () => void;
   onSwitchTeams: () => void;
   onScoreUpdate: (team: "home" | "away") => void;
+  onRecordStat?: (team: "home" | "away", type: "block" | "ace") => void;
 }
 
 export const ScoreboardLayout = ({
@@ -25,6 +27,7 @@ export const ScoreboardLayout = ({
   onTimerComplete,
   onSwitchTeams,
   onScoreUpdate,
+  onRecordStat,
 }: ScoreboardLayoutProps) => {
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
@@ -32,7 +35,7 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={1}
+        initialMinutes={14}
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
@@ -60,6 +63,14 @@ export const ScoreboardLayout = ({
           onScoreUpdate={() => onScoreUpdate("away")}
         />
       </div>
+
+      <TimerControls
+        isMatchComplete={isMatchComplete}
+        onStartStop={() => {}}
+        onReset={() => {}}
+        onSwitchTeams={onSwitchTeams}
+        onRecordStat={onRecordStat}
+      />
     </div>
   );
 };

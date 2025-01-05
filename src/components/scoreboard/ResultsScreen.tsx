@@ -6,12 +6,27 @@ import { ArrowRight } from "lucide-react";
 interface ResultsScreenProps {
   match: Match;
   setScores: SetScores;
+  stats: {
+    home: { blocks: number; aces: number };
+    away: { blocks: number; aces: number };
+  };
   isTeamsSwitched: boolean;
   onStartNextMatch?: () => void;
 }
 
-export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch }: ResultsScreenProps) => {
-  const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
+export const ResultsScreen = ({ 
+  match, 
+  setScores, 
+  stats,
+  isTeamsSwitched, 
+  onStartNextMatch 
+}: ResultsScreenProps) => {
+  const calculateTeamResults = (
+    teamScores: number[], 
+    opposingScores: number[], 
+    teamName: string,
+    teamStats: { blocks: number; aces: number }
+  ) => {
     let setPoints = 0;
     let drawPoints = 0;
     
@@ -30,7 +45,9 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
       setPoints,
       drawPoints,
       bonusPoints,
-      totalPoints: setPoints + drawPoints + bonusPoints
+      totalPoints: setPoints + drawPoints + bonusPoints,
+      blocks: teamStats.blocks,
+      aces: teamStats.aces
     };
   };
 
@@ -40,13 +57,15 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   const homeResults = calculateTeamResults(
     isTeamsSwitched ? setScores.away : setScores.home,
     isTeamsSwitched ? setScores.home : setScores.away,
-    homeTeam.name
+    homeTeam.name,
+    isTeamsSwitched ? stats.away : stats.home
   );
   
   const awayResults = calculateTeamResults(
     isTeamsSwitched ? setScores.home : setScores.away,
     isTeamsSwitched ? setScores.away : setScores.home,
-    awayTeam.name
+    awayTeam.name,
+    isTeamsSwitched ? stats.home : stats.away
   );
 
   const getWinnerText = () => {
@@ -83,6 +102,8 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
                     <p className="animate-scale-in">Set Points: {result.setPoints}</p>
                     <p className="animate-scale-in delay-75">Draw Points: {result.drawPoints}</p>
                     <p className="animate-scale-in delay-150">Bonus Points: {result.bonusPoints}</p>
+                    <p className="animate-scale-in delay-200">Blocks: {result.blocks}</p>
+                    <p className="animate-scale-in delay-250">Aces: {result.aces}</p>
                     <div className="w-full h-px bg-white/20 my-8"></div>
                     <p className="text-5xl animate-[pulse_3s_ease-in-out_infinite]">
                       Total: {result.totalPoints}
