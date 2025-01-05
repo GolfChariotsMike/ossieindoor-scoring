@@ -1,11 +1,11 @@
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
+import { Timer } from "./scoreboard/Timer";
 import { BackButton } from "./scoreboard/BackButton";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 import { GameScores } from "./scoreboard/GameScores";
 import { LoadingSpinner } from "./scoreboard/LoadingSpinner";
 import { ResultsScreen } from "./scoreboard/ResultsScreen";
-import { ScoreboardHeader } from "./scoreboard/ScoreboardHeader";
 import { useGameState } from "@/hooks/useGameState";
 import { useMatchData } from "@/hooks/useMatchData";
 import { useState, useEffect, useRef } from "react";
@@ -32,6 +32,7 @@ const Scoreboard = () => {
   const searchParams = new URLSearchParams(location.search);
   const fixtureParam = searchParams.get('fixture');
   
+  // Try to get fixture from URL params first, then location state
   const fixture = fixtureParam 
     ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
     : location.state?.fixture as Fixture | undefined;
@@ -156,21 +157,21 @@ const Scoreboard = () => {
               onStartNextMatch={() => {
                 const nextMatch = findNextMatch(nextMatches);
                 if (nextMatch) {
+                  console.log('Manually transitioning to next match:', nextMatch.Id);
                   handleStartNextMatch(nextMatch);
                 }
               }}
             />
           ) : (
             <>
-              <div className="flex flex-col items-center">
-                <ScoreboardHeader
-                  onTimerComplete={handleTimerComplete}
-                  onSwitchTeams={handleSwitchTeams}
-                  isBreak={isBreak}
-                  isMatchComplete={isMatchComplete}
-                  fixture={fixture}
-                />
-              </div>
+              <Timer
+                initialMinutes={14} // Updated to 14 minutes
+                onComplete={handleTimerComplete}
+                onSwitchTeams={handleSwitchTeams}
+                isBreak={isBreak}
+                isMatchComplete={isMatchComplete}
+                fixture={fixture}
+              />
 
               <GameScores
                 currentScore={currentScore}
