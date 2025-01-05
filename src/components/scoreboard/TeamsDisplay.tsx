@@ -6,8 +6,9 @@ interface TeamsDisplayProps {
   awayTeam: Team;
   homeScore: number;
   awayScore: number;
-  onHomeScore: () => void;
-  onAwayScore: () => void;
+  onHomeScore: (increment: boolean) => void;
+  onAwayScore: (increment: boolean) => void;
+  onStatUpdate: (team: "home" | "away", type: "block" | "ace") => void;
 }
 
 export const TeamsDisplay = ({
@@ -17,6 +18,7 @@ export const TeamsDisplay = ({
   awayScore,
   onHomeScore,
   onAwayScore,
+  onStatUpdate,
 }: TeamsDisplayProps) => {
   return (
     <div className="grid grid-cols-2 gap-16 items-center">
@@ -24,11 +26,13 @@ export const TeamsDisplay = ({
         teamName={homeTeam.name}
         score={homeScore}
         onScoreUpdate={onHomeScore}
+        onStatUpdate={(type) => onStatUpdate("home", type)}
       />
       <TeamScore
         teamName={awayTeam.name}
         score={awayScore}
         onScoreUpdate={onAwayScore}
+        onStatUpdate={(type) => onStatUpdate("away", type)}
       />
     </div>
   );

@@ -6,6 +6,10 @@ import { ArrowRight } from "lucide-react";
 interface ResultsScreenProps {
   match: Match;
   setScores: SetScores;
+  stats: {
+    home: { blocks: number; aces: number; blocksAgainst: number };
+    away: { blocks: number; aces: number; blocksAgainst: number };
+  };
   isTeamsSwitched: boolean;
   onStartNextMatch?: () => void;
 }

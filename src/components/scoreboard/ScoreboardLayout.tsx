@@ -12,7 +12,8 @@ interface ScoreboardLayoutProps {
   isMatchComplete: boolean;
   onTimerComplete: () => void;
   onSwitchTeams: () => void;
-  onScoreUpdate: (team: "home" | "away") => void;
+  onScoreUpdate: (team: "home" | "away", increment: boolean) => void;
+  onStatUpdate: (team: "home" | "away", type: "block" | "ace") => void;
 }
 
 export const ScoreboardLayout = ({
@@ -25,6 +26,7 @@ export const ScoreboardLayout = ({
   onTimerComplete,
   onSwitchTeams,
   onScoreUpdate,
+  onStatUpdate,
 }: ScoreboardLayoutProps) => {
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
@@ -32,7 +34,7 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={1}
+        initialMinutes={14}
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
@@ -43,7 +45,8 @@ export const ScoreboardLayout = ({
         <TeamScore
           teamName={homeTeam.name}
           score={currentScore.home}
-          onScoreUpdate={() => onScoreUpdate("home")}
+          onScoreUpdate={(increment) => onScoreUpdate("home", increment)}
+          onStatUpdate={(type) => onStatUpdate("home", type)}
         />
 
         <div className="w-64">
@@ -57,7 +60,8 @@ export const ScoreboardLayout = ({
         <TeamScore
           teamName={awayTeam.name}
           score={currentScore.away}
-          onScoreUpdate={() => onScoreUpdate("away")}
+          onScoreUpdate={(increment) => onScoreUpdate("away", increment)}
+          onStatUpdate={(type) => onStatUpdate("away", type)}
         />
       </div>
     </div>
