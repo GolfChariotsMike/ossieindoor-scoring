@@ -1,11 +1,11 @@
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
-import { Timer } from "./scoreboard/Timer";
 import { BackButton } from "./scoreboard/BackButton";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 import { GameScores } from "./scoreboard/GameScores";
 import { LoadingSpinner } from "./scoreboard/LoadingSpinner";
 import { ResultsScreen } from "./scoreboard/ResultsScreen";
+import { ScoreboardHeader } from "./scoreboard/ScoreboardHeader";
 import { useGameState } from "@/hooks/useGameState";
 import { useMatchData } from "@/hooks/useMatchData";
 import { useState, useEffect, useRef } from "react";
@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { format, parse } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { FastForward, Shield, Award } from "lucide-react";
+import { FastForward } from "lucide-react";
 import { useNextMatch } from "./scoreboard/NextMatchLogic";
 
 const parseFixtureDate = (dateStr: string) => {
@@ -32,7 +32,6 @@ const Scoreboard = () => {
   const searchParams = new URLSearchParams(location.search);
   const fixtureParam = searchParams.get('fixture');
   
-  // Try to get fixture from URL params first, then location state
   const fixture = fixtureParam 
     ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
     : location.state?.fixture as Fixture | undefined;
@@ -157,7 +156,6 @@ const Scoreboard = () => {
               onStartNextMatch={() => {
                 const nextMatch = findNextMatch(nextMatches);
                 if (nextMatch) {
-                  console.log('Manually transitioning to next match:', nextMatch.Id);
                   handleStartNextMatch(nextMatch);
                 }
               }}
@@ -165,48 +163,13 @@ const Scoreboard = () => {
           ) : (
             <>
               <div className="flex flex-col items-center">
-                <Timer
-                  initialMinutes={14}
-                  onComplete={handleTimerComplete}
+                <ScoreboardHeader
+                  onTimerComplete={handleTimerComplete}
                   onSwitchTeams={handleSwitchTeams}
                   isBreak={isBreak}
                   isMatchComplete={isMatchComplete}
                   fixture={fixture}
                 />
-                <div className="flex justify-center gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => console.log('Home team block')}
-                    className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream h-9 w-9"
-                  >
-                    <Shield className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => console.log('Home team ace')}
-                    className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream h-9 w-9"
-                  >
-                    <Award className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => console.log('Away team block')}
-                    className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream h-9 w-9"
-                  >
-                    <Shield className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => console.log('Away team ace')}
-                    className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream h-9 w-9"
-                  >
-                    <Award className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
 
               <GameScores
