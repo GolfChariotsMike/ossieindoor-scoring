@@ -18,12 +18,14 @@ export const ScoreboardHeader = ({
   fixture,
 }: ScoreboardHeaderProps) => {
   return (
-    <div className="flex items-center justify-between w-full max-w-4xl mx-auto">
-      <TeamControls
-        team="home"
-        onBlock={() => console.log('Home team block')}
-        onAce={() => console.log('Home team ace')}
-      />
+    <div className="flex items-center justify-between w-full max-w-4xl mx-auto relative">
+      <div className="absolute left-0 top-[100px]">
+        <TeamControls
+          team="home"
+          onBlock={() => console.log('Home team block')}
+          onAce={() => console.log('Home team ace')}
+        />
+      </div>
       <Timer
         initialMinutes={14}
         onComplete={onTimerComplete}
@@ -32,11 +34,13 @@ export const ScoreboardHeader = ({
         isMatchComplete={isMatchComplete}
         fixture={fixture}
       />
-      <TeamControls
-        team="away"
-        onBlock={() => console.log('Away team block')}
-        onAce={() => console.log('Away team ace')}
-      />
+      <div className="absolute right-0 top-[100px]">
+        <TeamControls
+          team="away"
+          onBlock={() => console.log('Away team block')}
+          onAce={() => console.log('Away team ace')}
+        />
+      </div>
     </div>
   );
 };
