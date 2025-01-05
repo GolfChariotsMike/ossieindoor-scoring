@@ -37,6 +37,14 @@ export const saveMatchScores = async (
     const homePointsFor = homeScores.reduce((acc, score) => acc + score, 0);
     const awayPointsFor = awayScores.reduce((acc, score) => acc + score, 0);
 
+    // Calculate total set points (2 points per set won)
+    const homeSetPoints = homeSetsWon * 2;
+    const awaySetPoints = awaySetsWon * 2;
+
+    // Calculate bonus points (1 point per 10 points scored)
+    const homeBonus = homeScores.reduce((total, score) => total + Math.floor(score / 10), 0);
+    const awayBonus = awayScores.reduce((total, score) => total + Math.floor(score / 10), 0);
+
     // Save to match_results table
     const { error: resultError } = await supabase
       .from('match_results')
@@ -53,14 +61,6 @@ export const saveMatchScores = async (
 
     if (resultError) throw resultError;
 
-    // Calculate bonus points (1 point per 10 points scored)
-    const homeBonus = homeScores.reduce((total, score) => total + Math.floor(score / 10), 0);
-    const awayBonus = awayScores.reduce((total, score) => total + Math.floor(score / 10), 0);
-
-    // Calculate total set points (2 points per set won)
-    const homeSetPoints = homeSetsWon * 2;
-    const awaySetPoints = awaySetsWon * 2;
-
     // Save home team results to match_results_simplified
     const { error: homeSimplifiedError } = await supabase
       .from('match_results_simplified')
@@ -76,7 +76,8 @@ export const saveMatchScores = async (
         bonus_points: homeBonus,
         total_points: homeSetPoints + homeBonus,
         points_for: homePointsFor,
-        points_against: awayPointsFor
+        points_against: awayPointsFor,
+        total_set_points_against: awaySetPoints  // Added this line
       }]);
 
     if (homeSimplifiedError) throw homeSimplifiedError;
@@ -96,7 +97,8 @@ export const saveMatchScores = async (
         bonus_points: awayBonus,
         total_points: awaySetPoints + awayBonus,
         points_for: awayPointsFor,
-        points_against: homePointsFor
+        points_against: homePointsFor,
+        total_set_points_against: homeSetPoints  // Added this line
       }]);
 
     if (awaySimplifiedError) throw awaySimplifiedError;
