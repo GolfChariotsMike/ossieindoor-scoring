@@ -25,7 +25,15 @@ export const GameScores = ({
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-start mb-8">
       <div className="flex flex-col items-center gap-8">
-        <div className="flex gap-2 mb-1">
+        <TeamScore
+          teamName={homeTeam.name}
+          score={currentScore.home}
+          onScoreUpdate={(increment) => onScoreUpdate("home", increment)}
+        />
+      </div>
+
+      <div className="w-64">
+        <div className="flex justify-center gap-2 mb-4">
           <Button
             variant="outline"
             size="icon"
@@ -42,24 +50,6 @@ export const GameScores = ({
           >
             <Award className="h-4 w-4" />
           </Button>
-        </div>
-        <TeamScore
-          teamName={homeTeam.name}
-          score={currentScore.home}
-          onScoreUpdate={(increment) => onScoreUpdate("home", increment)}
-        />
-      </div>
-
-      <div className="w-64">
-        <SetScoresDisplay 
-          setScores={setScores} 
-          match={match}
-          isTeamsSwitched={isTeamsSwitched}
-        />
-      </div>
-
-      <div className="flex flex-col items-center gap-8">
-        <div className="flex gap-2 mb-1">
           <Button
             variant="outline"
             size="icon"
@@ -77,6 +67,14 @@ export const GameScores = ({
             <Award className="h-4 w-4" />
           </Button>
         </div>
+        <SetScoresDisplay 
+          setScores={setScores} 
+          match={match}
+          isTeamsSwitched={isTeamsSwitched}
+        />
+      </div>
+
+      <div className="flex flex-col items-center gap-8">
         <TeamScore
           teamName={awayTeam.name}
           score={currentScore.away}
