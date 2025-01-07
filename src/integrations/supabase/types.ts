@@ -275,6 +275,68 @@ export type Database = {
         }
         Relationships: []
       }
+      results_v3: {
+        Row: {
+          created_at: string | null
+          division: string | null
+          id: string
+          is_home_team: boolean
+          match_id: string | null
+          match_result: string | null
+          set1_points_against: number | null
+          set1_points_for: number | null
+          set2_points_against: number | null
+          set2_points_for: number | null
+          set3_points_against: number | null
+          set3_points_for: number | null
+          team_name: string
+          total_points_against: number | null
+          total_points_for: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          division?: string | null
+          id?: string
+          is_home_team: boolean
+          match_id?: string | null
+          match_result?: string | null
+          set1_points_against?: number | null
+          set1_points_for?: number | null
+          set2_points_against?: number | null
+          set2_points_for?: number | null
+          set3_points_against?: number | null
+          set3_points_for?: number | null
+          team_name: string
+          total_points_against?: number | null
+          total_points_for?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          division?: string | null
+          id?: string
+          is_home_team?: boolean
+          match_id?: string | null
+          match_result?: string | null
+          set1_points_against?: number | null
+          set1_points_for?: number | null
+          set2_points_against?: number | null
+          set2_points_for?: number | null
+          set3_points_against?: number | null
+          set3_points_for?: number | null
+          team_name?: string
+          total_points_against?: number | null
+          total_points_for?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "results_v3_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

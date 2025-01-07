@@ -33,19 +33,62 @@ export const saveMatchScores = async (
     const awaySetsWon = homeScores.reduce((acc, score, index) => 
       acc + (score < awayScores[index] ? 1 : 0), 0);
 
-    // Calculate total points for and against
+    // Calculate total points
     const homePointsFor = homeScores.reduce((acc, score) => acc + score, 0);
     const awayPointsFor = awayScores.reduce((acc, score) => acc + score, 0);
 
-    // Calculate total set points (2 points per set won)
-    const homeSetPoints = homeSetsWon * 2;
-    const awaySetPoints = awaySetsWon * 2;
+    // Calculate match results
+    const getMatchResult = (isHomeTeam: boolean) => {
+      const teamSetsWon = isHomeTeam ? homeSetsWon : awaySetsWon;
+      const opponentSetsWon = isHomeTeam ? awaySetsWon : homeSetsWon;
+      if (teamSetsWon > opponentSetsWon) return 'W';
+      if (teamSetsWon < opponentSetsWon) return 'L';
+      return 'D';
+    };
 
-    // Calculate bonus points (1 point per 10 points scored)
-    const homeBonus = homeScores.reduce((total, score) => total + Math.floor(score / 10), 0);
-    const awayBonus = awayScores.reduce((total, score) => total + Math.floor(score / 10), 0);
+    // Save home team results to results_v3
+    const { error: homeResultError } = await supabase
+      .from('results_v3')
+      .insert([{
+        match_id: matchId,
+        team_name: matchData.home_team_name,
+        is_home_team: true,
+        division: matchData.division,
+        set1_points_for: homeScores[0] || 0,
+        set1_points_against: awayScores[0] || 0,
+        set2_points_for: homeScores[1] || 0,
+        set2_points_against: awayScores[1] || 0,
+        set3_points_for: homeScores[2] || 0,
+        set3_points_against: awayScores[2] || 0,
+        total_points_for: homePointsFor,
+        total_points_against: awayPointsFor,
+        match_result: getMatchResult(true)
+      }]);
 
-    // Save to match_results table
+    if (homeResultError) throw homeResultError;
+
+    // Save away team results to results_v3
+    const { error: awayResultError } = await supabase
+      .from('results_v3')
+      .insert([{
+        match_id: matchId,
+        team_name: matchData.away_team_name,
+        is_home_team: false,
+        division: matchData.division,
+        set1_points_for: awayScores[0] || 0,
+        set1_points_against: homeScores[0] || 0,
+        set2_points_for: awayScores[1] || 0,
+        set2_points_against: homeScores[1] || 0,
+        set3_points_for: awayScores[2] || 0,
+        set3_points_against: homeScores[2] || 0,
+        total_points_for: awayPointsFor,
+        total_points_against: homePointsFor,
+        match_result: getMatchResult(false)
+      }]);
+
+    if (awayResultError) throw awayResultError;
+
+    // Save to match_results table (keeping existing functionality)
     const { error: resultError } = await supabase
       .from('match_results')
       .insert([{
@@ -61,7 +104,7 @@ export const saveMatchScores = async (
 
     if (resultError) throw resultError;
 
-    // Save home team results to match_results_simplified
+    // Save to match_results_simplified (keeping existing functionality)
     const { error: homeSimplifiedError } = await supabase
       .from('match_results_simplified')
       .insert([{
@@ -72,17 +115,16 @@ export const saveMatchScores = async (
         set1_points: homeScores[0] || 0,
         set2_points: homeScores[1] || 0,
         set3_points: homeScores[2] || 0,
-        total_set_points: homeSetPoints,
-        bonus_points: homeBonus,
-        total_points: homeSetPoints + homeBonus,
+        total_set_points: homeSetsWon * 2,
+        bonus_points: Math.floor(homePointsFor / 10),
+        total_points: (homeSetsWon * 2) + Math.floor(homePointsFor / 10),
         points_for: homePointsFor,
         points_against: awayPointsFor,
-        total_set_points_against: awaySetPoints  // Added this line
+        total_set_points_against: awaySetsWon * 2
       }]);
 
     if (homeSimplifiedError) throw homeSimplifiedError;
 
-    // Save away team results to match_results_simplified
     const { error: awaySimplifiedError } = await supabase
       .from('match_results_simplified')
       .insert([{
@@ -93,12 +135,12 @@ export const saveMatchScores = async (
         set1_points: awayScores[0] || 0,
         set2_points: awayScores[1] || 0,
         set3_points: awayScores[2] || 0,
-        total_set_points: awaySetPoints,
-        bonus_points: awayBonus,
-        total_points: awaySetPoints + awayBonus,
+        total_set_points: awaySetsWon * 2,
+        bonus_points: Math.floor(awayPointsFor / 10),
+        total_points: (awaySetsWon * 2) + Math.floor(awayPointsFor / 10),
         points_for: awayPointsFor,
         points_against: homePointsFor,
-        total_set_points_against: homeSetPoints  // Added this line
+        total_set_points_against: homeSetsWon * 2
       }]);
 
     if (awaySimplifiedError) throw awaySimplifiedError;
