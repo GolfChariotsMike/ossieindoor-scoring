@@ -18,7 +18,8 @@ const MirroredScoreboard = () => {
     : location.state?.fixture as Fixture | undefined;
 
   const [currentScore, setCurrentScore] = useState({ home: 0, away: 0 });
-  const [timeLeft, setTimeLeft] = useState(840); // 14 minutes in seconds
+  const [setScores, setSetScores] = useState({ home: [], away: [] });
+  const [timeLeft, setTimeLeft] = useState('14:00');
   const [isBreak, setIsBreak] = useState(false);
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
@@ -31,12 +32,15 @@ const MirroredScoreboard = () => {
         'broadcast',
         { event: 'score-update' },
         ({ payload }) => {
-          console.log('Received score update:', payload);
+          console.log('Display received update:', payload);
           setCurrentScore(payload.currentScore);
           setTimeLeft(payload.timeLeft);
           setIsBreak(payload.isBreak);
           setIsTeamsSwitched(payload.isTeamsSwitched);
           setIsMatchComplete(payload.isMatchComplete);
+          if (payload.setScores) {
+            setSetScores(payload.setScores);
+          }
         }
       )
       .subscribe();
@@ -53,7 +57,6 @@ const MirroredScoreboard = () => {
   return (
     <div className={`min-h-screen ${isMatchComplete ? 'bg-white' : 'bg-volleyball-red'}`}>
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
-        {/* Use a wrapper div for the rotation to maintain layout */}
         <div className="origin-center rotate-180 h-full flex flex-col justify-between">
           <Timer
             initialMinutes={14}
@@ -68,10 +71,10 @@ const MirroredScoreboard = () => {
 
           <GameScores
             currentScore={currentScore}
-            setScores={{ home: [], away: [] }}
+            setScores={setScores}
             match={match}
-            isTeamsSwitched={!isTeamsSwitched} // Invert the teams for the mirrored display
-            onScoreUpdate={() => {}} // Read-only mode
+            isTeamsSwitched={!isTeamsSwitched}
+            onScoreUpdate={() => {}}
           />
         </div>
       </div>

@@ -121,6 +121,7 @@ const Scoreboard = () => {
         event: 'score-update',
         payload: {
           currentScore,
+          setScores,
           timeLeft: document.querySelector('.timer')?.textContent || '14:00',
           isBreak,
           isTeamsSwitched,
@@ -139,7 +140,7 @@ const Scoreboard = () => {
       clearInterval(intervalId);
       supabase.removeChannel(channel);
     };
-  }, [currentScore, isBreak, isTeamsSwitched, isMatchComplete]);
+  }, [currentScore, setScores, isBreak, isTeamsSwitched, isMatchComplete]);
 
   if (isLoading || !match) {
     return <LoadingState />;
