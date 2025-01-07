@@ -16,33 +16,25 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
   const { toast } = useToast();
 
   return useQuery({
-    queryKey: ["match", courtId],
+    queryKey: ["match", courtId, fixture?.Id],
     queryFn: async () => {
+      console.log('Fetching match data for:', { courtId, fixtureId: fixture?.Id });
+      
       if (fixture) {
         const matchCode = generateMatchCode(courtId, fixture);
         
-        const { data: existingMatch, error: checkError } = await supabase
+        // Delete any existing matches for this court and time
+        const { error: deleteError } = await supabase
           .from('matches_v2')
-          .select()
-          .eq('match_code', matchCode)
-          .maybeSingle();
+          .delete()
+          .eq('match_code', matchCode);
 
-        if (checkError) {
-          console.error('Error checking existing match:', checkError);
-          throw checkError;
+        if (deleteError) {
+          console.error('Error deleting existing match:', deleteError);
+          throw deleteError;
         }
 
-        if (existingMatch) {
-          return {
-            id: existingMatch.id,
-            court: existingMatch.court_number,
-            startTime: existingMatch.start_time,
-            division: existingMatch.division,
-            homeTeam: { id: existingMatch.home_team_id, name: existingMatch.home_team_name },
-            awayTeam: { id: existingMatch.away_team_id, name: existingMatch.away_team_name },
-          };
-        }
-
+        // Create new match
         const { data: matchData, error } = await supabase
           .from('matches_v2')
           .insert({
@@ -68,6 +60,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           throw error;
         }
 
+        console.log('Created new match:', matchData);
         return {
           id: matchData.id,
           court: matchData.court_number,
@@ -78,62 +71,37 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         };
       }
 
-      const { data: existingMatch, error } = await supabase
+      // For non-fixture matches, create a default match
+      const matchCode = generateMatchCode(courtId);
+      const { data: matchData, error } = await supabase
         .from('matches_v2')
+        .insert({
+          match_code: matchCode,
+          court_number: parseInt(courtId),
+          home_team_id: 'unknown',
+          home_team_name: 'Team A',
+          away_team_id: 'unknown',
+          away_team_name: 'Team B',
+        })
         .select()
-        .eq('court_number', parseInt(courtId))
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .single();
 
       if (error) {
-        console.error('Error fetching match:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch match data",
-          variant: "destructive",
-        });
+        console.error('Error creating default match:', error);
         throw error;
       }
 
-      if (!existingMatch) {
-        const matchCode = generateMatchCode(courtId);
-        const { data: newMatch, error: createError } = await supabase
-          .from('matches_v2')
-          .insert({
-            match_code: matchCode,
-            court_number: parseInt(courtId),
-            home_team_id: 'unknown',
-            home_team_name: 'Team A',
-            away_team_id: 'unknown',
-            away_team_name: 'Team B',
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating default match:', createError);
-          throw createError;
-        }
-
-        return {
-          id: newMatch.id,
-          court: newMatch.court_number,
-          startTime: newMatch.start_time,
-          division: newMatch.division,
-          homeTeam: { id: newMatch.home_team_id, name: newMatch.home_team_name },
-          awayTeam: { id: newMatch.away_team_id, name: newMatch.away_team_name },
-        };
-      }
-
       return {
-        id: existingMatch.id,
-        court: existingMatch.court_number,
-        startTime: existingMatch.start_time,
-        division: existingMatch.division,
-        homeTeam: { id: existingMatch.home_team_id, name: existingMatch.home_team_name },
-        awayTeam: { id: existingMatch.away_team_id, name: existingMatch.away_team_name },
+        id: matchData.id,
+        court: matchData.court_number,
+        startTime: matchData.start_time,
+        division: matchData.division,
+        homeTeam: { id: matchData.home_team_id, name: matchData.home_team_name },
+        awayTeam: { id: matchData.away_team_id, name: matchData.away_team_name },
       };
     },
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    staleTime: 0,
   });
 };

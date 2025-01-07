@@ -17,24 +17,16 @@ export const useMatchInitialization = (
     // Force a complete reset of the game state
     resetGameState();
     
-    if (fixture?.Id) {
-      // Force refetch of match data
-      refetch().then(() => {
-        console.log('Match data refreshed for fixture:', fixture.Id);
-        toast({
-          title: "Match Started",
-          description: `${fixture.HomeTeam} vs ${fixture.AwayTeam}`,
-        });
-      }).catch(error => {
-        console.error('Error refreshing match data:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load match data",
-          variant: "destructive",
-        });
+    // Force refetch of match data
+    refetch().catch(error => {
+      console.error('Error refreshing match data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load match data",
+        variant: "destructive",
       });
-    }
-  }, [fixture?.Id, resetGameState, refetch, fixture]);
+    });
+  }, [fixture?.Id, resetGameState, refetch]);
 
-  return { match, isLoading, refetch };
+  return { match, isLoading };
 };
