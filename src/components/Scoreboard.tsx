@@ -1,143 +1,124 @@
-import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
+import { Fixture } from "@/types/volleyball";
+import { Timer } from "./scoreboard/Timer";
+import { BackButton } from "./scoreboard/BackButton";
+import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
+import { GameScores } from "./scoreboard/GameScores";
+import { LoadingSpinner } from "./scoreboard/LoadingSpinner";
+import { ResultsScreen } from "./scoreboard/ResultsScreen";
+import { useGameState } from "@/hooks/useGameState";
+import { useMatchData } from "@/hooks/useMatchData";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
-import { useToast } from "@/components/ui/use-toast";
-import { BackButton } from "@/components/scoreboard/BackButton";
-import { ExitConfirmationDialog } from "@/components/scoreboard/ExitConfirmationDialog";
-import { LoadingState } from "@/components/scoreboard/LoadingState";
-import { ScoreboardLayout } from "@/components/scoreboard/ScoreboardLayout";
-import { supabase } from "@/integrations/supabase/client";
+import { format, parse } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { FastForward } from "lucide-react";
+import { useNextMatch } from "./scoreboard/NextMatchLogic";
+
+const parseFixtureDate = (dateStr: string) => {
+  try {
+    return parse(dateStr, 'dd/MM/yyyy HH:mm', new Date());
+  } catch (error) {
+    console.error('Error parsing date:', dateStr, error);
+    return new Date();
+  }
+};
 
 const Scoreboard = () => {
   const { courtId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const fixture = location.state?.fixture as Fixture | undefined;
-  const { toast } = useToast();
+  const searchParams = new URLSearchParams(location.search);
+  const fixtureParam = searchParams.get('fixture');
+  
+  // Try to get fixture from URL params first, then location state
+  const fixture = fixtureParam 
+    ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
+    : location.state?.fixture as Fixture | undefined;
 
-  const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
-  const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
-  const [isBreak, setIsBreak] = useState(false);
-  const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
-  const [isMatchComplete, setIsMatchComplete] = useState(false);
+  const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousFixtureIdRef = useRef<string | null>(null);
 
-  const { data: match, isLoading } = useQuery({
-    queryKey: ["match", courtId],
+  const {
+    currentScore,
+    setScores,
+    isBreak,
+    isTeamsSwitched,
+    isMatchComplete,
+    handleScore,
+    handleTimerComplete,
+    handleSwitchTeams,
+    saveMatchScores,
+    hasGameStarted,
+    resetGameState
+  } = useGameState();
+
+  const { data: match, isLoading } = useMatchData(courtId!, fixture);
+  const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
+
+  const { data: nextMatches = [] } = useQuery({
+    queryKey: ["matches", fixture?.DateTime ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')],
     queryFn: async () => {
-      if (fixture) {
-        return {
-          id: fixture.Id || "match-1",
-          court: parseInt(courtId!),
-          startTime: fixture.DateTime,
-          division: fixture.DivisionName,
-          homeTeam: { id: fixture.HomeTeamId, name: fixture.HomeTeam },
-          awayTeam: { id: fixture.AwayTeamId, name: fixture.AwayTeam },
-        };
-      }
-      const data = await fetchMatchData(courtId!);
-      if (Array.isArray(data)) {
-        throw new Error("Invalid match data received");
-      }
-      return data as Match;
+      const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
+      const result = await fetchMatchData(undefined, queryDate);
+      return (Array.isArray(result) ? result : []).map(item => ({
+        ...item,
+        Id: item.Id || item.id || `${item.DateTime}-${item.PlayingAreaName}`,
+      })) as Fixture[];
     },
   });
 
-  // Add broadcast channel for real-time updates
+  // Reset game state only when fixture ID changes
   useEffect(() => {
-    const channel = supabase.channel(`scoreboard-${courtId}`);
-    
-    const broadcastUpdate = () => {
-      if (!match) return;
-      
-      channel.send({
-        type: 'broadcast',
-        event: 'score-update',
-        payload: {
-          matchId: match.id,
-          currentScore,
-          setScores,
-          timeLeft: document.querySelector('.timer')?.textContent || '14:00',
-          isBreak,
-          isTeamsSwitched,
-          isMatchComplete,
-          match
-        }
-      });
-    };
-
-    // Broadcast initial state and set up interval
-    broadcastUpdate();
-    const intervalId = setInterval(broadcastUpdate, 1000);
-
-    return () => {
-      clearInterval(intervalId);
-      supabase.removeChannel(channel);
-    };
-  }, [courtId, match, currentScore, setScores, isBreak, isTeamsSwitched, isMatchComplete]);
-
-  const handleScore = (team: "home" | "away") => {
-    if (isMatchComplete) return;
-    setCurrentScore((prev) => ({
-      ...prev,
-      [team]: prev[team] + 1,
-    }));
-  };
-
-  const handleTimerComplete = () => {
-    if (isBreak) {
-      setIsBreak(false);
-      setCurrentScore({ home: 0, away: 0 });
-      handleSwitchTeams();
-      
-      if (!isMatchComplete) {
-        toast({
-          title: "Break Time Over",
-          description: "Starting next set",
-        });
-      }
-    } else {
-      // Only proceed if there are actual scores
-      if (currentScore.home === 0 && currentScore.away === 0) {
-        return;
-      }
-
-      const newSetScores = {
-        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
-        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
-      };
-      
-      setSetScores(newSetScores);
-      setIsBreak(true);
-      
-      if (newSetScores.home.length >= 3) {
-        setIsMatchComplete(true);
-        toast({
-          title: "Match Complete",
-          description: "The match has ended",
-        });
-      } else {
-        toast({
-          title: "Set Complete",
-          description: "Starting 1 minute break",
-        });
-      }
+    if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
+      console.log('New fixture detected, resetting game state:', fixture.Id);
+      resetGameState();
+      previousFixtureIdRef.current = fixture.Id;
     }
-  };
+  }, [fixture?.Id, resetGameState]);
 
-  const handleSwitchTeams = () => {
-    if (isMatchComplete) return;
-    setIsTeamsSwitched(!isTeamsSwitched);
-    setCurrentScore((prev) => ({
-      home: prev.away,
-      away: prev.home
-    }));
-  };
+  useEffect(() => {
+    if (isMatchComplete && match && hasGameStarted) {
+      console.log('Match complete, saving scores');
+      saveMatchScores(match.id, setScores.home, setScores.away);
+      setResultsDisplayStartTime(Date.now());
+    }
+  }, [isMatchComplete, match, setScores, saveMatchScores, hasGameStarted]);
+
+  useEffect(() => {
+    if (resultsDisplayStartTime) {
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+
+      transitionTimeoutRef.current = setTimeout(() => {
+        console.log('Results display time complete, checking for next match');
+        const nextMatch = findNextMatch(nextMatches);
+        if (nextMatch) {
+          console.log('Auto-transitioning to next match:', nextMatch.Id);
+          handleStartNextMatch(nextMatch);
+        } else {
+          console.log('No next match found for auto-transition');
+        }
+      }, 30000);
+
+      return () => {
+        if (transitionTimeoutRef.current) {
+          clearTimeout(transitionTimeoutRef.current);
+        }
+      };
+    }
+  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch]);
 
   const handleBack = () => {
-    setShowExitConfirmation(true);
+    if (hasGameStarted) {
+      setShowExitConfirmation(true);
+    } else {
+      navigate('/');
+    }
   };
 
   const confirmExit = () => {
@@ -145,25 +126,63 @@ const Scoreboard = () => {
   };
 
   if (isLoading || !match) {
-    return <LoadingState />;
+    return <LoadingSpinner />;
   }
 
   return (
-    <div className="min-h-screen bg-volleyball-red">
+    <div className={`min-h-screen ${isMatchComplete ? 'bg-white' : 'bg-volleyball-red'}`}>
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
         <BackButton onClick={handleBack} />
+        
+        {isMatchComplete && (
+          <div className="absolute top-6 right-6 z-10">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
+            >
+              <FastForward className="w-4 h-4 mr-1" />
+              Return to Courts
+            </Button>
+          </div>
+        )}
 
-        <ScoreboardLayout
-          isBreak={isBreak}
-          currentScore={currentScore}
-          setScores={setScores}
-          match={match}
-          isTeamsSwitched={isTeamsSwitched}
-          isMatchComplete={isMatchComplete}
-          onTimerComplete={handleTimerComplete}
-          onSwitchTeams={handleSwitchTeams}
-          onScoreUpdate={handleScore}
-        />
+        <div className="flex flex-col justify-between h-full">
+          {isMatchComplete ? (
+            <ResultsScreen
+              match={match}
+              setScores={setScores}
+              isTeamsSwitched={isTeamsSwitched}
+              onStartNextMatch={() => {
+                const nextMatch = findNextMatch(nextMatches);
+                if (nextMatch) {
+                  console.log('Manually transitioning to next match:', nextMatch.Id);
+                  handleStartNextMatch(nextMatch);
+                }
+              }}
+            />
+          ) : (
+            <>
+              <Timer
+                initialMinutes={14} // Updated to 14 minutes
+                onComplete={handleTimerComplete}
+                onSwitchTeams={handleSwitchTeams}
+                isBreak={isBreak}
+                isMatchComplete={isMatchComplete}
+                fixture={fixture}
+              />
+
+              <GameScores
+                currentScore={currentScore}
+                setScores={setScores}
+                match={match}
+                isTeamsSwitched={isTeamsSwitched}
+                onScoreUpdate={handleScore}
+              />
+            </>
+          )}
+        </div>
 
         <ExitConfirmationDialog
           open={showExitConfirmation}

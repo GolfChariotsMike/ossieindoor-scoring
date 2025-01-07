@@ -11,22 +11,18 @@ interface TimerProps {
   isBreak: boolean;
   isMatchComplete: boolean;
   fixture?: { Id: string };
-  timeLeft?: number;
-  isReadOnly?: boolean;
 }
 
 export const Timer = ({ 
-  initialMinutes = 14,
+  initialMinutes = 14, // Changed default to 14 minutes
   onComplete, 
   onSwitchTeams,
   isBreak,
   isMatchComplete,
-  fixture,
-  timeLeft: externalTimeLeft,
-  isReadOnly = false
+  fixture
 }: TimerProps) => {
   const {
-    timeLeft: internalTimeLeft,
+    timeLeft,
     handleStartStop,
     handleReset,
     handleSkipPhase,
@@ -40,26 +36,23 @@ export const Timer = ({
     fixture
   });
 
-  const timeLeft = externalTimeLeft ?? internalTimeLeft;
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
   return (
     <div className="text-volleyball-cream text-center relative">
-      {!isReadOnly && (
-        <div className="absolute top-0 right-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSkipPhase}
-            disabled={isMatchComplete}
-            className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
-          >
-            <FastForward className="w-4 h-4 mr-1" />
-            Skip Phase
-          </Button>
-        </div>
-      )}
+      <div className="absolute top-0 right-0">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSkipPhase}
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+        >
+          <FastForward className="w-4 h-4 mr-1" />
+          Skip Phase
+        </Button>
+      </div>
       
       <TimerDisplay 
         minutes={minutes}
@@ -68,14 +61,12 @@ export const Timer = ({
         isMatchComplete={isMatchComplete}
       />
       
-      {!isReadOnly && (
-        <TimerControls 
-          isMatchComplete={isMatchComplete}
-          onStartStop={handleStartStop}
-          onReset={handleReset}
-          onSwitchTeams={onSwitchTeams}
-        />
-      )}
+      <TimerControls 
+        isMatchComplete={isMatchComplete}
+        onStartStop={handleStartStop}
+        onReset={handleReset}
+        onSwitchTeams={onSwitchTeams}
+      />
     </div>
   );
 };
