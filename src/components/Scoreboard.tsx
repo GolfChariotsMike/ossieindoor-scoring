@@ -15,6 +15,7 @@ import { format, parse } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useNextMatch } from "./scoreboard/NextMatchLogic";
+import { toast } from "@/components/ui/use-toast";
 
 const parseFixtureDate = (dateStr: string) => {
   try {
@@ -39,7 +40,6 @@ const Scoreboard = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousFixtureIdRef = useRef<string | null>(null);
 
   const {
     currentScore,
@@ -55,7 +55,7 @@ const Scoreboard = () => {
     resetGameState
   } = useGameState();
 
-  const { data: match, isLoading } = useMatchData(courtId!, fixture);
+  const { data: match, isLoading, refetch } = useMatchData(courtId!, fixture);
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
 
   const { data: nextMatches = [] } = useQuery({
@@ -70,13 +70,18 @@ const Scoreboard = () => {
     },
   });
 
+  // Reset game state when fixture changes
   useEffect(() => {
-    if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
+    if (fixture?.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
       resetGameState();
-      previousFixtureIdRef.current = fixture.Id;
+      refetch(); // Refetch match data to ensure we have the latest
+      toast({
+        title: "Match Reset",
+        description: "Starting new match with fresh scores",
+      });
     }
-  }, [fixture?.Id, resetGameState]);
+  }, [fixture?.Id, resetGameState, refetch]);
 
   useEffect(() => {
     if (isMatchComplete && match && hasGameStarted) {
