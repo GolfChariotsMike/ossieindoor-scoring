@@ -23,27 +23,38 @@ const MirroredScoreboard = () => {
   const [isBreak, setIsBreak] = useState(false);
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
+  const [match, setMatch] = useState<any>(null);
 
-  const { data: match, isLoading } = useMatchData(courtId!, fixture);
+  const { data: initialMatch, isLoading } = useMatchData(courtId!, fixture);
 
   useEffect(() => {
-    const channel = supabase.channel('scoreboard-updates')
+    if (initialMatch) {
+      setMatch(initialMatch);
+    }
+  }, [initialMatch]);
+
+  useEffect(() => {
+    const channel = supabase.channel(`scoreboard-${courtId}`)
       .on(
         'broadcast',
         { event: 'score-update' },
         ({ payload }) => {
           console.log('Display received update:', payload);
-          setCurrentScore(payload.currentScore);
-          // Convert time string (MM:SS) to seconds
-          if (payload.timeLeft) {
-            const [minutes, seconds] = payload.timeLeft.split(':').map(Number);
-            setTimeLeft(minutes * 60 + seconds);
-          }
-          setIsBreak(payload.isBreak);
-          setIsTeamsSwitched(payload.isTeamsSwitched);
-          setIsMatchComplete(payload.isMatchComplete);
-          if (payload.setScores) {
-            setSetScores(payload.setScores);
+          if (payload.matchId === match?.id) {
+            setCurrentScore(payload.currentScore);
+            if (payload.timeLeft) {
+              const [minutes, seconds] = payload.timeLeft.split(':').map(Number);
+              setTimeLeft(minutes * 60 + seconds);
+            }
+            setIsBreak(payload.isBreak);
+            setIsTeamsSwitched(payload.isTeamsSwitched);
+            setIsMatchComplete(payload.isMatchComplete);
+            if (payload.setScores) {
+              setSetScores(payload.setScores);
+            }
+            if (payload.match) {
+              setMatch(payload.match);
+            }
           }
         }
       )
@@ -52,7 +63,7 @@ const MirroredScoreboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [courtId, match?.id]);
 
   if (isLoading || !match) {
     return <LoadingSpinner />;
@@ -61,7 +72,7 @@ const MirroredScoreboard = () => {
   return (
     <div className={`min-h-screen ${isMatchComplete ? 'bg-white' : 'bg-volleyball-red'}`}>
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
-        <div className="origin-center rotate-180 h-full flex flex-col justify-between">
+        <div className="h-full flex flex-col justify-between transform rotate-180">
           <Timer
             initialMinutes={14}
             onComplete={() => {}}

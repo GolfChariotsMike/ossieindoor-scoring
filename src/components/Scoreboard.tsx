@@ -45,6 +45,39 @@ const Scoreboard = () => {
     },
   });
 
+  // Add broadcast channel for real-time updates
+  useEffect(() => {
+    const channel = supabase.channel(`scoreboard-${courtId}`);
+    
+    const broadcastUpdate = () => {
+      if (!match) return;
+      
+      channel.send({
+        type: 'broadcast',
+        event: 'score-update',
+        payload: {
+          matchId: match.id,
+          currentScore,
+          setScores,
+          timeLeft: document.querySelector('.timer')?.textContent || '14:00',
+          isBreak,
+          isTeamsSwitched,
+          isMatchComplete,
+          match
+        }
+      });
+    };
+
+    // Broadcast initial state and set up interval
+    broadcastUpdate();
+    const intervalId = setInterval(broadcastUpdate, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+      supabase.removeChannel(channel);
+    };
+  }, [courtId, match, currentScore, setScores, isBreak, isTeamsSwitched, isMatchComplete]);
+
   const handleScore = (team: "home" | "away") => {
     if (isMatchComplete) return;
     setCurrentScore((prev) => ({
@@ -110,37 +143,6 @@ const Scoreboard = () => {
   const confirmExit = () => {
     navigate('/');
   };
-
-  // Add broadcast channel for real-time updates
-  useEffect(() => {
-    const channel = supabase.channel('scoreboard-updates');
-    
-    const broadcastUpdate = () => {
-      channel.send({
-        type: 'broadcast',
-        event: 'score-update',
-        payload: {
-          currentScore,
-          setScores,
-          timeLeft: document.querySelector('.timer')?.textContent || '14:00',
-          isBreak,
-          isTeamsSwitched,
-          isMatchComplete
-        }
-      });
-    };
-
-    // Broadcast initial state
-    broadcastUpdate();
-
-    // Set up interval to broadcast updates
-    const intervalId = setInterval(broadcastUpdate, 1000);
-
-    return () => {
-      clearInterval(intervalId);
-      supabase.removeChannel(channel);
-    };
-  }, [currentScore, setScores, isBreak, isTeamsSwitched, isMatchComplete]);
 
   if (isLoading || !match) {
     return <LoadingState />;
