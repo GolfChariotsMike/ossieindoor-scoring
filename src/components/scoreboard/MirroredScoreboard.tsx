@@ -3,7 +3,6 @@ import { Fixture } from "@/types/volleyball";
 import { Timer } from "./Timer";
 import { GameScores } from "./GameScores";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { useGameState } from "@/hooks/useGameState";
 import { useMatchData } from "@/hooks/useMatchData";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,7 +53,8 @@ const MirroredScoreboard = () => {
   return (
     <div className={`min-h-screen ${isMatchComplete ? 'bg-white' : 'bg-volleyball-red'}`}>
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
-        <div className="flex flex-col justify-between h-full transform rotate-180">
+        {/* Use a wrapper div for the rotation to maintain layout */}
+        <div className="origin-center rotate-180 h-full flex flex-col justify-between">
           <Timer
             initialMinutes={14}
             onComplete={() => {}}
