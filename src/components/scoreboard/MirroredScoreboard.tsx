@@ -19,7 +19,7 @@ const MirroredScoreboard = () => {
 
   const [currentScore, setCurrentScore] = useState({ home: 0, away: 0 });
   const [setScores, setSetScores] = useState({ home: [], away: [] });
-  const [timeLeft, setTimeLeft] = useState('14:00');
+  const [timeLeft, setTimeLeft] = useState(840); // 14 minutes in seconds
   const [isBreak, setIsBreak] = useState(false);
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
@@ -34,7 +34,11 @@ const MirroredScoreboard = () => {
         ({ payload }) => {
           console.log('Display received update:', payload);
           setCurrentScore(payload.currentScore);
-          setTimeLeft(payload.timeLeft);
+          // Convert time string (MM:SS) to seconds
+          if (payload.timeLeft) {
+            const [minutes, seconds] = payload.timeLeft.split(':').map(Number);
+            setTimeLeft(minutes * 60 + seconds);
+          }
           setIsBreak(payload.isBreak);
           setIsTeamsSwitched(payload.isTeamsSwitched);
           setIsMatchComplete(payload.isMatchComplete);
