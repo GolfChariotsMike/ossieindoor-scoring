@@ -12,18 +12,25 @@ export const useMatchInitialization = (
 
   // Reset game state and refetch match data when fixture changes
   useEffect(() => {
+    console.log('Match initialization - Fixture changed:', fixture?.Id);
+    
+    // Force a complete reset of the game state
+    resetGameState();
+    
     if (fixture?.Id) {
-      console.log('Initializing new match:', fixture.Id);
-      
-      // Force a complete reset of the game state
-      resetGameState();
-      
       // Force refetch of match data
       refetch().then(() => {
         console.log('Match data refreshed for fixture:', fixture.Id);
         toast({
-          title: "New Match Started",
+          title: "Match Started",
           description: `${fixture.HomeTeam} vs ${fixture.AwayTeam}`,
+        });
+      }).catch(error => {
+        console.error('Error refreshing match data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load match data",
+          variant: "destructive",
         });
       });
     }

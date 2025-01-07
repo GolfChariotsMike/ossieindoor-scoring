@@ -15,6 +15,8 @@ export const ScoreboardContainer = () => {
     ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
     : location.state?.fixture as Fixture | undefined;
 
+  console.log('ScoreboardContainer - Initializing with fixture:', fixture);
+
   const gameState = useGameState();
   const { match, isLoading } = useMatchInitialization(
     courtId!,
@@ -23,9 +25,11 @@ export const ScoreboardContainer = () => {
   );
 
   if (isLoading || !match) {
+    console.log('ScoreboardContainer - Loading state');
     return <LoadingSpinner />;
   }
 
+  console.log('ScoreboardContainer - Rendering with match:', match);
   return (
     <ScoreboardContent
       courtId={courtId!}

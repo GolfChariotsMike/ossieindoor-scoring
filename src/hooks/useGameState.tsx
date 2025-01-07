@@ -13,6 +13,7 @@ export const useGameState = () => {
   const [hasGameStarted, setHasGameStarted] = useState(false);
 
   const resetGameState = () => {
+    console.log('Resetting game state');
     setCurrentScore({ home: 0, away: 0 });
     setSetScores({ home: [], away: [] });
     setIsBreak(false);
