@@ -32,7 +32,6 @@ const Scoreboard = () => {
   const searchParams = new URLSearchParams(location.search);
   const fixtureParam = searchParams.get('fixture');
   
-  // Try to get fixture from URL params first, then location state
   const fixture = fixtureParam 
     ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
     : location.state?.fixture as Fixture | undefined;
@@ -71,7 +70,6 @@ const Scoreboard = () => {
     },
   });
 
-  // Reset game state only when fixture ID changes
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
@@ -102,6 +100,7 @@ const Scoreboard = () => {
           handleStartNextMatch(nextMatch);
         } else {
           console.log('No next match found for auto-transition');
+          navigate('/');
         }
       }, 30000);
 
@@ -111,7 +110,7 @@ const Scoreboard = () => {
         }
       };
     }
-  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch]);
+  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, navigate]);
 
   const handleBack = () => {
     if (hasGameStarted) {
@@ -123,6 +122,18 @@ const Scoreboard = () => {
 
   const confirmExit = () => {
     navigate('/');
+  };
+
+  const handleManualNextMatch = () => {
+    console.log('Manual next match transition triggered');
+    const nextMatch = findNextMatch(nextMatches);
+    if (nextMatch) {
+      console.log('Manually transitioning to next match:', nextMatch.Id);
+      handleStartNextMatch(nextMatch);
+    } else {
+      console.log('No next match found, returning to court selection');
+      navigate('/');
+    }
   };
 
   if (isLoading || !match) {
@@ -154,18 +165,12 @@ const Scoreboard = () => {
               match={match}
               setScores={setScores}
               isTeamsSwitched={isTeamsSwitched}
-              onStartNextMatch={() => {
-                const nextMatch = findNextMatch(nextMatches);
-                if (nextMatch) {
-                  console.log('Manually transitioning to next match:', nextMatch.Id);
-                  handleStartNextMatch(nextMatch);
-                }
-              }}
+              onStartNextMatch={handleManualNextMatch}
             />
           ) : (
             <>
               <Timer
-                initialMinutes={14} // Updated to 14 minutes
+                initialMinutes={14}
                 onComplete={handleTimerComplete}
                 onSwitchTeams={handleSwitchTeams}
                 isBreak={isBreak}

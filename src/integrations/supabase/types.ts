@@ -79,6 +79,7 @@ export type Database = {
           team_name: string
           total_points: number | null
           total_set_points: number | null
+          total_set_points_against: number | null
         }
         Insert: {
           aces?: number | null
@@ -99,6 +100,7 @@ export type Database = {
           team_name: string
           total_points?: number | null
           total_set_points?: number | null
+          total_set_points_against?: number | null
         }
         Update: {
           aces?: number | null
@@ -119,6 +121,7 @@ export type Database = {
           team_name?: string
           total_points?: number | null
           total_set_points?: number | null
+          total_set_points_against?: number | null
         }
         Relationships: [
           {

@@ -58,6 +58,13 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
     return "It's a Draw!";
   };
 
+  const handleStartNextMatch = () => {
+    console.log('Manual next match transition triggered');
+    if (onStartNextMatch) {
+      onStartNextMatch();
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center">
       <div className="absolute inset-0 z-50">
@@ -97,7 +104,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
                 <Button
                   variant="outline"
                   size="lg"
-                  onClick={onStartNextMatch}
+                  onClick={handleStartNextMatch}
                   className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream text-xl py-6 px-8"
                 >
                   <ArrowRight className="w-6 h-6 mr-2" />
