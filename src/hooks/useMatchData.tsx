@@ -23,18 +23,32 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
       if (fixture) {
         const matchCode = generateMatchCode(courtId, fixture);
         
-        // Delete any existing matches for this court and time
-        const { error: deleteError } = await supabase
+        // First, try to find an existing match
+        const { data: existingMatch, error: findError } = await supabase
           .from('matches_v2')
-          .delete()
-          .eq('match_code', matchCode);
+          .select()
+          .eq('match_code', matchCode)
+          .maybeSingle();
 
-        if (deleteError) {
-          console.error('Error deleting existing match:', deleteError);
-          throw deleteError;
+        if (findError) {
+          console.error('Error finding existing match:', findError);
+          throw findError;
         }
 
-        // Create new match
+        // If match exists, return it
+        if (existingMatch) {
+          console.log('Found existing match:', existingMatch);
+          return {
+            id: existingMatch.id,
+            court: existingMatch.court_number,
+            startTime: existingMatch.start_time,
+            division: existingMatch.division,
+            homeTeam: { id: existingMatch.home_team_id, name: existingMatch.home_team_name },
+            awayTeam: { id: existingMatch.away_team_id, name: existingMatch.away_team_name },
+          };
+        }
+
+        // If no match exists, create a new one
         const { data: matchData, error } = await supabase
           .from('matches_v2')
           .insert({
