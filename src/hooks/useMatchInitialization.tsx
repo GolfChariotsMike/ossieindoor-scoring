@@ -1,32 +1,36 @@
 import { useEffect } from "react";
-import { useMatchData } from "./useMatchData";
-import { Fixture } from "@/types/volleyball";
-import { toast } from "@/components/ui/use-toast";
+import { Match, Fixture } from "@/types/volleyball";
+import { useQuery } from "@tanstack/react-query";
+import { fetchMatchData } from "@/utils/matchDataFetcher";
 
 export const useMatchInitialization = (
-  courtId: string, 
+  courtId: string,
   fixture: Fixture | undefined,
-  resetGameState: () => void,
+  resetGameState: () => void
 ) => {
-  const { data: match, isLoading, refetch } = useMatchData(courtId, fixture);
+  const { data: match, isLoading } = useQuery({
+    queryKey: ["match", courtId, fixture?.Id],
+    queryFn: async () => {
+      console.log('Fetching match data for:', { courtId, fixtureId: fixture?.Id });
+      if (fixture) {
+        const data = await fetchMatchData(courtId, undefined, fixture);
+        return data as Match;
+      }
+      const data = await fetchMatchData(courtId);
+      if (Array.isArray(data)) {
+        throw new Error("Invalid match data received");
+      }
+      return data as Match;
+    },
+    staleTime: Infinity, // Prevent automatic refetching
+  });
 
-  // Reset game state and refetch match data when fixture changes
   useEffect(() => {
-    console.log('Match initialization - Fixture changed:', fixture?.Id);
-    
-    // Force a complete reset of the game state
-    resetGameState();
-    
-    // Force refetch of match data
-    refetch().catch(error => {
-      console.error('Error refreshing match data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load match data",
-        variant: "destructive",
-      });
-    });
-  }, [fixture?.Id, resetGameState, refetch]);
+    if (fixture?.Id) {
+      console.log('Match initialization - Fixture changed:', fixture.Id);
+      resetGameState();
+    }
+  }, [fixture?.Id, resetGameState]);
 
   return { match, isLoading };
 };
