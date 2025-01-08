@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Match, Fixture } from "@/types/volleyball";
 import { useQuery } from "@tanstack/react-query";
-import { fetchMatchData } from "@/utils/matchDataFetcher";
 
 export const useMatchInitialization = (
   courtId: string,
@@ -11,10 +10,9 @@ export const useMatchInitialization = (
   const { data: match, isLoading } = useQuery({
     queryKey: ["match", courtId, fixture?.Id],
     queryFn: async () => {
-      console.log('Fetching match data for:', { courtId, fixtureId: fixture?.Id });
+      console.log('Creating new match data for:', { courtId, fixtureId: fixture?.Id });
+      
       if (fixture) {
-        // Pass selectedDate as undefined since it's optional
-        const data = await fetchMatchData(courtId, undefined);
         return {
           id: fixture.Id,
           court: parseInt(courtId),
@@ -24,11 +22,16 @@ export const useMatchInitialization = (
           awayTeam: { id: fixture.AwayTeamId, name: fixture.AwayTeam },
         } as Match;
       }
-      const data = await fetchMatchData(courtId);
-      if (Array.isArray(data)) {
-        throw new Error("Invalid match data received");
-      }
-      return data as Match;
+
+      // For non-fixture matches, create a default match
+      return {
+        id: `court-${courtId}-${Date.now()}`,
+        court: parseInt(courtId),
+        startTime: new Date().toISOString(),
+        division: "Default",
+        homeTeam: { id: "team-a", name: "Team A" },
+        awayTeam: { id: "team-b", name: "Team B" },
+      } as Match;
     },
     staleTime: Infinity, // Prevent automatic refetching
   });
