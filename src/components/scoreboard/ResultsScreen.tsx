@@ -92,19 +92,17 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
           </div>
 
           {onStartNextMatch && (
-            <div className="relative z-50">
+            <div className="relative z-50 flex justify-center">
               <Button
                 type="button"
-                variant="outline"
-                size="lg"
                 onClick={(e) => {
                   e.stopPropagation();
                   console.log('Next match button clicked');
                   onStartNextMatch();
                 }}
-                className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream text-xl py-6 px-8 relative z-50"
+                className="bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg transform transition-transform hover:scale-105"
               >
-                <ArrowRight className="w-6 h-6 mr-2" />
+                <ArrowRight className="w-8 h-8 mr-3" />
                 Start Next Match
               </Button>
             </div>
