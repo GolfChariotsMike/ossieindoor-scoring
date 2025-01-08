@@ -82,13 +82,18 @@ export default {
           "0%": { transform: "scale(1)" },
           "50%": { transform: "scale(1.1)" },
           "100%": { transform: "scale(1)" }
+        },
+        "pulse-scale": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.05)" }
         }
       },
       animation: {
         "score-update": "score-update 0.3s ease-in-out",
         "firework": "firework 1s ease-out forwards",
         "fade-out": "fade-out 1s ease-out forwards",
-        "scale": "scale 2s ease-in-out infinite"
+        "scale": "scale 2s ease-in-out infinite",
+        "pulse-scale": "pulse-scale 2s ease-in-out infinite"
       },
     },
   },

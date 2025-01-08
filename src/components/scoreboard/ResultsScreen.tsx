@@ -100,7 +100,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
                   console.log('Next match button clicked');
                   onStartNextMatch();
                 }}
-                className="bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg transform transition-transform hover:scale-105"
+                className="bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale"
               >
                 <ArrowRight className="w-8 h-8 mr-3" />
                 Start Next Match
