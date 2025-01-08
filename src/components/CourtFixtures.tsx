@@ -25,11 +25,18 @@ const CourtFixtures = () => {
 
   console.log('Received matches:', matches);
 
+  // Filter and sort court fixtures
   const courtFixtures = Array.isArray(matches) 
-    ? matches.filter((match: Fixture) => match.PlayingAreaName === `Court ${courtId}`)
+    ? matches
+        .filter((match: Fixture) => match.PlayingAreaName === `Court ${courtId}`)
+        .sort((a: Fixture, b: Fixture) => {
+          const dateA = parse(a.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+          const dateB = parse(b.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+          return dateA.getTime() - dateB.getTime();
+        })
     : [];
 
-  console.log('Filtered court fixtures:', courtFixtures);
+  console.log('Filtered and sorted court fixtures:', courtFixtures);
 
   if (isLoading) {
     return (
