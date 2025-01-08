@@ -102,7 +102,7 @@ const Scoreboard = () => {
           console.log('No next match found for auto-transition');
           navigate('/');
         }
-      }, 30000);
+      }, 20000); // Changed from 30000 to 20000 milliseconds
 
       return () => {
         if (transitionTimeoutRef.current) {
