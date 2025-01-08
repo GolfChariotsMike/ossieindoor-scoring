@@ -13,8 +13,16 @@ export const useMatchInitialization = (
     queryFn: async () => {
       console.log('Fetching match data for:', { courtId, fixtureId: fixture?.Id });
       if (fixture) {
-        const data = await fetchMatchData(courtId, undefined, fixture);
-        return data as Match;
+        // Pass selectedDate as undefined since it's optional
+        const data = await fetchMatchData(courtId, undefined);
+        return {
+          id: fixture.Id,
+          court: parseInt(courtId),
+          startTime: fixture.DateTime,
+          division: fixture.DivisionName,
+          homeTeam: { id: fixture.HomeTeamId, name: fixture.HomeTeam },
+          awayTeam: { id: fixture.AwayTeamId, name: fixture.AwayTeam },
+        } as Match;
       }
       const data = await fetchMatchData(courtId);
       if (Array.isArray(data)) {
