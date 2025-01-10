@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import CourtSelection from "@/components/CourtSelection";
 import Scoreboard from "@/components/Scoreboard";
 import CourtFixtures from "@/components/CourtFixtures";
+import DisplayScoreboard from "@/components/DisplayScoreboard";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +16,7 @@ function App() {
           <Route path="/" element={<CourtSelection />} />
           <Route path="/court/:courtId/:date" element={<CourtFixtures />} />
           <Route path="/scoreboard/:courtId" element={<Scoreboard />} />
+          <Route path="/display/:courtId" element={<DisplayScoreboard />} />
         </Routes>
       </Router>
       <Toaster />
