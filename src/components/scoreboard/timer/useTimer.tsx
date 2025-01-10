@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { MatchPhase } from "./types";
-import { supabase } from "@/integrations/supabase/client";
 
 interface UseTimerProps {
   initialMinutes: number;
@@ -99,21 +98,6 @@ export const useTimer = ({
           }
           return prev - 1;
         });
-
-        // Broadcast timer state
-        const channel = supabase.channel('timer-updates');
-        channel.subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await channel.send({
-              type: 'broadcast',
-              event: 'timer_update',
-              payload: { 
-                timeLeft, 
-                isBreak 
-              }
-            });
-          }
-        });
       }, 1000);
     }
 
@@ -122,7 +106,7 @@ export const useTimer = ({
         clearInterval(interval);
       }
     };
-  }, [isRunning, timeLeft, matchPhase, isBreak]);
+  }, [isRunning, timeLeft, matchPhase]);
 
   useEffect(() => {
     if (isBreak && matchPhase.includes('set')) {
