@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Match, Score, SetScores, Fixture } from "@/types/volleyball";
 import { DisplayScoreboardContent } from "./DisplayScoreboardContent";
 import { useMatchData } from "@/hooks/useMatchData";
+import { Database } from "@/integrations/supabase/types";
+
+type MatchScore = Database['public']['Tables']['match_scores_v2']['Row'];
 
 export const DisplayScoreboardContainer = () => {
   const { courtId } = useParams();
@@ -35,11 +38,13 @@ export const DisplayScoreboardContainer = () => {
         },
         (payload) => {
           console.log('Received real-time update:', payload);
-          if (payload.new) {
+          const newScore = payload.new as MatchScore;
+          
+          if (newScore) {
             // Update current score
             setCurrentScore({
-              home: payload.new.home_score || 0,
-              away: payload.new.away_score || 0
+              home: newScore.home_score || 0,
+              away: newScore.away_score || 0
             });
 
             // Update set scores
@@ -48,9 +53,9 @@ export const DisplayScoreboardContainer = () => {
               away: [...setScores.away]
             };
             
-            if (payload.new.set_number <= 3) {
-              newSetScores.home[payload.new.set_number - 1] = payload.new.home_score;
-              newSetScores.away[payload.new.set_number - 1] = payload.new.away_score;
+            if (newScore.set_number <= 3) {
+              newSetScores.home[newScore.set_number - 1] = newScore.home_score || 0;
+              newSetScores.away[newScore.set_number - 1] = newScore.away_score || 0;
               setSetScores(newSetScores);
             }
           }
