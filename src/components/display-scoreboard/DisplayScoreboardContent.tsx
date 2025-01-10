@@ -8,6 +8,8 @@ interface DisplayScoreboardContentProps {
   currentScore: Score;
   setScores: SetScores;
   isTeamsSwitched: boolean;
+  timeLeft: number;
+  isBreak: boolean;
 }
 
 export const DisplayScoreboardContent = ({
@@ -16,6 +18,8 @@ export const DisplayScoreboardContent = ({
   currentScore,
   setScores,
   isTeamsSwitched,
+  timeLeft,
+  isBreak,
 }: DisplayScoreboardContentProps) => {
   if (isLoading || !match) {
     return <LoadingSpinner />;
@@ -23,6 +27,9 @@ export const DisplayScoreboardContent = ({
 
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
 
   return (
     <div className="min-h-screen bg-volleyball-red">
@@ -33,6 +40,10 @@ export const DisplayScoreboardContent = ({
             startTime={match.startTime}
             division={match.division}
           />
+
+          <div className={`font-score text-[12rem] tracking-[0.2em] leading-none mb-2 text-center ${isBreak ? 'text-blue-400' : 'text-white'} [text-shadow:_4px_4px_0_rgb(0_0_0)]`}>
+            {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
+          </div>
 
           <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
             {/* Home Team */}

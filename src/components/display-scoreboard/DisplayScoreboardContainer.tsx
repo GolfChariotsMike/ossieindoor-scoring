@@ -13,6 +13,8 @@ export const DisplayScoreboardContainer = () => {
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
   const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [isBreak, setIsBreak] = useState(false);
   
   // Fetch the latest active match for this court
   const { data: match, isLoading } = useMatchData(courtId!);
@@ -72,7 +74,7 @@ export const DisplayScoreboardContainer = () => {
 
     fetchCurrentScores();
 
-    // Set up real-time subscription
+    // Set up real-time subscription for scores
     const channel = supabase
       .channel('match-updates')
       .on(
@@ -125,10 +127,25 @@ export const DisplayScoreboardContainer = () => {
       )
       .subscribe();
 
+    // Subscribe to timer updates
+    const timerChannel = supabase
+      .channel('timer-updates')
+      .on(
+        'broadcast',
+        { event: 'timer_update' },
+        ({ payload }) => {
+          console.log('Received timer update:', payload);
+          setTimeLeft(payload.timeLeft);
+          setIsBreak(payload.isBreak);
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log('Cleaning up subscriptions');
       supabase.removeChannel(channel);
       supabase.removeChannel(switchChannel);
+      supabase.removeChannel(timerChannel);
     };
   }, [match]);
 
@@ -139,6 +156,8 @@ export const DisplayScoreboardContainer = () => {
       currentScore={currentScore}
       setScores={setScores}
       isTeamsSwitched={isTeamsSwitched}
+      timeLeft={timeLeft}
+      isBreak={isBreak}
     />
   );
 };
