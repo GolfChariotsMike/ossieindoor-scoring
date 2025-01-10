@@ -9,17 +9,24 @@ const generateMatchCode = (courtId: string, fixture?: Fixture): string => {
   const day = String(now.getDate()).padStart(2, '0');
   const hour = String(now.getHours()).padStart(2, '0');
   const minute = String(now.getMinutes()).padStart(2, '0');
-  return `${month}${day}${hour}${minute}${courtId.padStart(3, '0')}`;
+  
+  // Add team names to make the match code unique for different team combinations
+  const teamIdentifier = fixture ? 
+    `_${fixture.HomeTeam.replace(/\s+/g, '')}_${fixture.AwayTeam.replace(/\s+/g, '')}` : 
+    '_TeamA_TeamB';
+  
+  return `${month}${day}${hour}${minute}${courtId.padStart(3, '0')}${teamIdentifier}`;
 };
 
 export const useMatchData = (courtId: string, fixture?: Fixture) => {
   const { toast } = useToast();
 
   return useQuery({
-    queryKey: ["match", courtId],
+    queryKey: ["match", courtId, fixture?.HomeTeam, fixture?.AwayTeam],
     queryFn: async () => {
       if (fixture) {
         const matchCode = generateMatchCode(courtId, fixture);
+        console.log('Generated match code:', matchCode);
         
         const { data: existingMatch, error: checkError } = await supabase
           .from('matches_v2')
