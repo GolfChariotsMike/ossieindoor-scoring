@@ -1,7 +1,7 @@
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Match, Score, SetScores, Fixture } from "@/types/volleyball";
+import { Score, SetScores } from "@/types/volleyball";
 import { DisplayScoreboardContent } from "./DisplayScoreboardContent";
 import { useMatchData } from "@/hooks/useMatchData";
 import { Database } from "@/integrations/supabase/types";
