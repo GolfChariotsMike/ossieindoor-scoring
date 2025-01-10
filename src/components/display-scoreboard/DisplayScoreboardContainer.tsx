@@ -18,10 +18,54 @@ export const DisplayScoreboardContainer = () => {
   const { data: match, isLoading } = useMatchData(courtId!);
 
   useEffect(() => {
-    if (!match) return;
+    if (!match) {
+      console.log('No match data available');
+      return;
+    }
 
     console.log('Setting up real-time subscription for match:', match.id);
 
+    // First fetch current scores
+    const fetchCurrentScores = async () => {
+      console.log('Fetching current scores for match:', match.id);
+      const { data: scores, error } = await supabase
+        .from('match_scores_v2')
+        .select('*')
+        .eq('match_id', match.id)
+        .order('set_number', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching scores:', error);
+        return;
+      }
+
+      console.log('Received scores:', scores);
+
+      if (scores && scores.length > 0) {
+        // Get the latest score
+        const latestScore = scores[scores.length - 1];
+        console.log('Setting current score from latest:', latestScore);
+        setCurrentScore({
+          home: latestScore.home_score || 0,
+          away: latestScore.away_score || 0
+        });
+
+        // Set up all set scores
+        const newSetScores = { home: [], away: [] };
+        scores.forEach(score => {
+          if (score.set_number <= 3) {
+            newSetScores.home[score.set_number - 1] = score.home_score || 0;
+            newSetScores.away[score.set_number - 1] = score.away_score || 0;
+          }
+        });
+        console.log('Setting set scores:', newSetScores);
+        setSetScores(newSetScores);
+      }
+    };
+
+    fetchCurrentScores();
+
+    // Set up real-time subscription
     const channel = supabase
       .channel('match-updates')
       .on(
@@ -44,55 +88,28 @@ export const DisplayScoreboardContainer = () => {
             });
 
             // Update set scores
-            const newSetScores = {
-              home: [...setScores.home],
-              away: [...setScores.away]
-            };
-            
-            if (newScore.set_number <= 3) {
-              newSetScores.home[newScore.set_number - 1] = newScore.home_score || 0;
-              newSetScores.away[newScore.set_number - 1] = newScore.away_score || 0;
-              setSetScores(newSetScores);
-            }
+            setSetScores(prevSetScores => {
+              const newSetScores = {
+                home: [...prevSetScores.home],
+                away: [...prevSetScores.away]
+              };
+              
+              if (newScore.set_number <= 3) {
+                newSetScores.home[newScore.set_number - 1] = newScore.home_score || 0;
+                newSetScores.away[newScore.set_number - 1] = newScore.away_score || 0;
+              }
+              return newSetScores;
+            });
           }
         }
       )
       .subscribe();
 
-    // Also fetch the current scores when first loading
-    const fetchCurrentScores = async () => {
-      const { data: scores } = await supabase
-        .from('match_scores_v2')
-        .select('*')
-        .eq('match_id', match.id)
-        .order('set_number', { ascending: true });
-
-      if (scores && scores.length > 0) {
-        // Get the latest score
-        const latestScore = scores[scores.length - 1];
-        setCurrentScore({
-          home: latestScore.home_score || 0,
-          away: latestScore.away_score || 0
-        });
-
-        // Set up all set scores
-        const newSetScores = { home: [], away: [] };
-        scores.forEach(score => {
-          if (score.set_number <= 3) {
-            newSetScores.home[score.set_number - 1] = score.home_score || 0;
-            newSetScores.away[score.set_number - 1] = score.away_score || 0;
-          }
-        });
-        setSetScores(newSetScores);
-      }
-    };
-
-    fetchCurrentScores();
-
     return () => {
+      console.log('Cleaning up subscription');
       supabase.removeChannel(channel);
     };
-  }, [match, setScores]);
+  }, [match]);
 
   return (
     <DisplayScoreboardContent
