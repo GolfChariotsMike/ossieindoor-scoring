@@ -32,7 +32,7 @@ export const DisplayScoreboardContainer = () => {
         .from('match_scores_v2')
         .select('*')
         .eq('match_id', match.id)
-        .order('set_number', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching scores:', error);
@@ -43,21 +43,28 @@ export const DisplayScoreboardContainer = () => {
 
       if (scores && scores.length > 0) {
         // Get the latest score
-        const latestScore = scores[scores.length - 1];
+        const latestScore = scores[0];
         console.log('Setting current score from latest:', latestScore);
         setCurrentScore({
           home: latestScore.home_score || 0,
           away: latestScore.away_score || 0
         });
 
+        // Group scores by set number
+        const scoresBySet = scores.reduce((acc: { [key: number]: MatchScore }, score) => {
+          acc[score.set_number] = score;
+          return acc;
+        }, {});
+
         // Set up all set scores
         const newSetScores = { home: [], away: [] };
-        scores.forEach(score => {
-          if (score.set_number <= 3) {
-            newSetScores.home[score.set_number - 1] = score.home_score || 0;
-            newSetScores.away[score.set_number - 1] = score.away_score || 0;
+        for (let i = 1; i <= 3; i++) {
+          const setScore = scoresBySet[i];
+          if (setScore) {
+            newSetScores.home[i - 1] = setScore.home_score || 0;
+            newSetScores.away[i - 1] = setScore.away_score || 0;
           }
-        });
+        }
         console.log('Setting set scores:', newSetScores);
         setSetScores(newSetScores);
       }
@@ -105,9 +112,23 @@ export const DisplayScoreboardContainer = () => {
       )
       .subscribe();
 
+    // Subscribe to team switch events
+    const switchChannel = supabase
+      .channel('team-switch')
+      .on(
+        'broadcast',
+        { event: 'team_switch' },
+        ({ payload }) => {
+          console.log('Received team switch event:', payload);
+          setIsTeamsSwitched(payload.isTeamsSwitched);
+        }
+      )
+      .subscribe();
+
     return () => {
-      console.log('Cleaning up subscription');
+      console.log('Cleaning up subscriptions');
       supabase.removeChannel(channel);
+      supabase.removeChannel(switchChannel);
     };
   }, [match]);
 

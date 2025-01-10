@@ -9,6 +9,7 @@ import { useNextMatch } from "./NextMatchLogic";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { format, parse } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 const parseFixtureDate = (dateStr: string) => {
   try {
@@ -116,6 +117,26 @@ export const ScoreboardContainer = () => {
       navigate('/');
     }
   };
+
+  // Broadcast team switch state
+  useEffect(() => {
+    if (match) {
+      const channel = supabase.channel('team-switch');
+      channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.send({
+            type: 'broadcast',
+            event: 'team_switch',
+            payload: { isTeamsSwitched: gameState.isTeamsSwitched }
+          });
+        }
+      });
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [match, gameState.isTeamsSwitched]);
 
   return (
     <ScoreboardContent
