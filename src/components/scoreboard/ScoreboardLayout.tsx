@@ -32,7 +32,7 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={1}
+        initialMinutes={14}
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
