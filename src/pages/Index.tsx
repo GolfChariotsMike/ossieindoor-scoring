@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -13,9 +14,12 @@ const Index = () => {
       <div className="text-center space-y-8">
         <Button 
           onClick={handleStandaloneScoreboard}
-          className="bg-volleyball-cream text-volleyball-black hover:bg-volleyball-cream/90 text-xl px-8 py-6"
+          variant="outline"
+          size="sm"
+          className="bg-volleyball-cream text-volleyball-black hover:bg-volleyball-cream/90 gap-2"
         >
           Open Standalone Scoreboard
+          <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
     </div>
