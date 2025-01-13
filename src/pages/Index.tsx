@@ -10,17 +10,17 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-volleyball-red relative">
-      <Button 
-        onClick={handleStandaloneScoreboard}
-        variant="outline"
-        size="sm"
-        className="bg-volleyball-cream text-volleyball-black hover:bg-volleyball-cream/90 gap-2 absolute top-4 right-4 z-50"
-      >
-        Open Standalone Scoreboard
-        <ArrowRight className="h-4 w-4" />
-      </Button>
-      <div className="w-full max-w-4xl p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-volleyball-red">
+      <div className="w-full max-w-4xl p-4 flex flex-col items-center gap-4">
+        <Button 
+          onClick={handleStandaloneScoreboard}
+          variant="outline"
+          size="sm"
+          className="bg-volleyball-cream text-volleyball-black hover:bg-volleyball-cream/90 gap-2"
+        >
+          Open Standalone Scoreboard
+          <ArrowRight className="h-4 w-4" />
+        </Button>
         {/* This is where the courts would be rendered */}
       </div>
     </div>
