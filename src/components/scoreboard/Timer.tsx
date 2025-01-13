@@ -11,7 +11,6 @@ interface TimerProps {
   isBreak: boolean;
   isMatchComplete: boolean;
   fixture?: { Id: string };
-  className?: string;
 }
 
 export const Timer = ({ 
@@ -20,8 +19,7 @@ export const Timer = ({
   onSwitchTeams,
   isBreak,
   isMatchComplete,
-  fixture,
-  className
+  fixture
 }: TimerProps) => {
   const {
     timeLeft,
@@ -61,7 +59,6 @@ export const Timer = ({
         seconds={seconds}
         isBreak={isBreak}
         isMatchComplete={isMatchComplete}
-        className={className}
       />
       
       <TimerControls 

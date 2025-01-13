@@ -31,10 +31,6 @@ export const ScoreboardLayout = ({
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
-  const timerClassName = isBreak 
-    ? "text-volleyball-black [text-shadow:_2px_2px_0_rgb(255,255,255),_-2px_-2px_0_rgb(255,255,255),_2px_-2px_0_rgb(255,255,255),_-2px_2px_0_rgb(255,255,255)]"
-    : "text-volleyball-cream [text-shadow:_2px_2px_0_rgb(0,0,0),_-2px_-2px_0_rgb(0,0,0),_2px_-2px_0_rgb(0,0,0),_-2px_2px_0_rgb(0,0,0)]";
-
   return (
     <div className="flex flex-col justify-between h-full">
       <div>
@@ -44,7 +40,6 @@ export const ScoreboardLayout = ({
           onSwitchTeams={onSwitchTeams}
           isBreak={isBreak}
           isMatchComplete={isMatchComplete}
-          className={timerClassName}
         />
       </div>
 
