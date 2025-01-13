@@ -10,8 +10,11 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-volleyball-red">
-      <div className="text-center space-y-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-volleyball-red">
+      <div className="w-full max-w-4xl p-4">
+        {/* This is where the courts would be rendered */}
+      </div>
+      <div className="mt-4 mb-8">
         <Button 
           onClick={handleStandaloneScoreboard}
           variant="outline"
