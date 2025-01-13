@@ -40,7 +40,7 @@ export const Timer = ({
   const seconds = timeLeft % 60;
 
   return (
-    <div className="text-[#FFFFFF] text-center relative">
+    <div className="text-center relative">
       <div className="absolute top-0 right-0">
         <Button
           variant="outline"
