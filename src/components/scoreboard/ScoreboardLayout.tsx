@@ -13,6 +13,7 @@ interface ScoreboardLayoutProps {
   onTimerComplete: () => void;
   onSwitchTeams: () => void;
   onScoreUpdate: (team: "home" | "away") => void;
+  initialMinutes?: number;
 }
 
 export const ScoreboardLayout = ({
@@ -25,6 +26,7 @@ export const ScoreboardLayout = ({
   onTimerComplete,
   onSwitchTeams,
   onScoreUpdate,
+  initialMinutes = 14,
 }: ScoreboardLayoutProps) => {
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
@@ -32,7 +34,7 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={1}
+        initialMinutes={isBreak ? 1 : initialMinutes}
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}

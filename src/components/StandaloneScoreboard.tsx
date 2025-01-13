@@ -107,6 +107,7 @@ const StandaloneScoreboard = () => {
           onTimerComplete={handleTimerComplete}
           onSwitchTeams={handleSwitchTeams}
           onScoreUpdate={handleScore}
+          initialMinutes={14}
         />
 
         <ExitConfirmationDialog
