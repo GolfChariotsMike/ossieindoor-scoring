@@ -23,6 +23,10 @@ const CourtSelection = () => {
     navigate(`/court/${court}/${formattedDate}`);
   };
 
+  const handleStandaloneScoreboard = () => {
+    navigate('/scoreboard/0', { state: { standalone: true } });
+  };
+
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       const file = event.target.files?.[0];
@@ -78,7 +82,16 @@ const CourtSelection = () => {
     <div className="min-h-screen bg-volleyball-red">
       <div className="max-w-4xl mx-auto p-8">
         <div className="flex flex-col items-center mb-8">
-          <img src={logoUrl} alt="Logo" className="w-48 h-48 object-contain mb-4" />
+          <button 
+            onClick={handleStandaloneScoreboard}
+            className="hover:opacity-80 transition-opacity"
+          >
+            <img 
+              src={logoUrl} 
+              alt="Logo" 
+              className="w-48 h-48 object-contain mb-4 cursor-pointer" 
+            />
+          </button>
         </div>
 
         <div className="bg-volleyball-black/80 rounded-lg p-4 mb-8 max-w-xs mx-auto">
