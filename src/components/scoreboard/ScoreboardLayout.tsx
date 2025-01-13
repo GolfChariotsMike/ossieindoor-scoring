@@ -1,7 +1,8 @@
-import { Timer } from "./Timer";
-import { TeamScore } from "./TeamScore";
-import { SetScoresDisplay } from "./SetScoresDisplay";
 import { Match, Score, SetScores } from "@/types/volleyball";
+import { TeamsDisplay } from "./TeamsDisplay";
+import { Timer } from "./Timer";
+import { GameScores } from "./GameScores";
+import { SetScoresDisplay } from "./SetScoresDisplay";
 
 interface ScoreboardLayoutProps {
   isBreak: boolean;
@@ -28,40 +29,31 @@ export const ScoreboardLayout = ({
   onScoreUpdate,
   initialMinutes = 14,
 }: ScoreboardLayoutProps) => {
-  const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
-  const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
-
   return (
-    <div className="flex flex-col justify-between h-full">
-      <div>
-        <Timer
-          initialMinutes={isBreak ? 1 : initialMinutes}
-          onComplete={onTimerComplete}
-          onSwitchTeams={onSwitchTeams}
-          isBreak={isBreak}
+    <div className="h-full flex flex-col justify-between py-8">
+      <TeamsDisplay
+        match={match}
+        isTeamsSwitched={isTeamsSwitched}
+      />
+      
+      <Timer
+        initialMinutes={isBreak ? 1 : initialMinutes}
+        onComplete={onTimerComplete}
+        onSwitchTeams={onSwitchTeams}
+        isBreak={isBreak}
+        isMatchComplete={isMatchComplete}
+      />
+
+      <div className="space-y-8">
+        <GameScores
+          currentScore={currentScore}
+          onScoreUpdate={onScoreUpdate}
           isMatchComplete={isMatchComplete}
         />
-      </div>
-
-      <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
-        <TeamScore
-          teamName={homeTeam.name}
-          score={currentScore.home}
-          onScoreUpdate={() => onScoreUpdate("home")}
-        />
-
-        <div className="w-64">
-          <SetScoresDisplay 
-            setScores={setScores} 
-            match={match}
-            isTeamsSwitched={isTeamsSwitched}
-          />
-        </div>
-
-        <TeamScore
-          teamName={awayTeam.name}
-          score={currentScore.away}
-          onScoreUpdate={() => onScoreUpdate("away")}
+        
+        <SetScoresDisplay
+          setScores={setScores}
+          isTeamsSwitched={isTeamsSwitched}
         />
       </div>
     </div>
