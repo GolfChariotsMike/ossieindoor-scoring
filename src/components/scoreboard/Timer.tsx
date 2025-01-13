@@ -14,7 +14,7 @@ interface TimerProps {
 }
 
 export const Timer = ({ 
-  initialMinutes = 14, // Changed default to 14 minutes
+  initialMinutes = 14,
   onComplete, 
   onSwitchTeams,
   isBreak,
