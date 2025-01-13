@@ -41,6 +41,10 @@ export const Timer = ({
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
+  const timerClassName = isBreak 
+    ? "text-volleyball-black [text-shadow:_2px_2px_0_rgb(255,255,255),_-2px_-2px_0_rgb(255,255,255),_2px_-2px_0_rgb(255,255,255),_-2px_2px_0_rgb(255,255,255)]"
+    : "text-volleyball-cream [text-shadow:_4px_4px_0_rgb(0,0,0)]";
+
   return (
     <div className="text-center relative">
       <div className="absolute top-0 right-0">
@@ -61,7 +65,7 @@ export const Timer = ({
         seconds={seconds}
         isBreak={isBreak}
         isMatchComplete={isMatchComplete}
-        className={className}
+        className={timerClassName}
       />
       
       <TimerControls 
