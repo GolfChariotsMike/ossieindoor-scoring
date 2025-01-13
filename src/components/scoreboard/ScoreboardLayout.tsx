@@ -40,7 +40,7 @@ export const ScoreboardLayout = ({
           onSwitchTeams={onSwitchTeams}
           isBreak={isBreak}
           isMatchComplete={isMatchComplete}
-          className={isBreak ? 'text-volleyball-black [text-shadow:_2px_2px_0_#fff,_-2px_-2px_0_#fff,_2px_-2px_0_#fff,_-2px_2px_0_#fff]' : 'text-volleyball-cream'}
+          className={isBreak ? 'text-volleyball-black [text-shadow:_2px_2px_0_rgb(255,255,255),_-2px_-2px_0_rgb(255,255,255),_2px_-2px_0_rgb(255,255,255),_-2px_2px_0_rgb(255,255,255)]' : 'text-volleyball-cream'}
         />
       </div>
 
