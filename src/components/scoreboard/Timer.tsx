@@ -40,14 +40,14 @@ export const Timer = ({
   const seconds = timeLeft % 60;
 
   return (
-    <div className="text-volleyball-cream text-center relative">
+    <div className="text-[#FFFFFF] text-center relative">
       <div className="absolute top-0 right-0">
         <Button
           variant="outline"
           size="sm"
           onClick={handleSkipPhase}
           disabled={isMatchComplete}
-          className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
           <FastForward className="w-4 h-4 mr-1" />
           Skip Phase

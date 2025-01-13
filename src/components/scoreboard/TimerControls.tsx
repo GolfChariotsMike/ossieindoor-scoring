@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Play, Pause, RotateCcw, ArrowLeftRight } from "lucide-react";
+import { useState } from "react";
 
 interface TimerControlsProps {
   isMatchComplete: boolean;
@@ -14,35 +15,41 @@ export const TimerControls = ({
   onReset,
   onSwitchTeams,
 }: TimerControlsProps) => {
+  const [isRunning, setIsRunning] = useState(false);
+
+  const handleStartStop = () => {
+    setIsRunning(!isRunning);
+    onStartStop();
+  };
+
   return (
-    <div className="flex justify-center gap-4">
+    <div className="flex justify-center gap-4 mt-4">
       <Button
         variant="outline"
         size="lg"
-        onClick={onStartStop}
+        onClick={handleStartStop}
         disabled={isMatchComplete}
-        className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
       >
-        <Play className="w-6 h-6" />
-        <Pause className="w-6 h-6" />
+        {isRunning ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
       </Button>
       <Button
         variant="outline"
         size="lg"
         onClick={onReset}
         disabled={isMatchComplete}
-        className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
       >
-        <RotateCcw className="w-6 h-6" />
+        <RotateCcw className="h-6 w-6" />
       </Button>
       <Button
         variant="outline"
         size="lg"
         onClick={onSwitchTeams}
         disabled={isMatchComplete}
-        className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream disabled:opacity-50"
+        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
       >
-        <ArrowLeftRight className="w-6 h-6" />
+        <ArrowLeftRight className="h-6 w-6" />
       </Button>
     </div>
   );
