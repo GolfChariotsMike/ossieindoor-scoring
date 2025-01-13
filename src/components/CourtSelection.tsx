@@ -79,23 +79,6 @@ const CourtSelection = () => {
       <div className="max-w-4xl mx-auto p-8">
         <div className="flex flex-col items-center mb-8">
           <img src={logoUrl} alt="Logo" className="w-48 h-48 object-contain mb-4" />
-          
-          {/* Logo upload button */}
-          <div className="mb-4">
-            <label htmlFor="logo-upload" className="cursor-pointer">
-              <div className="flex items-center gap-2 bg-volleyball-cream text-volleyball-black px-4 py-2 rounded-md hover:bg-volleyball-cream/90 transition-colors">
-                <Upload size={16} />
-                <span>Upload Logo</span>
-              </div>
-              <input
-                id="logo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
         </div>
 
         <div className="bg-volleyball-black/80 rounded-lg p-4 mb-8 max-w-xs mx-auto">
