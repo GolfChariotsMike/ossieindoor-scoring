@@ -33,14 +33,14 @@ export const ScoreboardLayout = ({
 
   return (
     <div className="flex flex-col justify-between h-full">
-      <div className={`${isBreak ? 'text-volleyball-black' : 'text-volleyball-cream'}`}>
+      <div>
         <Timer
           initialMinutes={isBreak ? 1 : initialMinutes}
           onComplete={onTimerComplete}
           onSwitchTeams={onSwitchTeams}
           isBreak={isBreak}
           isMatchComplete={isMatchComplete}
-          className={isBreak ? 'text-volleyball-black [text-shadow:_0_0_2px_#f5e6d3,_0_0_2px_#f5e6d3]' : undefined}
+          className={isBreak ? 'text-volleyball-black [text-shadow:_2px_2px_0_#fff,_-2px_-2px_0_#fff,_2px_-2px_0_#fff,_-2px_2px_0_#fff]' : 'text-volleyball-cream'}
         />
       </div>
 
