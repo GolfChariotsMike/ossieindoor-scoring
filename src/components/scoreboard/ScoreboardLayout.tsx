@@ -4,7 +4,6 @@ import { SetScoresDisplay } from "./SetScoresDisplay";
 import { Match, Score, SetScores } from "@/types/volleyball";
 
 interface ScoreboardLayoutProps {
-  initialMinutes: number;
   isBreak: boolean;
   currentScore: Score;
   setScores: SetScores;
@@ -17,7 +16,6 @@ interface ScoreboardLayoutProps {
 }
 
 export const ScoreboardLayout = ({
-  initialMinutes,
   isBreak,
   currentScore,
   setScores,
@@ -34,7 +32,7 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={initialMinutes}
+        initialMinutes={1}
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}

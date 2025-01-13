@@ -120,7 +120,6 @@ const Scoreboard = () => {
         <BackButton onClick={handleBack} />
 
         <ScoreboardLayout
-          initialMinutes={14}
           isBreak={isBreak}
           currentScore={currentScore}
           setScores={setScores}
