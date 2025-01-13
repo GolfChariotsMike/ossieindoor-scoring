@@ -8,16 +8,13 @@ interface TimerDisplayProps {
 }
 
 export const TimerDisplay = ({ minutes, seconds, isBreak, isMatchComplete }: TimerDisplayProps) => {
-  const timerClassName = isBreak 
-    ? "text-black font-bold [text-shadow:_2px_2px_0_rgb(255,255,255),_-2px_-2px_0_rgb(255,255,255),_2px_-2px_0_rgb(255,255,255),_-2px_2px_0_rgb(255,255,255)]"
-    : "text-white [text-shadow:_2px_2px_0_rgb(0,0,0),_-2px_-2px_0_rgb(0,0,0),_2px_-2px_0_rgb(0,0,0),_-2px_2px_0_rgb(0,0,0)]";
-
   return (
-    <div className={cn(
-      "font-score text-[12rem] tracking-[0.2em] leading-none mb-2",
-      timerClassName,
-      isMatchComplete && "opacity-50"
-    )}>
+    <div 
+      className={cn(
+        "font-score text-[12rem] tracking-[0.2em] leading-none mb-2 [text-shadow:_4px_4px_0_rgb(0_0_0)]",
+        isBreak ? 'text-blue-400' : 'text-white'
+      )}
+    >
       {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
     </div>
   );

@@ -44,6 +44,29 @@ const CourtFixtures = () => {
     );
   }
 
+  const getScoreDisplay = (fixture: Fixture) => {
+    if (!fixture.HomeTeamScore || !fixture.AwayTeamScore) return null;
+    
+    try {
+      const homeScores = JSON.parse(fixture.HomeTeamScore);
+      const awayScores = JSON.parse(fixture.AwayTeamScore);
+      
+      return (
+        <div className="text-lg text-volleyball-cream/90">
+          {homeScores.map((score: number, index: number) => (
+            <span key={index}>
+              {score}-{awayScores[index]}
+              {index < homeScores.length - 1 ? ', ' : ''}
+            </span>
+          ))}
+        </div>
+      );
+    } catch (e) {
+      console.error('Error parsing scores:', e);
+      return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-volleyball-red">
       <div className="max-w-4xl mx-auto p-8">
@@ -83,11 +106,7 @@ const CourtFixtures = () => {
                       {fixture.DivisionName}
                     </div>
                   </div>
-                  {fixture.HomeTeamScore && fixture.AwayTeamScore && (
-                    <div className="text-lg text-volleyball-cream/90">
-                      {fixture.HomeTeamScore}-{fixture.AwayTeamScore}
-                    </div>
-                  )}
+                  {getScoreDisplay(fixture)}
                 </div>
               </Button>
             ))
