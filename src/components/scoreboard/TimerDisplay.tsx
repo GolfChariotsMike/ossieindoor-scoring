@@ -11,8 +11,10 @@ export const TimerDisplay = ({ minutes, seconds, isBreak, isMatchComplete }: Tim
   return (
     <div 
       className={cn(
-        "font-score text-[12rem] tracking-[0.2em] leading-none mb-2 [text-shadow:_4px_4px_0_rgb(0_0_0)]",
-        isBreak ? 'text-blue-400' : 'text-white'
+        "font-score text-[12rem] tracking-[0.2em] leading-none mb-2",
+        isBreak 
+          ? "text-volleyball-black [text-shadow:_4px_4px_0_rgb(255_255_255),_-4px_-4px_0_rgb(255_255_255),_4px_-4px_0_rgb(255_255_255),_-4px_4px_0_rgb(255_255_255)]" 
+          : "text-volleyball-cream [text-shadow:_4px_4px_0_rgb(0_0_0)]"
       )}
     >
       {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
