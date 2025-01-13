@@ -29,11 +29,18 @@ export const ScoreboardLayout = ({
   onScoreUpdate,
   initialMinutes = 14,
 }: ScoreboardLayoutProps) => {
+  const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
+  const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
+
   return (
     <div className="h-full flex flex-col justify-between py-8">
       <TeamsDisplay
-        match={match}
-        isTeamsSwitched={isTeamsSwitched}
+        homeTeam={homeTeam}
+        awayTeam={awayTeam}
+        homeScore={currentScore.home}
+        awayScore={currentScore.away}
+        onHomeScore={() => onScoreUpdate("home")}
+        onAwayScore={() => onScoreUpdate("away")}
       />
       
       <Timer
@@ -47,12 +54,15 @@ export const ScoreboardLayout = ({
       <div className="space-y-8">
         <GameScores
           currentScore={currentScore}
+          setScores={setScores}
+          match={match}
+          isTeamsSwitched={isTeamsSwitched}
           onScoreUpdate={onScoreUpdate}
-          isMatchComplete={isMatchComplete}
         />
         
         <SetScoresDisplay
           setScores={setScores}
+          match={match}
           isTeamsSwitched={isTeamsSwitched}
         />
       </div>
