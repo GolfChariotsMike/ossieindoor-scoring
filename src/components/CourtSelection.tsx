@@ -3,7 +3,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format, startOfDay } from "date-fns";
-import { Calendar as CalendarIcon, Upload, Volleyball } from "lucide-react";
+import { Calendar as CalendarIcon, Upload } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,7 @@ const CourtSelection = () => {
   const { toast } = useToast();
   const [date, setDate] = useState<Date>(startOfDay(new Date()));
   const [open, setOpen] = useState(false);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>("/lovable-uploads/1b9b6b64-0bcc-42d0-9d2b-dd0c359ad5d2.png");
   const courts = [1, 2, 3, 4, 5, 6, 7, 8];
 
   const handleCourtSelection = (court: number) => {
@@ -78,11 +78,7 @@ const CourtSelection = () => {
     <div className="min-h-screen bg-volleyball-red">
       <div className="max-w-4xl mx-auto p-8">
         <div className="flex flex-col items-center mb-8">
-          {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="w-32 h-32 object-contain mb-4" />
-          ) : (
-            <Volleyball className="w-20 h-20 text-volleyball-cream mb-2" />
-          )}
+          <img src={logoUrl} alt="Logo" className="w-48 h-48 object-contain mb-4" />
           
           {/* Logo upload button */}
           <div className="mb-4">
@@ -100,14 +96,9 @@ const CourtSelection = () => {
               />
             </label>
           </div>
-
-          <h1 className="text-2xl font-bold text-volleyball-cream">
-            Ossie Indoor Beach Volleyball
-          </h1>
         </div>
 
         <div className="bg-volleyball-black/80 rounded-lg p-4 mb-8 max-w-xs mx-auto">
-          <h2 className="text-volleyball-cream text-lg mb-2">Select Date</h2>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -118,7 +109,7 @@ const CourtSelection = () => {
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, "PPP") : <span>Pick a date</span>}
+                {format(date, "PPP")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
