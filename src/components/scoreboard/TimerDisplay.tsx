@@ -14,7 +14,7 @@ export const TimerDisplay = ({ minutes, seconds, isBreak, isMatchComplete }: Tim
         "font-score text-[12rem] tracking-[0.2em] leading-none mb-2",
         isBreak 
           ? "text-black [text-shadow:_2px_2px_0_#fff,_-2px_-2px_0_#fff,_2px_-2px_0_#fff,_-2px_2px_0_#fff]" 
-          : "text-black [text-shadow:_2px_2px_0_#fff,_-2px_-2px_0_#fff,_2px_-2px_0_#fff,_-2px_2px_0_#fff]"
+          : "text-white [text-shadow:_4px_4px_0_rgb(0_0_0)]"
       )}
     >
       {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
