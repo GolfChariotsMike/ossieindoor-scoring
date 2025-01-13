@@ -11,7 +11,7 @@ interface TimerProps {
   isBreak: boolean;
   isMatchComplete: boolean;
   fixture?: { Id: string };
-  className?: string; // Added className prop
+  className?: string;
 }
 
 export const Timer = ({ 
@@ -21,7 +21,7 @@ export const Timer = ({
   isBreak,
   isMatchComplete,
   fixture,
-  className // Added className prop
+  className
 }: TimerProps) => {
   const {
     timeLeft,
@@ -42,7 +42,7 @@ export const Timer = ({
   const seconds = timeLeft % 60;
 
   return (
-    <div className={`text-center relative ${className || ''}`}>
+    <div className="text-center relative">
       <div className="absolute top-0 right-0">
         <Button
           variant="outline"
@@ -61,6 +61,7 @@ export const Timer = ({
         seconds={seconds}
         isBreak={isBreak}
         isMatchComplete={isMatchComplete}
+        className={className}
       />
       
       <TimerControls 
