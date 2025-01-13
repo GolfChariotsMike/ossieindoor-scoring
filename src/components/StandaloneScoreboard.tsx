@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { BackButton } from "./scoreboard/BackButton";
 import { ExitConfirmationDialog } from "./scoreboard/ExitConfirmationDialog";
 import { ScoreboardLayout } from "./scoreboard/ScoreboardLayout";
+import { ResultsScreen } from "./scoreboard/ResultsScreen";
 
 const StandaloneScoreboard = () => {
   const navigate = useNavigate();
@@ -97,18 +98,26 @@ const StandaloneScoreboard = () => {
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
         <BackButton onClick={handleBack} />
 
-        <ScoreboardLayout
-          isBreak={isBreak}
-          currentScore={currentScore}
-          setScores={setScores}
-          match={match}
-          isTeamsSwitched={isTeamsSwitched}
-          isMatchComplete={isMatchComplete}
-          onTimerComplete={handleTimerComplete}
-          onSwitchTeams={handleSwitchTeams}
-          onScoreUpdate={handleScore}
-          initialMinutes={14}
-        />
+        {isMatchComplete ? (
+          <ResultsScreen
+            match={match}
+            setScores={setScores}
+            isTeamsSwitched={isTeamsSwitched}
+          />
+        ) : (
+          <ScoreboardLayout
+            isBreak={isBreak}
+            currentScore={currentScore}
+            setScores={setScores}
+            match={match}
+            isTeamsSwitched={isTeamsSwitched}
+            isMatchComplete={isMatchComplete}
+            onTimerComplete={handleTimerComplete}
+            onSwitchTeams={handleSwitchTeams}
+            onScoreUpdate={handleScore}
+            initialMinutes={14}
+          />
+        )}
 
         <ExitConfirmationDialog
           open={showExitConfirmation}
