@@ -31,7 +31,7 @@ export default {
         foreground: "hsl(var(--foreground))",
         volleyball: {
           red: "#ea384c",
-          black: "#222222",
+          black: "#000000e6",
           cream: "#f5e6d3",
         },
         primary: {

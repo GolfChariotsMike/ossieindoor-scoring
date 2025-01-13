@@ -13,7 +13,7 @@ export const TimerDisplay = ({ minutes, seconds, isBreak, isMatchComplete }: Tim
       className={cn(
         "font-score text-[12rem] tracking-[0.2em] leading-none mb-2",
         isBreak 
-          ? "text-[#000000e6] [text-shadow:_4px_4px_0_rgb(255_255_255),_-4px_-4px_0_rgb(255_255_255),_4px_-4px_0_rgb(255_255_255),_-4px_4px_0_rgb(255_255_255)]" 
+          ? "text-[#000000] [text-shadow:_4px_4px_0_rgb(255_255_255),_-4px_-4px_0_rgb(255_255_255),_4px_-4px_0_rgb(255_255_255),_-4px_4px_0_rgb(255_255_255)]" 
           : "text-[#FFFFFF] [text-shadow:_4px_4px_0_rgb(0_0_0),_-4px_-4px_0_rgb(0_0_0),_4px_-4px_0_rgb(0_0_0),_-4px_4px_0_rgb(0_0_0)]"
       )}
     >
