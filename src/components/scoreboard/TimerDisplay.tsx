@@ -15,7 +15,8 @@ export const TimerDisplay = ({ minutes, seconds, isBreak, isMatchComplete }: Tim
   return (
     <div className={cn(
       "font-score text-[12rem] tracking-[0.2em] leading-none mb-2",
-      timerClassName
+      timerClassName,
+      isMatchComplete && "opacity-50"
     )}>
       {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
     </div>
