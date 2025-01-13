@@ -11,15 +11,17 @@ interface TimerProps {
   isBreak: boolean;
   isMatchComplete: boolean;
   fixture?: { Id: string };
+  className?: string; // Added className prop
 }
 
 export const Timer = ({ 
-  initialMinutes = 14, // Changed default to 14 minutes
+  initialMinutes = 14,
   onComplete, 
   onSwitchTeams,
   isBreak,
   isMatchComplete,
-  fixture
+  fixture,
+  className // Added className prop
 }: TimerProps) => {
   const {
     timeLeft,
@@ -40,7 +42,7 @@ export const Timer = ({
   const seconds = timeLeft % 60;
 
   return (
-    <div className="text-volleyball-cream text-center relative">
+    <div className={`text-center relative ${className || ''}`}>
       <div className="absolute top-0 right-0">
         <Button
           variant="outline"
