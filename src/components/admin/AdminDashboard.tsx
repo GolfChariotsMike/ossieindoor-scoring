@@ -66,10 +66,13 @@ export const AdminDashboard = () => {
       // Parse the date string and convert it to ISO format
       const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
       
+      // Generate a UUID for the match_id using crypto
+      const matchUuid = crypto.randomUUID();
+      
       const { error } = await supabase
         .from('match_data_v2')
         .upsert({
-          match_id: match.Id,
+          match_id: matchUuid,
           court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
           division: match.DivisionName,
           home_team_name: match.HomeTeam,
