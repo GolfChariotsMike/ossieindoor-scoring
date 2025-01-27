@@ -280,12 +280,15 @@ export type Database = {
       }
       results_v3: {
         Row: {
+          bonus_points: number | null
           created_at: string | null
+          day_of_week: string | null
           division: string | null
           id: string
           is_home_team: boolean
           match_id: string | null
           match_result: string | null
+          points_percentage: number | null
           set1_points_against: number | null
           set1_points_for: number | null
           set2_points_against: number | null
@@ -293,16 +296,20 @@ export type Database = {
           set3_points_against: number | null
           set3_points_for: number | null
           team_name: string
+          total_points: number | null
           total_points_against: number | null
           total_points_for: number | null
         }
         Insert: {
+          bonus_points?: number | null
           created_at?: string | null
+          day_of_week?: string | null
           division?: string | null
           id?: string
           is_home_team: boolean
           match_id?: string | null
           match_result?: string | null
+          points_percentage?: number | null
           set1_points_against?: number | null
           set1_points_for?: number | null
           set2_points_against?: number | null
@@ -310,16 +317,20 @@ export type Database = {
           set3_points_against?: number | null
           set3_points_for?: number | null
           team_name: string
+          total_points?: number | null
           total_points_against?: number | null
           total_points_for?: number | null
         }
         Update: {
+          bonus_points?: number | null
           created_at?: string | null
+          day_of_week?: string | null
           division?: string | null
           id?: string
           is_home_team?: boolean
           match_id?: string | null
           match_result?: string | null
+          points_percentage?: number | null
           set1_points_against?: number | null
           set1_points_for?: number | null
           set2_points_against?: number | null
@@ -327,6 +338,7 @@ export type Database = {
           set3_points_against?: number | null
           set3_points_for?: number | null
           team_name?: string
+          total_points?: number | null
           total_points_against?: number | null
           total_points_for?: number | null
         }

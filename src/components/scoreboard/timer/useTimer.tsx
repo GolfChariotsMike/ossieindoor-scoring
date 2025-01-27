@@ -52,7 +52,7 @@ export const useTimer = ({
       } else if (nextPhase.startsWith('break')) {
         console.log('Starting break:', nextPhase);
         onComplete(); // Notify parent set is over
-        setTimeLeft(60); // 1 minute break
+        setTimeLeft(90); // 1.5 minutes break (90 seconds)
         setIsRunning(true);
         setMatchPhase(nextPhase);
       } else if (nextPhase === 'final_break') {
@@ -122,7 +122,7 @@ export const useTimer = ({
           console.log('Moving to break', currentSetNumber);
           const breakPhase = `break${currentSetNumber}` as MatchPhase;
           setMatchPhase(breakPhase);
-          setTimeLeft(60); // 1 minute regular break
+          setTimeLeft(90); // 1.5 minutes regular break (90 seconds)
         }
         setIsRunning(true);
       }
