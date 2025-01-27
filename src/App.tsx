@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
 import CourtSelection from "./components/CourtSelection";
 import CourtFixtures from "./components/CourtFixtures";
 import Scoreboard from "./components/Scoreboard";
@@ -9,8 +8,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/courts" element={<CourtSelection />} />
+        <Route path="/" element={<CourtSelection />} />
         <Route path="/courts/:courtId/:date" element={<CourtFixtures />} />
         <Route path="/scoreboard/:courtId" element={<Scoreboard />} />
         <Route path="/admin" element={<AdminRoute />} />
