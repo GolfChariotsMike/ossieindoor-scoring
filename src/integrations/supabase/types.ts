@@ -9,6 +9,92 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      match_data_v2: {
+        Row: {
+          away_bonus_points: number | null
+          away_result: string | null
+          away_team_name: string
+          away_total_match_points: number | null
+          away_total_points: number | null
+          court_number: number
+          created_at: string | null
+          division: string | null
+          home_bonus_points: number | null
+          home_result: string | null
+          home_team_name: string
+          home_total_match_points: number | null
+          home_total_points: number | null
+          id: string
+          match_date: string | null
+          match_id: string | null
+          set1_away_score: number | null
+          set1_home_score: number | null
+          set2_away_score: number | null
+          set2_home_score: number | null
+          set3_away_score: number | null
+          set3_home_score: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          away_bonus_points?: number | null
+          away_result?: string | null
+          away_team_name: string
+          away_total_match_points?: number | null
+          away_total_points?: number | null
+          court_number: number
+          created_at?: string | null
+          division?: string | null
+          home_bonus_points?: number | null
+          home_result?: string | null
+          home_team_name: string
+          home_total_match_points?: number | null
+          home_total_points?: number | null
+          id?: string
+          match_date?: string | null
+          match_id?: string | null
+          set1_away_score?: number | null
+          set1_home_score?: number | null
+          set2_away_score?: number | null
+          set2_home_score?: number | null
+          set3_away_score?: number | null
+          set3_home_score?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          away_bonus_points?: number | null
+          away_result?: string | null
+          away_team_name?: string
+          away_total_match_points?: number | null
+          away_total_points?: number | null
+          court_number?: number
+          created_at?: string | null
+          division?: string | null
+          home_bonus_points?: number | null
+          home_result?: string | null
+          home_team_name?: string
+          home_total_match_points?: number | null
+          home_total_points?: number | null
+          id?: string
+          match_date?: string | null
+          match_id?: string | null
+          set1_away_score?: number | null
+          set1_home_score?: number | null
+          set2_away_score?: number | null
+          set2_home_score?: number | null
+          set3_away_score?: number | null
+          set3_home_score?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_data_v2_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_results: {
         Row: {
           away_team_name: string
