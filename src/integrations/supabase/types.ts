@@ -113,7 +113,7 @@ export type Database = {
           {
             foreignKeyName: "match_data_v2_match_id_fkey"
             columns: ["match_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "matches_v2"
             referencedColumns: ["id"]
           },

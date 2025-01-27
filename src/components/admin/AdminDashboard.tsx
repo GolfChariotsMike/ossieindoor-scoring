@@ -114,7 +114,7 @@ export const AdminDashboard = () => {
       const matchCode = `${match.PlayingAreaName.replace('Court ', '')}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
       
       // First, check if the match exists
-      const { data: existingMatch, error: fetchError } = await supabase
+      let { data: existingMatch, error: fetchError } = await supabase
         .from('matches_v2')
         .select('id')
         .eq('match_code', matchCode)
@@ -177,8 +177,6 @@ export const AdminDashboard = () => {
           set3_home_score: matchScores.home[2],
           set3_away_score: matchScores.away[2],
           match_date: matchDate.toISOString(),
-        }, {
-          onConflict: 'match_id'
         });
 
       if (scoresError) {
