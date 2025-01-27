@@ -56,6 +56,7 @@ export const AdminDashboard = () => {
       toast({
         title: "No changes",
         description: "No scores have been modified for this match",
+        variant: "default",
       });
       return;
     }
@@ -83,20 +84,36 @@ export const AdminDashboard = () => {
           set2_away_score: matchScores.away[1],
           set3_home_score: matchScores.home[2],
           set3_away_score: matchScores.away[2],
-          match_date: matchDate.toISOString(), // Convert to ISO format
+          match_date: matchDate.toISOString(),
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving match scores:', error);
+        toast({
+          title: "Error",
+          description: `Failed to save match scores: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Clear the scores for this match after successful save
+      setScores(prev => {
+        const newScores = { ...prev };
+        delete newScores[match.Id];
+        return newScores;
+      });
 
       toast({
         title: "Success",
-        description: "Match scores have been saved",
+        description: `Scores saved successfully for ${match.HomeTeam} vs ${match.AwayTeam}`,
+        variant: "default",
       });
     } catch (error) {
       console.error('Error saving match scores:', error);
       toast({
         title: "Error",
-        description: "Failed to save match scores",
+        description: "An unexpected error occurred while saving the scores",
         variant: "destructive",
       });
     }
