@@ -58,13 +58,13 @@ export const useTimer = ({
       } else if (nextPhase === 'final_break') {
         console.log('Starting final break');
         onComplete(); // Notify parent set is over
-        setTimeLeft(30); // 30 seconds final break
+        setTimeLeft(60); // 60 seconds final break
         setIsRunning(true);
         setMatchPhase(nextPhase);
       } else if (nextPhase === 'results_display') {
         console.log('Starting results display');
         onComplete(); // Notify parent final break is over
-        setTimeLeft(30); // 30 seconds results display
+        setTimeLeft(60); // 60 seconds results display
         setIsRunning(true);
         setMatchPhase(nextPhase);
       } else if (nextPhase === 'complete') {
@@ -117,7 +117,7 @@ export const useTimer = ({
         if (currentSetNumber === 3) {
           console.log('Moving to final break from set 3');
           setMatchPhase('final_break');
-          setTimeLeft(30); // 30 seconds final break
+          setTimeLeft(60); // 60 seconds final break
         } else {
           console.log('Moving to break', currentSetNumber);
           const breakPhase = `break${currentSetNumber}` as MatchPhase;
