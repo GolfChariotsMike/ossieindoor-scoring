@@ -79,7 +79,7 @@ const CourtSelection = () => {
   };
 
   return (
-    <div className="min-h-screen bg-volleyball-red">
+    <div className="min-h-screen bg-volleyball-red relative">
       <div className="max-w-4xl mx-auto p-8">
         <div className="flex flex-col items-center mb-8">
           <button 
@@ -140,6 +140,17 @@ const CourtSelection = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Admin button at the bottom */}
+      <div className="absolute bottom-4 right-4">
+        <Button
+          variant="ghost"
+          className="text-volleyball-cream opacity-50 hover:opacity-100 transition-opacity text-sm"
+          onClick={() => navigate('/admin')}
+        >
+          Admin
+        </Button>
       </div>
     </div>
   );
