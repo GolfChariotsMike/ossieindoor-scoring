@@ -20,10 +20,13 @@ export const AdminDashboard = () => {
   const { toast } = useToast();
   const [scores, setScores] = useState<MatchScores>({});
 
-  const { data: matches = [], isLoading } = useQuery({
+  const { data: matchesData = [], isLoading } = useQuery({
     queryKey: ["matches", selectedDate],
     queryFn: () => fetchMatchData(undefined, parse(selectedDate, 'yyyy-MM-dd', new Date())),
   });
+
+  // Ensure matches is always an array
+  const matches = Array.isArray(matchesData) ? matchesData : [];
 
   const handleScoreChange = (matchId: string, team: 'home' | 'away', setIndex: number, value: string) => {
     const numValue = parseInt(value) || 0;
