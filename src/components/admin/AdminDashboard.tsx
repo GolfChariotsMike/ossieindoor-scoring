@@ -8,6 +8,14 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Fixture } from "@/types/volleyball";
 import { Calendar } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface MatchScores {
   [key: string]: {
@@ -116,62 +124,65 @@ export const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="space-y-6">
-          {matches.map((match: Fixture) => (
-            <div key={match.Id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="border-b border-gray-200 pb-4 mb-4">
-                <h3 className="text-xl font-semibold text-volleyball-black mb-2">
-                  {match.HomeTeam} vs {match.AwayTeam}
-                </h3>
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                  <span className="bg-volleyball-red/10 text-volleyball-red px-3 py-1 rounded-full">
-                    {match.PlayingAreaName}
-                  </span>
-                  <span className="bg-volleyball-black/10 text-volleyball-black px-3 py-1 rounded-full">
-                    {match.DivisionName}
-                  </span>
-                  <span className="bg-gray-100 px-3 py-1 rounded-full">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Teams</TableHead>
+                <TableHead className="w-[120px]">Court</TableHead>
+                <TableHead className="w-[120px]">Division</TableHead>
+                <TableHead className="w-[120px]">Time</TableHead>
+                <TableHead className="text-center">Set 1</TableHead>
+                <TableHead className="text-center">Set 2</TableHead>
+                <TableHead className="text-center">Set 3</TableHead>
+                <TableHead className="w-[120px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {matches.map((match: Fixture) => (
+                <TableRow key={match.Id} className="hover:bg-gray-50">
+                  <TableCell className="font-medium">
+                    <div className="font-semibold">{match.HomeTeam}</div>
+                    <div className="text-gray-500">vs</div>
+                    <div className="font-semibold">{match.AwayTeam}</div>
+                  </TableCell>
+                  <TableCell>{match.PlayingAreaName}</TableCell>
+                  <TableCell>{match.DivisionName}</TableCell>
+                  <TableCell>
                     {format(parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date()), 'h:mm a')}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="font-semibold text-volleyball-black">Set</div>
-                <div className="font-semibold text-volleyball-black">{match.HomeTeam}</div>
-                <div className="font-semibold text-volleyball-black">{match.AwayTeam}</div>
-                <div></div>
-
-                {[0, 1, 2].map((setIndex) => (
-                  <div key={setIndex} className="contents">
-                    <div className="flex items-center text-gray-600">Set {setIndex + 1}</div>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={scores[match.Id]?.home[setIndex] || 0}
-                      onChange={(e) => handleScoreChange(match.Id, 'home', setIndex, e.target.value)}
-                      className="text-center border-gray-200 focus:border-volleyball-red focus:ring-volleyball-red"
-                    />
-                    <Input
-                      type="number"
-                      min="0"
-                      value={scores[match.Id]?.away[setIndex] || 0}
-                      onChange={(e) => handleScoreChange(match.Id, 'away', setIndex, e.target.value)}
-                      className="text-center border-gray-200 focus:border-volleyball-red focus:ring-volleyball-red"
-                    />
-                    <div></div>
-                  </div>
-                ))}
-              </div>
-
-              <Button
-                onClick={() => saveMatchScores(match)}
-                className="bg-volleyball-red hover:bg-volleyball-red/90 text-white font-semibold transition-colors"
-              >
-                Save Scores
-              </Button>
-            </div>
-          ))}
+                  </TableCell>
+                  {[0, 1, 2].map((setIndex) => (
+                    <TableCell key={setIndex} className="text-center">
+                      <div className="flex flex-col space-y-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          value={scores[match.Id]?.home[setIndex] || 0}
+                          onChange={(e) => handleScoreChange(match.Id, 'home', setIndex, e.target.value)}
+                          className="text-center w-16 mx-auto"
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          value={scores[match.Id]?.away[setIndex] || 0}
+                          onChange={(e) => handleScoreChange(match.Id, 'away', setIndex, e.target.value)}
+                          className="text-center w-16 mx-auto"
+                        />
+                      </div>
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <Button
+                      onClick={() => saveMatchScores(match)}
+                      className="w-full bg-volleyball-red hover:bg-volleyball-red/90 text-white"
+                    >
+                      Save
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>
