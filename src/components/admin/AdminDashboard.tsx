@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parse } from "date-fns";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Fixture } from "@/types/volleyball";
 import { Calendar } from "lucide-react";
@@ -36,6 +36,52 @@ export const AdminDashboard = () => {
 
   const matches = Array.isArray(matchesData) ? matchesData : [];
 
+  // Fetch existing scores when matches load
+  useEffect(() => {
+    const fetchExistingScores = async () => {
+      for (const match of matches) {
+        const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+        const matchCode = `${match.PlayingAreaName.replace('Court ', '')}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
+        
+        const { data: existingMatch } = await supabase
+          .from('matches_v2')
+          .select('id')
+          .eq('match_code', matchCode)
+          .maybeSingle();
+
+        if (existingMatch) {
+          const { data: matchData } = await supabase
+            .from('match_data_v2')
+            .select('*')
+            .eq('match_id', existingMatch.id)
+            .maybeSingle();
+
+          if (matchData) {
+            setScores(prev => ({
+              ...prev,
+              [match.Id]: {
+                home: [
+                  matchData.set1_home_score || 0,
+                  matchData.set2_home_score || 0,
+                  matchData.set3_home_score || 0
+                ],
+                away: [
+                  matchData.set1_away_score || 0,
+                  matchData.set2_away_score || 0,
+                  matchData.set3_away_score || 0
+                ]
+              }
+            }));
+          }
+        }
+      }
+    };
+
+    if (matches.length > 0) {
+      fetchExistingScores();
+    }
+  }, [matches]);
+
   const handleScoreChange = (matchId: string, team: 'home' | 'away', setIndex: number, value: string) => {
     const numValue = parseInt(value) || 0;
     setScores(prev => ({
@@ -64,10 +110,7 @@ export const AdminDashboard = () => {
     const matchScores = scores[match.Id];
 
     try {
-      // Parse the date string and convert it to ISO format
       const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-      
-      // Generate match code
       const matchCode = `${match.PlayingAreaName.replace('Court ', '')}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
       
       // First, check if the match exists
@@ -91,7 +134,6 @@ export const AdminDashboard = () => {
       if (existingMatch) {
         matchId = existingMatch.id;
       } else {
-        // Create new match if it doesn't exist
         const { data: newMatch, error: createError } = await supabase
           .from('matches_v2')
           .insert({
@@ -119,7 +161,7 @@ export const AdminDashboard = () => {
         matchId = newMatch.id;
       }
 
-      // Now save the scores using the match_id
+      // Use upsert with match_id as the unique constraint
       const { error: scoresError } = await supabase
         .from('match_data_v2')
         .upsert({
@@ -135,6 +177,8 @@ export const AdminDashboard = () => {
           set3_home_score: matchScores.home[2],
           set3_away_score: matchScores.away[2],
           match_date: matchDate.toISOString(),
+        }, {
+          onConflict: 'match_id'
         });
 
       if (scoresError) {
@@ -146,13 +190,6 @@ export const AdminDashboard = () => {
         });
         return;
       }
-
-      // Clear the scores for this match after successful save
-      setScores(prev => {
-        const newScores = { ...prev };
-        delete newScores[match.Id];
-        return newScores;
-      });
 
       toast({
         title: "Success",
