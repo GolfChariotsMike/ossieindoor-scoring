@@ -67,38 +67,63 @@ export const AdminDashboard = () => {
       // Parse the date string and convert it to ISO format
       const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
       
-      // First, create or get the match in matches_v2
+      // Generate match code
       const matchCode = `${match.PlayingAreaName.replace('Court ', '')}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
-      const { data: matchData, error: matchError } = await supabase
+      
+      // First, check if the match exists
+      const { data: existingMatch, error: fetchError } = await supabase
         .from('matches_v2')
-        .upsert({
-          match_code: matchCode,
-          court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
-          start_time: matchDate.toISOString(),
-          division: match.DivisionName,
-          home_team_id: match.HomeTeamId || match.HomeTeam,
-          home_team_name: match.HomeTeam,
-          away_team_id: match.AwayTeamId || match.AwayTeam,
-          away_team_name: match.AwayTeam,
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('match_code', matchCode)
+        .maybeSingle();
 
-      if (matchError) {
-        console.error('Error creating match:', matchError);
+      if (fetchError) {
+        console.error('Error checking existing match:', fetchError);
         toast({
           title: "Error",
-          description: `Failed to create match: ${matchError.message}`,
+          description: `Failed to check existing match: ${fetchError.message}`,
           variant: "destructive",
         });
         return;
       }
 
-      // Now save the scores using the match_id from matches_v2
+      let matchId;
+      if (existingMatch) {
+        matchId = existingMatch.id;
+      } else {
+        // Create new match if it doesn't exist
+        const { data: newMatch, error: createError } = await supabase
+          .from('matches_v2')
+          .insert({
+            match_code: matchCode,
+            court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
+            start_time: matchDate.toISOString(),
+            division: match.DivisionName,
+            home_team_id: match.HomeTeamId || match.HomeTeam,
+            home_team_name: match.HomeTeam,
+            away_team_id: match.AwayTeamId || match.AwayTeam,
+            away_team_name: match.AwayTeam,
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating match:', createError);
+          toast({
+            title: "Error",
+            description: `Failed to create match: ${createError.message}`,
+            variant: "destructive",
+          });
+          return;
+        }
+        matchId = newMatch.id;
+      }
+
+      // Now save the scores using the match_id
       const { error: scoresError } = await supabase
         .from('match_data_v2')
         .upsert({
-          match_id: matchData.id,
+          match_id: matchId,
           court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
           division: match.DivisionName,
           home_team_name: match.HomeTeam,
