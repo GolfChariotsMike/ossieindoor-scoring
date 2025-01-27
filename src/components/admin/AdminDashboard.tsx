@@ -63,6 +63,9 @@ export const AdminDashboard = () => {
     const matchScores = scores[match.Id];
 
     try {
+      // Parse the date string and convert it to ISO format
+      const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+      
       const { error } = await supabase
         .from('match_data_v2')
         .upsert({
@@ -77,7 +80,7 @@ export const AdminDashboard = () => {
           set2_away_score: matchScores.away[1],
           set3_home_score: matchScores.home[2],
           set3_away_score: matchScores.away[2],
-          match_date: match.DateTime,
+          match_date: matchDate.toISOString(), // Convert to ISO format
         });
 
       if (error) throw error;
