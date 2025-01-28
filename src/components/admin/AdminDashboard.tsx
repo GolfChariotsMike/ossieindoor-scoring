@@ -7,9 +7,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Fixture } from "@/types/volleyball";
 import { DateSelector } from "./DateSelector";
 import { MatchesTable } from "./MatchesTable";
+import { UnscoredMatchesSection } from "./UnscoredMatchesSection";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface MatchScores {
   [key: string]: {
@@ -19,7 +20,9 @@ interface MatchScores {
 }
 
 export const AdminDashboard = () => {
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get('date');
+  const [selectedDate, setSelectedDate] = useState(dateParam || format(new Date(), 'yyyy-MM-dd'));
   const { toast } = useToast();
   const [scores, setScores] = useState<MatchScores>({});
   const navigate = useNavigate();
@@ -268,11 +271,13 @@ export const AdminDashboard = () => {
                 Back to Courts
               </Button>
               <h1 className="text-3xl font-bold text-volleyball-black">Admin Dashboard</h1>
-              <div className="w-[120px]" /> {/* Spacer for centering */}
+              <div className="w-[120px]" />
             </div>
             <DateSelector selectedDate={selectedDate} onDateChange={setSelectedDate} />
           </div>
         </div>
+
+        <UnscoredMatchesSection />
 
         <MatchesTable
           matches={matches}
