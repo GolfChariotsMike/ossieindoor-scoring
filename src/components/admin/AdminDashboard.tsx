@@ -7,6 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Fixture } from "@/types/volleyball";
 import { DateSelector } from "./DateSelector";
 import { MatchesTable } from "./MatchesTable";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface MatchScores {
   [key: string]: {
@@ -19,6 +22,7 @@ export const AdminDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const { toast } = useToast();
   const [scores, setScores] = useState<MatchScores>({});
+  const navigate = useNavigate();
 
   const { data: matchesData = [], isLoading } = useQuery({
     queryKey: ["matches", selectedDate],
@@ -258,8 +262,19 @@ export const AdminDashboard = () => {
     <div className="min-h-screen bg-volleyball-cream">
       <div className="max-w-7xl mx-auto p-8">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-volleyball-black">Admin Dashboard</h1>
+          <div className="flex flex-col items-center space-y-6">
+            <div className="w-full flex justify-between items-center">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/')}
+                className="bg-volleyball-black hover:bg-volleyball-black/90 text-volleyball-cream"
+              >
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                Back to Courts
+              </Button>
+              <h1 className="text-3xl font-bold text-volleyball-black">Admin Dashboard</h1>
+              <div className="w-[120px]" /> {/* Spacer for centering */}
+            </div>
             <DateSelector selectedDate={selectedDate} onDateChange={setSelectedDate} />
           </div>
         </div>
