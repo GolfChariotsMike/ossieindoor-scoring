@@ -88,19 +88,25 @@ export const AdminDashboard = () => {
   };
 
   const saveMatchScores = async (match: Fixture) => {
+    console.log('Starting to save match scores...', { match, scores: scores[match.Id] });
+    
     if (!scores[match.Id]) {
+      console.log('No scores found for match:', match.Id);
       toast({
         title: "No changes",
         description: "No scores have been modified for this match",
+        variant: "destructive",
       });
       return;
     }
 
     const matchScores = scores[match.Id];
+    console.log('Processing scores:', matchScores);
 
     try {
       const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
       const matchCode = `${match.PlayingAreaName.replace('Court ', '')}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
+      console.log('Generated match code:', matchCode);
       
       let { data: existingMatch, error: fetchError } = await supabase
         .from('matches_v2')
@@ -121,7 +127,9 @@ export const AdminDashboard = () => {
       let matchId;
       if (existingMatch) {
         matchId = existingMatch.id;
+        console.log('Found existing match:', matchId);
       } else {
+        console.log('Creating new match...');
         const { data: newMatch, error: createError } = await supabase
           .from('matches_v2')
           .insert({
@@ -147,6 +155,7 @@ export const AdminDashboard = () => {
           return;
         }
         matchId = newMatch.id;
+        console.log('Created new match:', matchId);
       }
 
       const { data: existingData, error: existingError } = await supabase
@@ -167,6 +176,7 @@ export const AdminDashboard = () => {
 
       let upsertError;
       if (existingData) {
+        console.log('Updating existing match data:', existingData.id);
         const { error: updateError } = await supabase
           .from('match_data_v2')
           .update({
@@ -181,6 +191,7 @@ export const AdminDashboard = () => {
         
         upsertError = updateError;
       } else {
+        console.log('Inserting new match data...');
         const { error: insertError } = await supabase
           .from('match_data_v2')
           .insert({
@@ -211,17 +222,21 @@ export const AdminDashboard = () => {
         return;
       }
 
+      console.log('Successfully saved match scores!');
       toast({
-        title: "Success",
-        description: `Scores saved successfully for ${match.HomeTeam} vs ${match.AwayTeam}`,
+        title: "Success!",
+        description: `Scores saved for ${match.HomeTeam} vs ${match.AwayTeam}`,
+        variant: "default",
+        duration: 3000,
       });
 
     } catch (error) {
-      console.error('Error saving match scores:', error);
+      console.error('Unexpected error saving match scores:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred while saving the scores",
         variant: "destructive",
+        duration: 5000,
       });
     }
   };
