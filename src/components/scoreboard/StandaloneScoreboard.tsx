@@ -25,11 +25,11 @@ const StandaloneScoreboard = () => {
     awayTeam: { id: "away", name: "AWAY TEAM" },
   };
 
-  const handleScore = (team: "home" | "away") => {
+  const handleScore = (team: "home" | "away", increment: boolean = true) => {
     if (isMatchComplete) return;
     setCurrentScore((prev) => ({
       ...prev,
-      [team]: prev[team] + 1,
+      [team]: increment ? prev[team] + 1 : Math.max(0, prev[team] - 1),
     }));
   };
 
