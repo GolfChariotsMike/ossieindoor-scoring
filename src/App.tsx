@@ -1,17 +1,19 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AdminDashboard } from "@/components/admin/AdminDashboard";
-import { Toaster } from "@/components/ui/toaster";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import CourtSelection from "./components/CourtSelection";
+import CourtFixtures from "./components/CourtFixtures";
+import Scoreboard from "./components/Scoreboard";
+import { AdminRoute } from "./components/admin/AdminRoute";
 
 function App() {
   return (
-    <>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/admin" element={<AdminDashboard />} />
-        </Routes>
-      </BrowserRouter>
-      <Toaster />
-    </>
+    <Router>
+      <Routes>
+        <Route path="/" element={<CourtSelection />} />
+        <Route path="/courts/:courtId/:date" element={<CourtFixtures />} />
+        <Route path="/scoreboard/:courtId" element={<Scoreboard />} />
+        <Route path="/admin" element={<AdminRoute />} />
+      </Routes>
+    </Router>
   );
 }
 

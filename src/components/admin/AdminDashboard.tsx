@@ -88,20 +88,15 @@ export const AdminDashboard = () => {
   };
 
   const saveMatchScores = async (match: Fixture) => {
-    console.log("Attempting to save match scores...");
-    
     if (!scores[match.Id]) {
-      console.log("No scores to save");
       toast({
         title: "No changes",
         description: "No scores have been modified for this match",
-        variant: "default",
       });
       return;
     }
 
     const matchScores = scores[match.Id];
-    console.log("Match scores to save:", matchScores);
 
     try {
       const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
@@ -170,35 +165,38 @@ export const AdminDashboard = () => {
         return;
       }
 
-      const scoreData = {
-        match_id: matchId,
-        court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
-        division: match.DivisionName,
-        home_team_name: match.HomeTeam,
-        away_team_name: match.AwayTeam,
-        set1_home_score: matchScores.home[0],
-        set1_away_score: matchScores.away[0],
-        set2_home_score: matchScores.home[1],
-        set2_away_score: matchScores.away[1],
-        set3_home_score: matchScores.home[2],
-        set3_away_score: matchScores.away[2],
-        match_date: matchDate.toISOString(),
-      };
-
       let upsertError;
       if (existingData) {
-        console.log("Updating existing match data");
         const { error: updateError } = await supabase
           .from('match_data_v2')
-          .update(scoreData)
+          .update({
+            set1_home_score: matchScores.home[0],
+            set1_away_score: matchScores.away[0],
+            set2_home_score: matchScores.home[1],
+            set2_away_score: matchScores.away[1],
+            set3_home_score: matchScores.home[2],
+            set3_away_score: matchScores.away[2],
+          })
           .eq('id', existingData.id);
         
         upsertError = updateError;
       } else {
-        console.log("Inserting new match data");
         const { error: insertError } = await supabase
           .from('match_data_v2')
-          .insert(scoreData);
+          .insert({
+            match_id: matchId,
+            court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
+            division: match.DivisionName,
+            home_team_name: match.HomeTeam,
+            away_team_name: match.AwayTeam,
+            set1_home_score: matchScores.home[0],
+            set1_away_score: matchScores.away[0],
+            set2_home_score: matchScores.home[1],
+            set2_away_score: matchScores.away[1],
+            set3_home_score: matchScores.home[2],
+            set3_away_score: matchScores.away[2],
+            match_date: matchDate.toISOString(),
+          });
         
         upsertError = insertError;
       }
@@ -213,11 +211,9 @@ export const AdminDashboard = () => {
         return;
       }
 
-      console.log("Successfully saved match scores");
       toast({
         title: "Success",
         description: `Scores saved successfully for ${match.HomeTeam} vs ${match.AwayTeam}`,
-        variant: "default",
       });
 
     } catch (error) {
