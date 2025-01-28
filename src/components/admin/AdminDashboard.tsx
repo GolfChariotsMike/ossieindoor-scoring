@@ -2,20 +2,11 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parse } from "date-fns";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Fixture } from "@/types/volleyball";
-import { Calendar } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DateSelector } from "./DateSelector";
+import { MatchesTable } from "./MatchesTable";
 
 interface MatchScores {
   [key: string]: {
@@ -158,7 +149,6 @@ export const AdminDashboard = () => {
         matchId = newMatch.id;
       }
 
-      // First try to update
       const { data: existingData, error: existingError } = await supabase
         .from('match_data_v2')
         .select('id')
@@ -177,7 +167,6 @@ export const AdminDashboard = () => {
 
       let upsertError;
       if (existingData) {
-        // Update existing record
         const { error: updateError } = await supabase
           .from('match_data_v2')
           .update({
@@ -192,7 +181,6 @@ export const AdminDashboard = () => {
         
         upsertError = updateError;
       } else {
-        // Insert new record
         const { error: insertError } = await supabase
           .from('match_data_v2')
           .insert({
@@ -223,7 +211,6 @@ export const AdminDashboard = () => {
         return;
       }
 
-      // Show success toast after successful save
       toast({
         title: "Success",
         description: `Scores saved successfully for ${match.HomeTeam} vs ${match.AwayTeam}`,
@@ -255,78 +242,16 @@ export const AdminDashboard = () => {
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold text-volleyball-black">Admin Dashboard</h1>
-            <div className="flex items-center space-x-2 bg-white rounded-lg shadow p-2">
-              <Calendar className="text-volleyball-red h-5 w-5" />
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="border-none focus:ring-0"
-              />
-            </div>
+            <DateSelector selectedDate={selectedDate} onDateChange={setSelectedDate} />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[200px]">Teams</TableHead>
-                <TableHead className="w-[120px]">Court</TableHead>
-                <TableHead className="w-[120px]">Division</TableHead>
-                <TableHead className="w-[120px]">Time</TableHead>
-                <TableHead className="text-center">Set 1</TableHead>
-                <TableHead className="text-center">Set 2</TableHead>
-                <TableHead className="text-center">Set 3</TableHead>
-                <TableHead className="w-[120px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {matches.map((match: Fixture) => (
-                <TableRow key={match.Id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">
-                    <div className="font-semibold">{match.HomeTeam}</div>
-                    <div className="text-gray-500">vs</div>
-                    <div className="font-semibold">{match.AwayTeam}</div>
-                  </TableCell>
-                  <TableCell>{match.PlayingAreaName}</TableCell>
-                  <TableCell>{match.DivisionName}</TableCell>
-                  <TableCell>
-                    {format(parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date()), 'h:mm a')}
-                  </TableCell>
-                  {[0, 1, 2].map((setIndex) => (
-                    <TableCell key={setIndex} className="text-center">
-                      <div className="flex flex-col space-y-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={scores[match.Id]?.home[setIndex] || 0}
-                          onChange={(e) => handleScoreChange(match.Id, 'home', setIndex, e.target.value)}
-                          className="text-center w-16 mx-auto"
-                        />
-                        <Input
-                          type="number"
-                          min="0"
-                          value={scores[match.Id]?.away[setIndex] || 0}
-                          onChange={(e) => handleScoreChange(match.Id, 'away', setIndex, e.target.value)}
-                          className="text-center w-16 mx-auto"
-                        />
-                      </div>
-                    </TableCell>
-                  ))}
-                  <TableCell>
-                    <Button
-                      onClick={() => saveMatchScores(match)}
-                      className="w-full bg-volleyball-red hover:bg-volleyball-red/90 text-white"
-                    >
-                      Save
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <MatchesTable
+          matches={matches}
+          scores={scores}
+          onScoreChange={handleScoreChange}
+          onSave={saveMatchScores}
+        />
       </div>
     </div>
   );
