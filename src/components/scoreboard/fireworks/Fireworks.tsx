@@ -51,7 +51,7 @@ export const Fireworks = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 9999 }}>
+    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 99999 }}>
       <style>
         {`
           @keyframes launch {
