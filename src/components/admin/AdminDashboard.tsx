@@ -158,28 +158,66 @@ export const AdminDashboard = () => {
         matchId = newMatch.id;
       }
 
-      const { error: scoresError } = await supabase
+      // First try to update
+      const { data: existingData, error: existingError } = await supabase
         .from('match_data_v2')
-        .upsert({
-          match_id: matchId,
-          court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
-          division: match.DivisionName,
-          home_team_name: match.HomeTeam,
-          away_team_name: match.AwayTeam,
-          set1_home_score: matchScores.home[0],
-          set1_away_score: matchScores.away[0],
-          set2_home_score: matchScores.home[1],
-          set2_away_score: matchScores.away[1],
-          set3_home_score: matchScores.home[2],
-          set3_away_score: matchScores.away[2],
-          match_date: matchDate.toISOString(),
-        });
+        .select('id')
+        .eq('match_id', matchId)
+        .maybeSingle();
 
-      if (scoresError) {
-        console.error('Error saving match scores:', scoresError);
+      if (existingError) {
+        console.error('Error checking existing match data:', existingError);
         toast({
           title: "Error",
-          description: `Failed to save match scores: ${scoresError.message}`,
+          description: `Failed to check existing match data: ${existingError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let upsertError;
+      if (existingData) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('match_data_v2')
+          .update({
+            set1_home_score: matchScores.home[0],
+            set1_away_score: matchScores.away[0],
+            set2_home_score: matchScores.home[1],
+            set2_away_score: matchScores.away[1],
+            set3_home_score: matchScores.home[2],
+            set3_away_score: matchScores.away[2],
+          })
+          .eq('id', existingData.id);
+        
+        upsertError = updateError;
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('match_data_v2')
+          .insert({
+            match_id: matchId,
+            court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
+            division: match.DivisionName,
+            home_team_name: match.HomeTeam,
+            away_team_name: match.AwayTeam,
+            set1_home_score: matchScores.home[0],
+            set1_away_score: matchScores.away[0],
+            set2_home_score: matchScores.home[1],
+            set2_away_score: matchScores.away[1],
+            set3_home_score: matchScores.home[2],
+            set3_away_score: matchScores.away[2],
+            match_date: matchDate.toISOString(),
+          });
+        
+        upsertError = insertError;
+      }
+
+      if (upsertError) {
+        console.error('Error saving match scores:', upsertError);
+        toast({
+          title: "Error",
+          description: `Failed to save match scores: ${upsertError.message}`,
           variant: "destructive",
         });
         return;
