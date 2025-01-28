@@ -96,6 +96,7 @@ export const AdminDashboard = () => {
         title: "No changes",
         description: "No scores have been modified for this match",
         variant: "destructive",
+        className: "z-50",
       });
       return;
     }
@@ -227,7 +228,8 @@ export const AdminDashboard = () => {
         title: "Success!",
         description: `Scores saved for ${match.HomeTeam} vs ${match.AwayTeam}`,
         variant: "default",
-        duration: 3000,
+        duration: 5000,
+        className: "z-50 bg-green-100 border-green-500",
       });
 
     } catch (error) {
@@ -237,6 +239,7 @@ export const AdminDashboard = () => {
         description: "An unexpected error occurred while saving the scores",
         variant: "destructive",
         duration: 5000,
+        className: "z-50",
       });
     }
   };
