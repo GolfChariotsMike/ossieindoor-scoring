@@ -12,7 +12,7 @@ interface ScoreboardLayoutProps {
   isMatchComplete: boolean;
   onTimerComplete: () => void;
   onSwitchTeams: () => void;
-  onScoreUpdate: (team: "home" | "away") => void;
+  onScoreUpdate: (team: "home" | "away", increment: boolean) => void;
 }
 
 export const ScoreboardLayout = ({
@@ -43,7 +43,7 @@ export const ScoreboardLayout = ({
         <TeamScore
           teamName={homeTeam.name}
           score={currentScore.home}
-          onScoreUpdate={() => onScoreUpdate("home")}
+          onScoreUpdate={(increment) => onScoreUpdate("home", increment)}
         />
 
         <div className="w-64">
@@ -57,7 +57,7 @@ export const ScoreboardLayout = ({
         <TeamScore
           teamName={awayTeam.name}
           score={currentScore.away}
-          onScoreUpdate={() => onScoreUpdate("away")}
+          onScoreUpdate={(increment) => onScoreUpdate("away", increment)}
         />
       </div>
     </div>
