@@ -36,7 +36,6 @@ export const AdminDashboard = () => {
 
   const matches = Array.isArray(matchesData) ? matchesData : [];
 
-  // Fetch existing scores when matches load
   useEffect(() => {
     const fetchExistingScores = async () => {
       for (const match of matches) {
@@ -112,7 +111,6 @@ export const AdminDashboard = () => {
       const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
       const matchCode = `${match.PlayingAreaName.replace('Court ', '')}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
       
-      // First, check if the match exists
       let { data: existingMatch, error: fetchError } = await supabase
         .from('matches_v2')
         .select('id')
@@ -292,3 +290,4 @@ export const AdminDashboard = () => {
       </div>
     </div>
   );
+};
