@@ -18,7 +18,7 @@ export const UnscoredMatchesSection = () => {
   const navigate = useNavigate();
   const today = new Date();
 
-  const { data: allMatches = [], isLoading } = useQuery({
+  const { data: allMatchesData = [], isLoading } = useQuery({
     queryKey: ["all-matches"],
     queryFn: () => fetchMatchData(),
   });
@@ -33,6 +33,8 @@ export const UnscoredMatchesSection = () => {
     },
   });
 
+  // Convert allMatchesData to array if it's a single match object
+  const allMatches = Array.isArray(allMatchesData) ? allMatchesData : [allMatchesData];
   const scoredMatchCodes = new Set(scoredMatches.map(match => match.match_code));
 
   const unscoredPastMatches = allMatches.filter((match: Fixture) => {
