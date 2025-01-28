@@ -64,50 +64,48 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
         <Fireworks />
       </div>
       <div className="relative z-10 w-[90%] max-w-7xl">
-        <div className="bg-white/60 p-12 rounded-3xl shadow-2xl backdrop-blur-md">
-          <h1 className="text-8xl font-sets mb-16 text-black text-center animate-[scale_2s_ease-in-out_infinite]">
-            {getWinnerText()}
-          </h1>
-          
-          <div className="grid grid-cols-2 gap-16 mb-12">
-            {[homeResults, awayResults].map((result) => (
-              <div 
-                key={result.name}
-                className="bg-volleyball-black rounded-2xl p-10 flex flex-col items-center transition-transform hover:scale-105 duration-300"
-              >
-                <h2 className="text-6xl font-sets mb-10 text-white animate-fade-in">
-                  {result.name}
-                </h2>
-                <div className="space-y-8 text-4xl font-score text-white">
-                  <p className="animate-scale-in">Set Points: {result.setPoints}</p>
-                  <p className="animate-scale-in delay-75">Draw Points: {result.drawPoints}</p>
-                  <p className="animate-scale-in delay-150">Bonus Points: {result.bonusPoints}</p>
-                  <div className="w-full h-px bg-white/20 my-8"></div>
-                  <p className="text-5xl animate-[pulse_3s_ease-in-out_infinite]">
-                    Total: {result.totalPoints}
-                  </p>
-                </div>
+        <h1 className="text-8xl font-sets mb-16 text-white text-center animate-[scale_2s_ease-in-out_infinite] drop-shadow-lg">
+          {getWinnerText()}
+        </h1>
+        
+        <div className="grid grid-cols-2 gap-16 mb-12">
+          {[homeResults, awayResults].map((result) => (
+            <div 
+              key={result.name}
+              className="bg-volleyball-black/90 rounded-2xl p-10 flex flex-col items-center transition-transform hover:scale-105 duration-300 backdrop-blur-sm"
+            >
+              <h2 className="text-6xl font-sets mb-10 text-white animate-fade-in">
+                {result.name}
+              </h2>
+              <div className="space-y-8 text-4xl font-score text-white">
+                <p className="animate-scale-in">Set Points: {result.setPoints}</p>
+                <p className="animate-scale-in delay-75">Draw Points: {result.drawPoints}</p>
+                <p className="animate-scale-in delay-150">Bonus Points: {result.bonusPoints}</p>
+                <div className="w-full h-px bg-white/20 my-8"></div>
+                <p className="text-5xl animate-[pulse_3s_ease-in-out_infinite]">
+                  Total: {result.totalPoints}
+                </p>
               </div>
-            ))}
-          </div>
-
-          {onStartNextMatch && (
-            <div className="relative z-10 flex justify-center">
-              <Button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log('Next match button clicked');
-                  onStartNextMatch();
-                }}
-                className="bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale"
-              >
-                <ArrowRight className="w-8 h-8 mr-3" />
-                Start Next Match
-              </Button>
             </div>
-          )}
+          ))}
         </div>
+
+        {onStartNextMatch && (
+          <div className="relative z-10 flex justify-center">
+            <Button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('Next match button clicked');
+                onStartNextMatch();
+              }}
+              className="bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale"
+            >
+              <ArrowRight className="w-8 h-8 mr-3" />
+              Start Next Match
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
