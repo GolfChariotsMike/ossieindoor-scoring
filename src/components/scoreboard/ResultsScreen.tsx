@@ -63,8 +63,8 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
       <div className="absolute inset-0">
         <Fireworks />
       </div>
-      <div className="relative z-50 w-[90%] max-w-7xl">
-        <div className="bg-white/90 p-12 rounded-3xl shadow-2xl backdrop-blur-sm">
+      <div className="relative z-10 w-[90%] max-w-7xl">
+        <div className="bg-white/60 p-12 rounded-3xl shadow-2xl backdrop-blur-md">
           <h1 className="text-8xl font-sets mb-16 text-black text-center animate-[scale_2s_ease-in-out_infinite]">
             {getWinnerText()}
           </h1>
@@ -92,7 +92,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
           </div>
 
           {onStartNextMatch && (
-            <div className="relative z-50 flex justify-center">
+            <div className="relative z-10 flex justify-center">
               <Button
                 type="button"
                 onClick={(e) => {
