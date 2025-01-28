@@ -102,7 +102,6 @@ export const AdminDashboard = () => {
       toast({
         title: "No changes",
         description: "No scores have been modified for this match",
-        variant: "default",
       });
       return;
     }
@@ -161,7 +160,6 @@ export const AdminDashboard = () => {
         matchId = newMatch.id;
       }
 
-      // Use upsert with match_id as the unique constraint
       const { error: scoresError } = await supabase
         .from('match_data_v2')
         .upsert({
@@ -192,7 +190,6 @@ export const AdminDashboard = () => {
       toast({
         title: "Success",
         description: `Scores saved successfully for ${match.HomeTeam} vs ${match.AwayTeam}`,
-        variant: "default",
       });
     } catch (error) {
       console.error('Error saving match scores:', error);
@@ -295,4 +292,3 @@ export const AdminDashboard = () => {
       </div>
     </div>
   );
-};
