@@ -223,10 +223,12 @@ export const AdminDashboard = () => {
         return;
       }
 
+      // Show success toast after successful save
       toast({
         title: "Success",
         description: `Scores saved successfully for ${match.HomeTeam} vs ${match.AwayTeam}`,
       });
+
     } catch (error) {
       console.error('Error saving match scores:', error);
       toast({
