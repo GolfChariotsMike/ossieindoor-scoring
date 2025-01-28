@@ -64,7 +64,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
         <Fireworks />
       </div>
       <div className="relative z-10 w-[90%] max-w-7xl">
-        <h1 className="text-8xl font-sets mb-16 text-white text-center animate-[scale_2s_ease-in-out_infinite] drop-shadow-lg">
+        <h1 className="text-8xl font-sets mb-16 text-black text-center animate-[scale_2s_ease-in-out_infinite] drop-shadow-lg">
           {getWinnerText()}
         </h1>
         
