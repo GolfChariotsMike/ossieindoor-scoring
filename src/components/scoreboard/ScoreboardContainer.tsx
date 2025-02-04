@@ -9,6 +9,7 @@ import { useNextMatch } from "./NextMatchLogic";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { format, parse } from "date-fns";
+import { toast } from "@/components/ui/use-toast";
 
 const parseFixtureDate = (dateStr: string) => {
   try {
@@ -74,13 +75,67 @@ export const ScoreboardContainer = () => {
       }
 
       transitionTimeoutRef.current = setTimeout(() => {
-        console.log('Results display time complete, checking for next match');
-        const nextMatch = findNextMatch(nextMatches);
-        if (nextMatch) {
-          console.log('Auto-transitioning to next match:', nextMatch.Id);
-          handleStartNextMatch(nextMatch);
-        } else {
-          console.log('No next match found for auto-transition');
+        try {
+          console.log('Results display time complete, checking for next match', {
+            currentFixture: fixture?.Id,
+            currentTime: new Date().toISOString(),
+            availableMatches: nextMatches.length
+          });
+
+          const nextMatch = findNextMatch(nextMatches);
+          
+          if (nextMatch) {
+            console.log('Found next match:', {
+              nextMatchId: nextMatch.Id,
+              nextMatchTime: nextMatch.DateTime,
+              nextMatchTeams: `${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`
+            });
+            
+            try {
+              handleStartNextMatch(nextMatch);
+            } catch (error) {
+              console.error('Error transitioning to next match:', {
+                error,
+                nextMatchDetails: nextMatch,
+                currentFixture: fixture
+              });
+              
+              toast({
+                title: "Error transitioning to next match",
+                description: "There was an error loading the next match. Returning to court selection.",
+                variant: "destructive",
+              });
+              
+              // Fallback to court selection after a brief delay
+              setTimeout(() => {
+                navigate('/');
+              }, 3000);
+            }
+          } else {
+            console.log('No next match found', {
+              currentTime: new Date().toISOString(),
+              availableMatches: nextMatches.map(m => ({
+                id: m.Id,
+                datetime: m.DateTime,
+                court: m.PlayingAreaName
+              }))
+            });
+            navigate('/');
+          }
+        } catch (error) {
+          console.error('Critical error in match transition logic:', {
+            error,
+            currentFixture: fixture,
+            nextMatchesCount: nextMatches.length,
+            resultsDisplayStartTime
+          });
+          
+          toast({
+            title: "Error",
+            description: "Something went wrong. Returning to court selection.",
+            variant: "destructive",
+          });
+          
           navigate('/');
         }
       }, 50000); // Changed from 20000 to 50000 milliseconds (50 seconds)
@@ -91,7 +146,7 @@ export const ScoreboardContainer = () => {
         }
       };
     }
-  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, navigate]);
+  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, navigate, fixture]);
 
   const handleBack = () => {
     if (gameState.hasGameStarted) {
