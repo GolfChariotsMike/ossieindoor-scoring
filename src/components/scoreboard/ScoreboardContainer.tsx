@@ -83,7 +83,7 @@ export const ScoreboardContainer = () => {
           console.log('No next match found for auto-transition');
           navigate('/');
         }
-      }, 20000);
+      }, 50000); // Changed from 20000 to 50000 milliseconds (50 seconds)
 
       return () => {
         if (transitionTimeoutRef.current) {
