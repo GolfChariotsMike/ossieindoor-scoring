@@ -33,6 +33,33 @@ export type Database = {
         }
         Relationships: []
       }
+      divisions: {
+        Row: {
+          created_at: string | null
+          day_of_week: string
+          id: string
+          league_url: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: string
+          id?: string
+          league_url?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: string
+          id?: string
+          league_url?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       match_data_v2: {
         Row: {
           away_bonus_points: number | null
@@ -51,6 +78,7 @@ export type Database = {
           id: string
           match_date: string | null
           match_id: string | null
+          points_percentage: number | null
           set1_away_score: number | null
           set1_home_score: number | null
           set2_away_score: number | null
@@ -76,6 +104,7 @@ export type Database = {
           id?: string
           match_date?: string | null
           match_id?: string | null
+          points_percentage?: number | null
           set1_away_score?: number | null
           set1_home_score?: number | null
           set2_away_score?: number | null
@@ -101,6 +130,7 @@ export type Database = {
           id?: string
           match_date?: string | null
           match_id?: string | null
+          points_percentage?: number | null
           set1_away_score?: number | null
           set1_home_score?: number | null
           set2_away_score?: number | null
@@ -157,6 +187,41 @@ export type Database = {
           start_time?: string | null
         }
         Relationships: []
+      }
+      teams: {
+        Row: {
+          created_at: string | null
+          division_id: string | null
+          external_team_id: string | null
+          id: string
+          team_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          division_id?: string | null
+          external_team_id?: string | null
+          id?: string
+          team_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          division_id?: string | null
+          external_team_id?: string | null
+          id?: string
+          team_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
