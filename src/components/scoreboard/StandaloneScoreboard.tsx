@@ -1,10 +1,12 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Score, SetScores } from "@/types/volleyball";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { BackButton } from "./BackButton";
 import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
 import { ScoreboardLayout } from "./ScoreboardLayout";
+import { format } from "date-fns";
 
 const StandaloneScoreboard = () => {
   const navigate = useNavigate();
@@ -17,12 +19,24 @@ const StandaloneScoreboard = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
 
+  const startTime = new Date().toISOString();
+  const courtNumber = 0;
+  const formattedDate = format(new Date(startTime), 'yyyyMMdd-HHmm');
+  const matchCode = `${courtNumber}-${formattedDate}`;
+
   const genericMatch = {
-    id: "standalone-match",
-    court: 0,
-    startTime: new Date().toISOString(),
+    id: matchCode,
+    court: courtNumber,
+    startTime,
     homeTeam: { id: "home", name: "HOME TEAM" },
     awayTeam: { id: "away", name: "AWAY TEAM" },
+    PlayingAreaName: `Court ${courtNumber}`,
+    DateTime: format(new Date(startTime), 'dd/MM/yyyy HH:mm'),
+    DivisionName: "Practice",
+    HomeTeam: "HOME TEAM",
+    AwayTeam: "AWAY TEAM",
+    HomeTeamId: "home",
+    AwayTeamId: "away"
   };
 
   const handleScore = (team: "home" | "away", increment: boolean = true) => {
@@ -103,7 +117,7 @@ const StandaloneScoreboard = () => {
           match={genericMatch}
           isTeamsSwitched={isTeamsSwitched}
           isMatchComplete={isMatchComplete}
-          onTimerComplete={handleTimerComplete}
+          onTimerComplete={() => handleTimerComplete()}
           onSwitchTeams={handleSwitchTeams}
           onScoreUpdate={handleScore}
         />
