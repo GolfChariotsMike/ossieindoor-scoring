@@ -27,14 +27,14 @@ export const AdminDashboard = () => {
   const { data: matchProgress = [], isLoading } = useQuery({
     queryKey: ["match-progress", selectedDay],
     queryFn: async () => {
-      let query = supabase
+      console.log('Fetching match progress data');
+      const { data, error } = await supabase
         .from('match_progress')
         .select('*')
         .order('created_at', { ascending: false });
 
-      const { data, error } = await query;
-
       if (error) {
+        console.error('Error fetching match progress:', error);
         toast({
           title: "Error",
           description: "Failed to fetch match progress",
@@ -43,6 +43,7 @@ export const AdminDashboard = () => {
         throw error;
       }
 
+      console.log('Fetched match progress data:', data);
       return data || [];
     },
   });
@@ -56,6 +57,8 @@ export const AdminDashboard = () => {
         const matchDate = parseISO(match.start_time);
         return format(matchDate, 'EEEE') === selectedDay;
       });
+
+  console.log('Filtered matches:', filteredMatches);
 
   if (isLoading) {
     return (

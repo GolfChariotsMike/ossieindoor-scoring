@@ -5,7 +5,7 @@ import { isMatchCompleted } from "@/utils/scoringLogic";
 import { saveMatchScores } from "@/utils/matchDatabase";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 
 export const useGameState = () => {
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
@@ -37,12 +37,26 @@ export const useGameState = () => {
 
   const recordFirstSetProgress = async (match: any, homeScore: number, awayScore: number) => {
     try {
-      const matchDate = parse(match.DateTime || match.startTime, 'dd/MM/yyyy HH:mm', new Date());
-      const matchCode = `${match.PlayingAreaName?.replace('Court ', '') || match.court}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
+      // Create a match code that matches exactly how it's stored in matches_v2
+      const matchDate = new Date(match.DateTime || match.startTime);
+      const courtNumber = match.PlayingAreaName 
+        ? parseInt(match.PlayingAreaName.replace('Court ', '')) 
+        : match.court;
+      
+      const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
+      const matchCode = `${courtNumber}-${formattedDate}`;
 
-      await supabase.from('match_progress').insert({
+      console.log('Recording first set progress:', {
+        matchCode,
+        courtNumber,
+        startTime: matchDate.toISOString(),
+        homeScore,
+        awayScore
+      });
+
+      const { error } = await supabase.from('match_progress').insert({
         match_code: matchCode,
-        court_number: parseInt(match.PlayingAreaName?.replace('Court ', '') || match.court.toString()),
+        court_number: courtNumber,
         division: match.DivisionName || match.division,
         home_team_name: match.HomeTeam || match.homeTeam.name,
         away_team_name: match.AwayTeam || match.awayTeam.name,
@@ -52,7 +66,12 @@ export const useGameState = () => {
         has_final_score: false
       });
 
-      console.log('First set progress recorded');
+      if (error) {
+        console.error('Error recording first set progress:', error);
+        throw error;
+      }
+
+      console.log('First set progress recorded successfully');
     } catch (error) {
       console.error('Error recording first set progress:', error);
     }
@@ -80,13 +99,21 @@ export const useGameState = () => {
         if (match) {
           const updateMatchProgress = async () => {
             try {
-              const matchDate = parse(match.DateTime || match.startTime, 'dd/MM/yyyy HH:mm', new Date());
-              const matchCode = `${match.PlayingAreaName?.replace('Court ', '') || match.court}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
+              const matchDate = new Date(match.DateTime || match.startTime);
+              const courtNumber = match.PlayingAreaName 
+                ? parseInt(match.PlayingAreaName.replace('Court ', '')) 
+                : match.court;
+              const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
+              const matchCode = `${courtNumber}-${formattedDate}`;
               
-              await supabase
+              const { error } = await supabase
                 .from('match_progress')
                 .update({ has_final_score: true })
                 .eq('match_code', matchCode);
+
+              if (error) {
+                console.error('Error updating match progress:', error);
+              }
             } catch (error) {
               console.error('Error updating match progress:', error);
             }
@@ -100,6 +127,10 @@ export const useGameState = () => {
         description: matchComplete ? "The match has ended" : "Starting next set",
       });
     } else {
+      if (currentScore.home === 0 && currentScore.away === 0) {
+        return;
+      }
+
       if (!firstSetRecorded && match) {
         setFirstSetRecorded(true);
         recordFirstSetProgress(
@@ -108,6 +139,7 @@ export const useGameState = () => {
           isTeamsSwitched ? currentScore.home : currentScore.away
         );
       }
+      
       setIsBreak(true);
       setHasGameStarted(true);
       toast({
@@ -140,3 +172,4 @@ export const useGameState = () => {
     resetGameState,
   };
 };
+
