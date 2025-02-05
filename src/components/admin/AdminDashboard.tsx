@@ -21,16 +21,28 @@ import { Badge } from "@/components/ui/badge";
 export const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [selectedDivision, setSelectedDivision] = useState<string>("all");
+  const [selectedDay, setSelectedDay] = useState<string>("all");
 
   // Fetch match progress data
   const { data: matchProgress = [], isLoading } = useQuery({
-    queryKey: ["match-progress", selectedDivision],
+    queryKey: ["match-progress", selectedDay],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('match_progress')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (selectedDay !== "all") {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        query = query.gte('start_time', startOfDay.toISOString())
+          .lte('start_time', endOfDay.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         toast({
@@ -45,13 +57,15 @@ export const AdminDashboard = () => {
     },
   });
 
-  // Get unique divisions from match progress
-  const divisions = Array.from(new Set(matchProgress.map(match => match.division))).filter(Boolean);
+  const days = ["all", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
-  // Filter matches based on selected division
-  const filteredMatches = matchProgress.filter(match => 
-    selectedDivision === "all" || match.division === selectedDivision
-  );
+  // Filter matches based on selected day
+  const filteredMatches = selectedDay === "all" 
+    ? matchProgress 
+    : matchProgress.filter(match => {
+        const matchDate = parseISO(match.start_time);
+        return format(matchDate, 'EEEE') === selectedDay;
+      });
 
   if (isLoading) {
     return (
@@ -81,21 +95,15 @@ export const AdminDashboard = () => {
               <div className="w-[120px]" />
             </div>
 
-            <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedDivision}>
-              <TabsList className="w-full justify-start bg-volleyball-cream mb-4 overflow-x-auto flex-wrap">
-                <TabsTrigger 
-                  value="all" 
-                  className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
-                >
-                  All Divisions
-                </TabsTrigger>
-                {divisions.map((division) => (
+            <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedDay}>
+              <TabsList className="w-full justify-start bg-volleyball-cream mb-4">
+                {days.map((day) => (
                   <TabsTrigger 
-                    key={division} 
-                    value={division}
+                    key={day} 
+                    value={day}
                     className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
                   >
-                    {division}
+                    {day === "all" ? "All Days" : day}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -108,6 +116,7 @@ export const AdminDashboard = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
+                <TableHead>Day</TableHead>
                 <TableHead>Court</TableHead>
                 <TableHead>Division</TableHead>
                 <TableHead>Teams</TableHead>
@@ -120,6 +129,9 @@ export const AdminDashboard = () => {
                 <TableRow key={match.id}>
                   <TableCell>
                     {format(parseISO(match.start_time), 'dd/MM/yyyy HH:mm')}
+                  </TableCell>
+                  <TableCell>
+                    {format(parseISO(match.start_time), 'EEEE')}
                   </TableCell>
                   <TableCell>Court {match.court_number}</TableCell>
                   <TableCell>{match.division || 'N/A'}</TableCell>
