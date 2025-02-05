@@ -42,8 +42,9 @@ export const AdminDashboard = () => {
       const allMatches = await Promise.all(
         Object.keys(LEAGUE_URLS).map(async (day) => {
           const matches = await fetchMatchData(undefined, new Date());
-          // Transform each match to conform to Fixture type
-          return matches.map(match => ({
+          // Convert single match to array if necessary and transform
+          const matchesArray = Array.isArray(matches) ? matches : [matches];
+          return matchesArray.map(match => ({
             Id: match.id || match.Id,
             DateTime: match.startTime || match.DateTime,
             PlayingAreaName: `Court ${match.court}` || match.PlayingAreaName,
