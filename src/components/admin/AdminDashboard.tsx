@@ -27,14 +27,14 @@ export const AdminDashboard = () => {
   const { data: matchProgress = [], isLoading } = useQuery({
     queryKey: ["match-progress", selectedDay],
     queryFn: async () => {
-      console.log('Fetching match progress data');
+      console.log('AdminDashboard: Fetching match progress data');
       const { data, error } = await supabase
         .from('match_progress')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching match progress:', error);
+        console.error('AdminDashboard: Error fetching match progress:', error);
         toast({
           title: "Error",
           description: "Failed to fetch match progress",
@@ -43,7 +43,7 @@ export const AdminDashboard = () => {
         throw error;
       }
 
-      console.log('Fetched match progress data:', data);
+      console.log('AdminDashboard: Raw match progress data:', data);
       return data || [];
     },
   });
@@ -54,11 +54,29 @@ export const AdminDashboard = () => {
   const filteredMatches = selectedDay === "all" 
     ? matchProgress 
     : matchProgress.filter(match => {
-        const matchDate = parseISO(match.start_time);
-        return format(matchDate, 'EEEE') === selectedDay;
+        if (!match.start_time) {
+          console.log('AdminDashboard: Match missing start_time:', match);
+          return false;
+        }
+        
+        try {
+          const matchDate = parseISO(match.start_time);
+          const dayMatch = format(matchDate, 'EEEE') === selectedDay;
+          console.log('AdminDashboard: Filtering match:', {
+            matchId: match.id,
+            startTime: match.start_time,
+            dayOfWeek: format(matchDate, 'EEEE'),
+            selectedDay,
+            matches: dayMatch
+          });
+          return dayMatch;
+        } catch (error) {
+          console.error('AdminDashboard: Error parsing date for match:', match, error);
+          return false;
+        }
       });
 
-  console.log('Filtered matches:', filteredMatches);
+  console.log('AdminDashboard: Filtered matches:', filteredMatches);
 
   if (isLoading) {
     return (
