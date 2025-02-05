@@ -1,8 +1,10 @@
+
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useTimer } from "./timer/useTimer";
+import { Fixture } from "@/types/volleyball";
 
 interface TimerProps {
   initialMinutes: number;
@@ -10,7 +12,7 @@ interface TimerProps {
   onSwitchTeams: () => void;
   isBreak: boolean;
   isMatchComplete: boolean;
-  fixture?: { Id: string };
+  fixture?: Fixture;
 }
 
 export const Timer = ({ 
@@ -29,7 +31,7 @@ export const Timer = ({
     progressToNextPhase
   } = useTimer({
     initialMinutes,
-    onComplete,
+    onComplete: () => onComplete(),
     onSwitchTeams,
     isBreak,
     isMatchComplete,

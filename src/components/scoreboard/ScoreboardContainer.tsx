@@ -1,3 +1,4 @@
+
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -106,7 +107,6 @@ export const ScoreboardContainer = () => {
                 variant: "destructive",
               });
               
-              // Fallback to court selection after a brief delay
               setTimeout(() => {
                 navigate('/');
               }, 3000);
@@ -138,7 +138,7 @@ export const ScoreboardContainer = () => {
           
           navigate('/');
         }
-      }, 50000); // Changed from 20000 to 50000 milliseconds (50 seconds)
+      }, 50000);
 
       return () => {
         if (transitionTimeoutRef.current) {
@@ -172,6 +172,7 @@ export const ScoreboardContainer = () => {
     }
   };
 
+  // Pass fixture along with match to ensure all match data is available
   return (
     <ScoreboardContent
       match={match}
