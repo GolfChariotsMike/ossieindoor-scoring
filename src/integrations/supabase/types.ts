@@ -33,6 +33,45 @@ export type Database = {
         }
         Relationships: []
       }
+      crash_logs: {
+        Row: {
+          browser_info: Json | null
+          court_number: number | null
+          created_at: string | null
+          error_message: string
+          error_stack: string | null
+          error_type: string
+          fixture_id: string | null
+          id: string
+          resolved: boolean | null
+          url: string | null
+        }
+        Insert: {
+          browser_info?: Json | null
+          court_number?: number | null
+          created_at?: string | null
+          error_message: string
+          error_stack?: string | null
+          error_type: string
+          fixture_id?: string | null
+          id?: string
+          resolved?: boolean | null
+          url?: string | null
+        }
+        Update: {
+          browser_info?: Json | null
+          court_number?: number | null
+          created_at?: string | null
+          error_message?: string
+          error_stack?: string | null
+          error_type?: string
+          fixture_id?: string | null
+          id?: string
+          resolved?: boolean | null
+          url?: string | null
+        }
+        Relationships: []
+      }
       divisions: {
         Row: {
           created_at: string | null
