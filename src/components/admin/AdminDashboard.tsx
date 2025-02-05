@@ -1,293 +1,57 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, parse } from "date-fns";
-import { fetchMatchData } from "@/utils/matchDataFetcher";
+import { format, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Fixture } from "@/types/volleyball";
-import { MatchesTable } from "./MatchesTable";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LEAGUE_URLS } from "@/config/leagueConfig";
-
-interface MatchScores {
-  [key: string]: {
-    home: number[];
-    away: number[];
-  };
-}
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 export const AdminDashboard = () => {
   const { toast } = useToast();
-  const [scores, setScores] = useState<MatchScores>({});
   const navigate = useNavigate();
-  const [selectedLeague, setSelectedLeague] = useState<string>("all");
+  const [selectedDivision, setSelectedDivision] = useState<string>("all");
 
-  // Get all unique division names from LEAGUE_URLS
-  const divisions = Object.entries(LEAGUE_URLS).flatMap(([day, urls]) => 
-    urls.map((url) => {
-      const divisionMatch = url.match(/LeagueId=(\d+)/);
-      const leagueId = divisionMatch ? divisionMatch[1] : null;
-      return { day, leagueId, url };
-    })
-  );
-
-  // Fetch matches for all days
-  const { data: allMatchesData = [], isLoading } = useQuery({
-    queryKey: ["all-matches", selectedLeague],
+  // Fetch match progress data
+  const { data: matchProgress = [], isLoading } = useQuery({
+    queryKey: ["match-progress", selectedDivision],
     queryFn: async () => {
-      const allMatches = await Promise.all(
-        Object.keys(LEAGUE_URLS).map(async (day) => {
-          const matches = await fetchMatchData(undefined, new Date());
-          // Convert single match to array if necessary and transform
-          const matchesArray = Array.isArray(matches) ? matches : [matches];
-          return matchesArray.map(match => ({
-            Id: match.id || match.Id,
-            DateTime: match.startTime || match.DateTime,
-            PlayingAreaName: `Court ${match.court}` || match.PlayingAreaName,
-            DivisionName: match.division || match.DivisionName,
-            HomeTeam: match.homeTeam?.name || match.HomeTeam,
-            AwayTeam: match.awayTeam?.name || match.AwayTeam,
-            HomeTeamId: match.homeTeam?.id || match.HomeTeamId,
-            AwayTeamId: match.awayTeam?.id || match.AwayTeamId,
-            HomeTeamScore: "0",
-            AwayTeamScore: "0"
-          }));
-        })
-      );
-      return allMatches.flat();
+      const { data, error } = await supabase
+        .from('match_progress')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch match progress",
+          variant: "destructive",
+        });
+        throw error;
+      }
+
+      return data || [];
     },
   });
 
-  const matches = Array.isArray(allMatchesData) ? allMatchesData : [];
+  // Get unique divisions from match progress
+  const divisions = Array.from(new Set(matchProgress.map(match => match.division))).filter(Boolean);
 
-  // Filter matches based on selected league
-  const filteredMatches = matches.filter(match => {
-    if (selectedLeague === "all") return true;
-    return match.DivisionName === selectedLeague;
-  });
-
-  // Sort matches by date
-  const sortedMatches = [...filteredMatches].sort((a, b) => {
-    const dateA = parse(a.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-    const dateB = parse(b.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-    return dateA.getTime() - dateB.getTime();
-  });
-
-  useEffect(() => {
-    const fetchExistingScores = async () => {
-      for (const match of matches) {
-        const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-        const matchCode = `${match.PlayingAreaName.replace('Court ', '')}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
-        
-        const { data: existingMatch } = await supabase
-          .from('matches_v2')
-          .select('id')
-          .eq('match_code', matchCode)
-          .maybeSingle();
-
-        if (existingMatch) {
-          const { data: matchData } = await supabase
-            .from('match_data_v2')
-            .select('*')
-            .eq('match_id', existingMatch.id)
-            .maybeSingle();
-
-          if (matchData) {
-            setScores(prev => ({
-              ...prev,
-              [match.Id]: {
-                home: [
-                  matchData.set1_home_score || 0,
-                  matchData.set2_home_score || 0,
-                  matchData.set3_home_score || 0
-                ],
-                away: [
-                  matchData.set1_away_score || 0,
-                  matchData.set2_away_score || 0,
-                  matchData.set3_away_score || 0
-                ]
-              }
-            }));
-          }
-        }
-      }
-    };
-
-    if (matches.length > 0) {
-      fetchExistingScores();
-    }
-  }, [matches]);
-
-  const handleScoreChange = (matchId: string, team: 'home' | 'away', setIndex: number, value: string) => {
-    const numValue = parseInt(value) || 0;
-    setScores(prev => ({
-      ...prev,
-      [matchId]: {
-        home: team === 'home' 
-          ? Object.assign([...prev[matchId]?.home || [0, 0, 0]], { [setIndex]: numValue })
-          : [...prev[matchId]?.home || [0, 0, 0]],
-        away: team === 'away'
-          ? Object.assign([...prev[matchId]?.away || [0, 0, 0]], { [setIndex]: numValue })
-          : [...prev[matchId]?.away || [0, 0, 0]],
-      }
-    }));
-  };
-
-  const saveMatchScores = async (match: Fixture) => {
-    console.log('Starting to save match scores...', { match, scores: scores[match.Id] });
-    
-    if (!scores[match.Id]) {
-      console.log('No scores found for match:', match.Id);
-      toast({
-        title: "No changes",
-        description: "No scores have been modified for this match",
-        variant: "destructive",
-        className: "z-50",
-      });
-      return;
-    }
-
-    const matchScores = scores[match.Id];
-    console.log('Processing scores:', matchScores);
-
-    try {
-      const matchDate = parse(match.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-      const matchCode = `${match.PlayingAreaName.replace('Court ', '')}-${format(matchDate, 'yyyyMMdd-HHmm')}`;
-      console.log('Generated match code:', matchCode);
-      
-      let { data: existingMatch, error: fetchError } = await supabase
-        .from('matches_v2')
-        .select('id')
-        .eq('match_code', matchCode)
-        .maybeSingle();
-
-      if (fetchError) {
-        console.error('Error checking existing match:', fetchError);
-        toast({
-          title: "Error",
-          description: `Failed to check existing match: ${fetchError.message}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      let matchId;
-      if (existingMatch) {
-        matchId = existingMatch.id;
-        console.log('Found existing match:', matchId);
-      } else {
-        console.log('Creating new match...');
-        const { data: newMatch, error: createError } = await supabase
-          .from('matches_v2')
-          .insert({
-            match_code: matchCode,
-            court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
-            start_time: matchDate.toISOString(),
-            division: match.DivisionName,
-            home_team_id: match.HomeTeamId || match.HomeTeam,
-            home_team_name: match.HomeTeam,
-            away_team_id: match.AwayTeamId || match.AwayTeam,
-            away_team_name: match.AwayTeam,
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating match:', createError);
-          toast({
-            title: "Error",
-            description: `Failed to create match: ${createError.message}`,
-            variant: "destructive",
-          });
-          return;
-        }
-        matchId = newMatch.id;
-        console.log('Created new match:', matchId);
-      }
-
-      const { data: existingData, error: existingError } = await supabase
-        .from('match_data_v2')
-        .select('id')
-        .eq('match_id', matchId)
-        .maybeSingle();
-
-      if (existingError) {
-        console.error('Error checking existing match data:', existingError);
-        toast({
-          title: "Error",
-          description: `Failed to check existing match data: ${existingError.message}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const matchDataPayload = {
-        match_id: matchId,
-        court_number: parseInt(match.PlayingAreaName.replace('Court ', '')),
-        division: match.DivisionName,
-        home_team_name: match.HomeTeam,
-        away_team_name: match.AwayTeam,
-        set1_home_score: matchScores.home[0],
-        set1_away_score: matchScores.away[0],
-        set2_home_score: matchScores.home[1],
-        set2_away_score: matchScores.away[1],
-        set3_home_score: matchScores.home[2],
-        set3_away_score: matchScores.away[2],
-        match_date: matchDate.toISOString(),
-      };
-
-      let upsertError;
-      if (existingData) {
-        console.log('Updating existing match data:', existingData.id);
-        const { error: updateError } = await supabase
-          .from('match_data_v2')
-          .update(matchDataPayload)
-          .eq('id', existingData.id);
-        
-        upsertError = updateError;
-      } else {
-        console.log('Inserting new match data...');
-        const { error: insertError } = await supabase
-          .from('match_data_v2')
-          .insert(matchDataPayload);
-        
-        upsertError = insertError;
-      }
-
-      if (upsertError) {
-        console.error('Error saving match scores:', upsertError);
-        toast({
-          title: "Error",
-          description: `Failed to save match scores: ${upsertError.message}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Successfully saved match scores!');
-      toast({
-        title: "Success!",
-        description: `Scores saved for ${match.HomeTeam} vs ${match.AwayTeam}`,
-        variant: "default",
-        duration: 5000,
-        className: "z-50 bg-green-100 border-green-500",
-      });
-
-    } catch (error) {
-      console.error('Unexpected error saving match scores:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while saving the scores",
-        variant: "destructive",
-        duration: 5000,
-        className: "z-50",
-      });
-    }
-  };
+  // Filter matches based on selected division
+  const filteredMatches = matchProgress.filter(match => 
+    selectedDivision === "all" || match.division === selectedDivision
+  );
 
   if (isLoading) {
     return (
@@ -298,9 +62,6 @@ export const AdminDashboard = () => {
       </div>
     );
   }
-
-  // Get unique division names from matches
-  const uniqueDivisions = Array.from(new Set(matches.map(match => match.DivisionName))).filter(Boolean);
 
   return (
     <div className="min-h-screen bg-volleyball-cream">
@@ -316,19 +77,19 @@ export const AdminDashboard = () => {
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 Back to Courts
               </Button>
-              <h1 className="text-3xl font-bold text-volleyball-black">Admin Dashboard</h1>
+              <h1 className="text-3xl font-bold text-volleyball-black">Match Progress Dashboard</h1>
               <div className="w-[120px]" />
             </div>
 
-            <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedLeague}>
+            <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedDivision}>
               <TabsList className="w-full justify-start bg-volleyball-cream mb-4 overflow-x-auto flex-wrap">
                 <TabsTrigger 
                   value="all" 
                   className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
                 >
-                  All Leagues
+                  All Divisions
                 </TabsTrigger>
-                {uniqueDivisions.map((division) => (
+                {divisions.map((division) => (
                   <TabsTrigger 
                     key={division} 
                     value={division}
@@ -342,14 +103,46 @@ export const AdminDashboard = () => {
           </div>
         </div>
 
-        <MatchesTable
-          matches={sortedMatches}
-          scores={scores}
-          onScoreChange={handleScoreChange}
-          onSave={saveMatchScores}
-        />
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Court</TableHead>
+                <TableHead>Division</TableHead>
+                <TableHead>Teams</TableHead>
+                <TableHead>First Set Score</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredMatches.map((match) => (
+                <TableRow key={match.id}>
+                  <TableCell>
+                    {format(parseISO(match.start_time), 'dd/MM/yyyy HH:mm')}
+                  </TableCell>
+                  <TableCell>Court {match.court_number}</TableCell>
+                  <TableCell>{match.division || 'N/A'}</TableCell>
+                  <TableCell>
+                    {match.home_team_name} vs {match.away_team_name}
+                  </TableCell>
+                  <TableCell>
+                    {match.first_set_home_score} - {match.first_set_away_score}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={match.has_final_score ? "default" : "secondary"}
+                      className={match.has_final_score ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}
+                    >
+                      {match.has_final_score ? "Final Score Saved" : "Match In Progress"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
 };
-

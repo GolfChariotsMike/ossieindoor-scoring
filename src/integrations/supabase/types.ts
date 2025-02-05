@@ -188,6 +188,51 @@ export type Database = {
           },
         ]
       }
+      match_progress: {
+        Row: {
+          away_team_name: string
+          court_number: number
+          created_at: string | null
+          division: string | null
+          first_set_away_score: number | null
+          first_set_home_score: number | null
+          has_final_score: boolean | null
+          home_team_name: string
+          id: string
+          match_code: string
+          start_time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          away_team_name: string
+          court_number: number
+          created_at?: string | null
+          division?: string | null
+          first_set_away_score?: number | null
+          first_set_home_score?: number | null
+          has_final_score?: boolean | null
+          home_team_name: string
+          id?: string
+          match_code: string
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          away_team_name?: string
+          court_number?: number
+          created_at?: string | null
+          division?: string | null
+          first_set_away_score?: number | null
+          first_set_home_score?: number | null
+          has_final_score?: boolean | null
+          home_team_name?: string
+          id?: string
+          match_code?: string
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       matches_v2: {
         Row: {
           away_team_id: string
