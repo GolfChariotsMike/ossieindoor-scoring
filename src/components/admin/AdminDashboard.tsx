@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parse } from "date-fns";
@@ -10,6 +11,8 @@ import { MatchesTable } from "./MatchesTable";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { LEAGUE_URLS } from "@/config/leagueConfig";
 
 interface MatchScores {
   [key: string]: {
@@ -23,6 +26,8 @@ export const AdminDashboard = () => {
   const { toast } = useToast();
   const [scores, setScores] = useState<MatchScores>({});
   const navigate = useNavigate();
+  const currentDayOfWeek = format(parse(selectedDate, 'yyyy-MM-dd', new Date()), 'EEEE') as keyof typeof LEAGUE_URLS;
+  const [selectedLeague, setSelectedLeague] = useState<string>("all");
 
   const { data: matchesData = [], isLoading } = useQuery({
     queryKey: ["matches", selectedDate],
@@ -30,6 +35,12 @@ export const AdminDashboard = () => {
   });
 
   const matches = Array.isArray(matchesData) ? matchesData : [];
+
+  // Filter matches based on selected league
+  const filteredMatches = matches.filter(match => {
+    if (selectedLeague === "all") return true;
+    return match.DivisionName === selectedLeague;
+  });
 
   useEffect(() => {
     const fetchExistingScores = async () => {
@@ -253,6 +264,9 @@ export const AdminDashboard = () => {
     );
   }
 
+  // Get unique division names from matches
+  const divisions = Array.from(new Set(matches.map(match => match.DivisionName))).filter(Boolean);
+
   return (
     <div className="min-h-screen bg-volleyball-cream">
       <div className="max-w-7xl mx-auto p-8">
@@ -268,14 +282,33 @@ export const AdminDashboard = () => {
                 Back to Courts
               </Button>
               <h1 className="text-3xl font-bold text-volleyball-black">Admin Dashboard</h1>
-              <div className="w-[120px]" /> {/* Spacer for centering */}
+              <div className="w-[120px]" />
             </div>
             <DateSelector selectedDate={selectedDate} onDateChange={setSelectedDate} />
+
+            {divisions.length > 0 && (
+              <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedLeague}>
+                <TabsList className="w-full justify-start bg-volleyball-cream mb-4 overflow-x-auto flex-wrap">
+                  <TabsTrigger value="all" className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream">
+                    All Leagues
+                  </TabsTrigger>
+                  {divisions.map((division) => (
+                    <TabsTrigger 
+                      key={division} 
+                      value={division}
+                      className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
+                    >
+                      {division}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            )}
           </div>
         </div>
 
         <MatchesTable
-          matches={matches}
+          matches={filteredMatches}
           scores={scores}
           onScoreChange={handleScoreChange}
           onSave={saveMatchScores}
