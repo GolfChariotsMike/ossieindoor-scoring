@@ -32,16 +32,6 @@ export const AdminDashboard = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (selectedDay !== "all") {
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
-        
-        query = query.gte('start_time', startOfDay.toISOString())
-          .lte('start_time', endOfDay.toISOString());
-      }
-
       const { data, error } = await query;
 
       if (error) {
@@ -158,3 +148,4 @@ export const AdminDashboard = () => {
     </div>
   );
 };
+
