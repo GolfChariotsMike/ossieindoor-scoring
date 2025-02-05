@@ -42,7 +42,19 @@ export const AdminDashboard = () => {
       const allMatches = await Promise.all(
         Object.keys(LEAGUE_URLS).map(async (day) => {
           const matches = await fetchMatchData(undefined, new Date());
-          return matches;
+          // Transform each match to conform to Fixture type
+          return matches.map(match => ({
+            Id: match.id || match.Id,
+            DateTime: match.startTime || match.DateTime,
+            PlayingAreaName: `Court ${match.court}` || match.PlayingAreaName,
+            DivisionName: match.division || match.DivisionName,
+            HomeTeam: match.homeTeam?.name || match.HomeTeam,
+            AwayTeam: match.awayTeam?.name || match.AwayTeam,
+            HomeTeamId: match.homeTeam?.id || match.HomeTeamId,
+            AwayTeamId: match.awayTeam?.id || match.AwayTeamId,
+            HomeTeamScore: "0",
+            AwayTeamScore: "0"
+          }));
         })
       );
       return allMatches.flat();
@@ -339,3 +351,4 @@ export const AdminDashboard = () => {
     </div>
   );
 };
+
