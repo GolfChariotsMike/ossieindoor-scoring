@@ -6,12 +6,11 @@ import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Fixture } from "@/types/volleyball";
-import { DateSelector } from "./DateSelector";
 import { MatchesTable } from "./MatchesTable";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LEAGUE_URLS } from "@/config/leagueConfig";
 
 interface MatchScores {
@@ -22,24 +21,47 @@ interface MatchScores {
 }
 
 export const AdminDashboard = () => {
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const { toast } = useToast();
   const [scores, setScores] = useState<MatchScores>({});
   const navigate = useNavigate();
-  const currentDayOfWeek = format(parse(selectedDate, 'yyyy-MM-dd', new Date()), 'EEEE') as keyof typeof LEAGUE_URLS;
   const [selectedLeague, setSelectedLeague] = useState<string>("all");
 
-  const { data: matchesData = [], isLoading } = useQuery({
-    queryKey: ["matches", selectedDate],
-    queryFn: () => fetchMatchData(undefined, parse(selectedDate, 'yyyy-MM-dd', new Date())),
+  // Get all unique division names from LEAGUE_URLS
+  const divisions = Object.entries(LEAGUE_URLS).flatMap(([day, urls]) => 
+    urls.map((url) => {
+      const divisionMatch = url.match(/LeagueId=(\d+)/);
+      const leagueId = divisionMatch ? divisionMatch[1] : null;
+      return { day, leagueId, url };
+    })
+  );
+
+  // Fetch matches for all days
+  const { data: allMatchesData = [], isLoading } = useQuery({
+    queryKey: ["all-matches", selectedLeague],
+    queryFn: async () => {
+      const allMatches = await Promise.all(
+        Object.keys(LEAGUE_URLS).map(async (day) => {
+          const matches = await fetchMatchData(undefined, new Date());
+          return matches;
+        })
+      );
+      return allMatches.flat();
+    },
   });
 
-  const matches = Array.isArray(matchesData) ? matchesData : [];
+  const matches = Array.isArray(allMatchesData) ? allMatchesData : [];
 
   // Filter matches based on selected league
   const filteredMatches = matches.filter(match => {
     if (selectedLeague === "all") return true;
     return match.DivisionName === selectedLeague;
+  });
+
+  // Sort matches by date
+  const sortedMatches = [...filteredMatches].sort((a, b) => {
+    const dateA = parse(a.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+    const dateB = parse(b.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+    return dateA.getTime() - dateB.getTime();
   });
 
   useEffect(() => {
@@ -265,7 +287,7 @@ export const AdminDashboard = () => {
   }
 
   // Get unique division names from matches
-  const divisions = Array.from(new Set(matches.map(match => match.DivisionName))).filter(Boolean);
+  const uniqueDivisions = Array.from(new Set(matches.map(match => match.DivisionName))).filter(Boolean);
 
   return (
     <div className="min-h-screen bg-volleyball-cream">
@@ -284,31 +306,31 @@ export const AdminDashboard = () => {
               <h1 className="text-3xl font-bold text-volleyball-black">Admin Dashboard</h1>
               <div className="w-[120px]" />
             </div>
-            <DateSelector selectedDate={selectedDate} onDateChange={setSelectedDate} />
 
-            {divisions.length > 0 && (
-              <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedLeague}>
-                <TabsList className="w-full justify-start bg-volleyball-cream mb-4 overflow-x-auto flex-wrap">
-                  <TabsTrigger value="all" className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream">
-                    All Leagues
+            <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedLeague}>
+              <TabsList className="w-full justify-start bg-volleyball-cream mb-4 overflow-x-auto flex-wrap">
+                <TabsTrigger 
+                  value="all" 
+                  className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
+                >
+                  All Leagues
+                </TabsTrigger>
+                {uniqueDivisions.map((division) => (
+                  <TabsTrigger 
+                    key={division} 
+                    value={division}
+                    className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
+                  >
+                    {division}
                   </TabsTrigger>
-                  {divisions.map((division) => (
-                    <TabsTrigger 
-                      key={division} 
-                      value={division}
-                      className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
-                    >
-                      {division}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            )}
+                ))}
+              </TabsList>
+            </Tabs>
           </div>
         </div>
 
         <MatchesTable
-          matches={filteredMatches}
+          matches={sortedMatches}
           scores={scores}
           onScoreChange={handleScoreChange}
           onSave={saveMatchScores}

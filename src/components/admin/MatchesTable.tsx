@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -28,8 +29,9 @@ export const MatchesTable = ({ matches, scores, onScoreChange, onSave }: Matches
           <TableRow>
             <TableHead className="w-[200px]">Teams</TableHead>
             <TableHead className="w-[120px]">Court</TableHead>
-            <TableHead className="w-[120px]">Division</TableHead>
+            <TableHead className="w-[120px]">Date</TableHead>
             <TableHead className="w-[120px]">Time</TableHead>
+            <TableHead className="w-[120px]">Status</TableHead>
             <TableHead className="text-center">Set 1</TableHead>
             <TableHead className="text-center">Set 2</TableHead>
             <TableHead className="text-center">Set 3</TableHead>
