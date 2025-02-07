@@ -2,7 +2,7 @@
 import { Timer } from "./Timer";
 import { TeamScore } from "./TeamScore";
 import { SetScoresDisplay } from "./SetScoresDisplay";
-import { Match, Score, SetScores } from "@/types/volleyball";
+import { Match, Score, SetScores, Fixture } from "@/types/volleyball";
 
 interface ScoreboardLayoutProps {
   isBreak: boolean;
@@ -30,6 +30,20 @@ export const ScoreboardLayout = ({
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
+  // Transform Match type to Fixture type
+  const fixtureData: Fixture = {
+    Id: match.id,
+    DateTime: match.startTime,
+    PlayingAreaName: `Court ${match.court}`,
+    DivisionName: match.division || '',
+    HomeTeam: match.homeTeam.name,
+    AwayTeam: match.awayTeam.name,
+    HomeTeamId: match.homeTeam.id,
+    AwayTeamId: match.awayTeam.id,
+    HomeTeamScore: '0',
+    AwayTeamScore: '0'
+  };
+
   console.log('ScoreboardLayout - Match data:', match);
   console.log('ScoreboardLayout - Current scores:', currentScore);
   console.log('ScoreboardLayout - Set scores:', setScores);
@@ -42,7 +56,7 @@ export const ScoreboardLayout = ({
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
         isMatchComplete={isMatchComplete}
-        fixture={match}
+        fixture={fixtureData}
       />
 
       <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">
