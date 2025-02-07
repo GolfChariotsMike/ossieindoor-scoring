@@ -44,26 +44,22 @@ export const useGameState = () => {
         isTeamsSwitched
       });
       
-      // Determine if we're dealing with a Match or Fixture type
-      const isFixture = 'DateTime' in match;
-      
-      // Extract date
-      const matchDate = isFixture 
+      // Extract common data based on type
+      const matchDate = 'DateTime' in match 
         ? new Date(match.DateTime)
         : new Date(match.startTime);
       
-      // Extract court number
-      const courtNumber = isFixture
+      const courtNumber = 'PlayingAreaName' in match
         ? parseInt(match.PlayingAreaName.replace('Court ', ''))
         : match.court;
       
       const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
       const matchCode = `${courtNumber}-${formattedDate}`;
 
-      // Extract team names
-      const homeTeamName = isFixture ? match.HomeTeam : match.homeTeam.name;
-      const awayTeamName = isFixture ? match.AwayTeam : match.awayTeam.name;
-      const division = isFixture ? match.DivisionName : match.division;
+      // Extract team names and division based on type
+      const homeTeamName = 'HomeTeam' in match ? match.HomeTeam : match.homeTeam.name;
+      const awayTeamName = 'AwayTeam' in match ? match.AwayTeam : match.awayTeam.name;
+      const division = 'DivisionName' in match ? match.DivisionName : match.division;
 
       // Adjust scores based on team switching
       const finalHomeScore = isTeamsSwitched ? awayScore : homeScore;
@@ -147,10 +143,14 @@ export const useGameState = () => {
         // Update match_progress to indicate final scores are saved
         const updateMatchProgress = async () => {
           try {
-            const matchDate = new Date(match.DateTime || match.startTime);
-            const courtNumber = match.PlayingAreaName 
-              ? parseInt(match.PlayingAreaName.replace('Court ', '')) 
+            const matchDate = 'DateTime' in match 
+              ? new Date(match.DateTime)
+              : new Date(match.startTime);
+              
+            const courtNumber = 'PlayingAreaName' in match
+              ? parseInt(match.PlayingAreaName.replace('Court ', ''))
               : match.court;
+              
             const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
             const matchCode = `${courtNumber}-${formattedDate}`;
             
