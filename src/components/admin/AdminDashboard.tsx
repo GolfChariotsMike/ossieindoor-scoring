@@ -38,7 +38,6 @@ export const AdminDashboard = () => {
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const [editedScores, setEditedScores] = useState<MatchScore | null>(null);
 
-  // Fetch match progress data from the view
   const { data: matchProgress = [], isLoading } = useQuery({
     queryKey: ["match-progress", selectedDay],
     queryFn: async () => {
@@ -63,13 +62,24 @@ export const AdminDashboard = () => {
     },
   });
 
-  // Mutation for updating scores
   const updateScoresMutation = useMutation({
     mutationFn: async (variables: { matchId: string; scores: MatchScore }) => {
+      const { data: matchData } = await supabase
+        .from('matches_v2')
+        .select('*')
+        .eq('id', variables.matchId)
+        .single();
+
+      if (!matchData) throw new Error('Match not found');
+
       const { data, error } = await supabase
         .from('match_data_v2')
         .upsert({
           match_id: variables.matchId,
+          court_number: matchData.court_number,
+          division: matchData.division,
+          home_team_name: matchData.home_team_name,
+          away_team_name: matchData.away_team_name,
           ...variables.scores,
         })
         .select();

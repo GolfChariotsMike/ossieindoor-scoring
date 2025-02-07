@@ -12,7 +12,7 @@ interface MatchRowProps {
     home: number[];
     away: number[];
   };
-  onScoreChange: (matchId: string, team: 'home' | 'away', setIndex: number, value: string) => void;
+  onScoreChange: (matchId: string, team: 'home' | 'away', setIndex: number, value: number) => void;
   onSave: (match: Fixture) => void;
 }
 
@@ -49,10 +49,12 @@ export const MatchRow = ({ match, scores, onScoreChange, onSave }: MatchRowProps
             <ScoreInput
               value={scores?.home[setIndex] || 0}
               onChange={(value) => onScoreChange(match.Id, 'home', setIndex, value)}
+              isEditing={true}
             />
             <ScoreInput
               value={scores?.away[setIndex] || 0}
               onChange={(value) => onScoreChange(match.Id, 'away', setIndex, value)}
+              isEditing={true}
             />
           </div>
         </TableCell>
