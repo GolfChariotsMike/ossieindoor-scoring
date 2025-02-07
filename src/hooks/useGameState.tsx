@@ -98,7 +98,7 @@ export const useGameState = () => {
     }
   };
 
-  const handleScore = (team: "home" | "away", increment: boolean) => {
+  const handleScore = (team: "home" | "away", increment: boolean, match?: Match | Fixture) => {
     if (isMatchComplete) return;
     
     const wasGameStarted = hasGameStarted;
@@ -110,16 +110,14 @@ export const useGameState = () => {
     }));
     
     // If this is the first score of the game, record first set progress
-    if (!wasGameStarted && increment) {
+    if (!wasGameStarted && increment && match) {
       console.log('First point scored, recording initial match progress');
       // We'll record the initial score after the state updates
       setTimeout(() => {
-        if (window.match) {
-          recordFirstSetProgress(window.match, 
-            team === 'home' ? 1 : 0, 
-            team === 'away' ? 1 : 0
-          );
-        }
+        recordFirstSetProgress(match, 
+          team === 'home' ? 1 : 0, 
+          team === 'away' ? 1 : 0
+        );
       }, 0);
     }
   };
