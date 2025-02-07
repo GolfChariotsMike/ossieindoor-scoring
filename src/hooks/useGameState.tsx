@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Score, SetScores } from "@/types/volleyball";
+import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { isMatchCompleted } from "@/utils/scoringLogic";
 import { saveMatchScores } from "@/utils/matchDatabase";
 import { toast } from "@/components/ui/use-toast";
@@ -35,21 +35,23 @@ export const useGameState = () => {
     }));
   };
 
-  const recordFirstSetProgress = async (match: any, homeScore: number, awayScore: number) => {
+  const recordFirstSetProgress = async (match: Match | Fixture, homeScore: number, awayScore: number) => {
     try {
       console.log('Starting recordFirstSetProgress with match:', match);
       
-      // Create a match code that matches exactly how it's stored in matches_v2
-      const matchDate = match.DateTime 
-        ? new Date(match.DateTime) 
-        : match.startTime 
-          ? new Date(match.startTime)
-          : new Date();
-
+      // Determine if we're dealing with a Match or Fixture type
+      const isFixture = 'DateTime' in match;
+      
+      // Extract date
+      const matchDate = isFixture 
+        ? new Date(match.DateTime)
+        : new Date(match.startTime);
+      
       console.log('Match date parsed:', matchDate);
 
-      const courtNumber = match.PlayingAreaName 
-        ? parseInt(match.PlayingAreaName.replace('Court ', '')) 
+      // Extract court number
+      const courtNumber = isFixture
+        ? parseInt(match.PlayingAreaName.replace('Court ', ''))
         : match.court;
       
       console.log('Court number parsed:', courtNumber);
@@ -58,35 +60,39 @@ export const useGameState = () => {
       const matchCode = `${courtNumber}-${formattedDate}`;
 
       console.log('Generated match code:', matchCode);
-      console.log('Preparing to insert match progress with data:', {
-        matchCode,
-        courtNumber,
-        division: match.DivisionName || match.division,
-        homeTeam: match.HomeTeam || match.homeTeam.name,
-        awayTeam: match.AwayTeam || match.awayTeam.name,
-        startTime: matchDate.toISOString(),
-        homeScore,
-        awayScore
-      });
 
-      const { data, error } = await supabase.from('match_progress').insert({
+      // Extract team names
+      const homeTeamName = isFixture ? match.HomeTeam : match.homeTeam.name;
+      const awayTeamName = isFixture ? match.AwayTeam : match.awayTeam.name;
+      const division = isFixture ? match.DivisionName : match.division;
+
+      const insertData = {
         match_code: matchCode,
         court_number: courtNumber,
-        division: match.DivisionName || match.division,
-        home_team_name: match.HomeTeam || match.homeTeam.name,
-        away_team_name: match.AwayTeam || match.awayTeam.name,
+        division: division,
+        home_team_name: homeTeamName,
+        away_team_name: awayTeamName,
         start_time: matchDate.toISOString(),
         first_set_home_score: homeScore,
         first_set_away_score: awayScore,
-        has_final_score: false
-      });
+        has_final_score: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Attempting to insert match progress with data:', insertData);
+
+      const { data, error } = await supabase
+        .from('match_progress')
+        .insert(insertData);
 
       if (error) {
-        console.error('Error recording first set progress:', error);
+        console.error('Supabase error inserting match progress:', error);
         throw error;
       }
 
-      console.log('First set progress recorded successfully:', data);
+      console.log('Successfully recorded first set progress:', data);
+      
       toast({
         title: "First Set Recorded",
         description: "The first set scores have been saved",
@@ -212,3 +218,4 @@ export const useGameState = () => {
     resetGameState,
   };
 };
+
