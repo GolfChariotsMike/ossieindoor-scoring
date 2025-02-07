@@ -276,11 +276,15 @@ export type Database = {
           away_team_name: string | null
           court_number: number | null
           division: string | null
-          first_set_away_score: number | null
-          first_set_home_score: number | null
           has_final_score: boolean | null
           home_team_name: string | null
           id: string | null
+          set1_away_score: number | null
+          set1_home_score: number | null
+          set2_away_score: number | null
+          set2_home_score: number | null
+          set3_away_score: number | null
+          set3_home_score: number | null
           start_time: string | null
         }
         Relationships: []

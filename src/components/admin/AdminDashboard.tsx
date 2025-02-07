@@ -176,23 +176,23 @@ export const AdminDashboard = () => {
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex flex-col">
-                      <span>{match.first_set_home_score || 0}</span>
+                      <span>{match.set1_home_score || 0}</span>
                       <span className="text-gray-500">-</span>
-                      <span>{match.first_set_away_score || 0}</span>
+                      <span>{match.set1_away_score || 0}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex flex-col">
-                      <span>{match.second_set_home_score || 0}</span>
+                      <span>{match.set2_home_score || 0}</span>
                       <span className="text-gray-500">-</span>
-                      <span>{match.second_set_away_score || 0}</span>
+                      <span>{match.set2_away_score || 0}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex flex-col">
-                      <span>{match.third_set_home_score || 0}</span>
+                      <span>{match.set3_home_score || 0}</span>
                       <span className="text-gray-500">-</span>
-                      <span>{match.third_set_away_score || 0}</span>
+                      <span>{match.set3_away_score || 0}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -212,3 +212,4 @@ export const AdminDashboard = () => {
     </div>
   );
 };
+
