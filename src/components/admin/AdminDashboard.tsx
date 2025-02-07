@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScoreInput } from "./ScoreInput";
 import {
   Table,
   TableBody,
@@ -19,13 +20,25 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
+interface MatchScore {
+  set1_home_score: number;
+  set1_away_score: number;
+  set2_home_score: number;
+  set2_away_score: number;
+  set3_home_score: number;
+  set3_away_score: number;
+}
+
 export const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedDay, setSelectedDay] = useState<string>("all");
   const [searchTeam, setSearchTeam] = useState<string>("");
+  const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
+  const [editedScores, setEditedScores] = useState<MatchScore | null>(null);
 
-  // Fetch match progress data from the new view
+  // Fetch match progress data from the view
   const { data: matchProgress = [], isLoading } = useQuery({
     queryKey: ["match-progress", selectedDay],
     queryFn: async () => {
@@ -49,6 +62,65 @@ export const AdminDashboard = () => {
       return data || [];
     },
   });
+
+  // Mutation for updating scores
+  const updateScoresMutation = useMutation({
+    mutationFn: async (variables: { matchId: string; scores: MatchScore }) => {
+      const { data, error } = await supabase
+        .from('match_data_v2')
+        .upsert({
+          match_id: variables.matchId,
+          ...variables.scores,
+        })
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["match-progress"] });
+      toast({
+        title: "Success",
+        description: "Match scores updated successfully",
+      });
+      setEditingMatchId(null);
+      setEditedScores(null);
+    },
+    onError: (error) => {
+      console.error('Error updating scores:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update match scores",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditClick = (match: any) => {
+    setEditingMatchId(match.id);
+    setEditedScores({
+      set1_home_score: match.set1_home_score || 0,
+      set1_away_score: match.set1_away_score || 0,
+      set2_home_score: match.set2_home_score || 0,
+      set2_away_score: match.set2_away_score || 0,
+      set3_home_score: match.set3_home_score || 0,
+      set3_away_score: match.set3_away_score || 0,
+    });
+  };
+
+  const handleScoreChange = (setNumber: 1 | 2 | 3, team: 'home' | 'away', value: number) => {
+    if (!editedScores) return;
+    
+    setEditedScores({
+      ...editedScores,
+      [`set${setNumber}_${team}_score`]: value,
+    });
+  };
+
+  const handleSaveClick = (matchId: string) => {
+    if (!editedScores) return;
+    updateScoresMutation.mutate({ matchId, scores: editedScores });
+  };
 
   const days = ["all", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
@@ -154,6 +226,7 @@ export const AdminDashboard = () => {
                 <TableHead className="text-center">Set 2</TableHead>
                 <TableHead className="text-center">Set 3</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -175,24 +248,48 @@ export const AdminDashboard = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <div className="flex flex-col">
-                      <span>{match.set1_home_score || 0}</span>
+                    <div className="flex flex-col space-y-2">
+                      <ScoreInput
+                        value={editingMatchId === match.id ? editedScores?.set1_home_score || 0 : match.set1_home_score || 0}
+                        onChange={(value) => handleScoreChange(1, 'home', value)}
+                        isEditing={editingMatchId === match.id}
+                      />
                       <span className="text-gray-500">-</span>
-                      <span>{match.set1_away_score || 0}</span>
+                      <ScoreInput
+                        value={editingMatchId === match.id ? editedScores?.set1_away_score || 0 : match.set1_away_score || 0}
+                        onChange={(value) => handleScoreChange(1, 'away', value)}
+                        isEditing={editingMatchId === match.id}
+                      />
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <div className="flex flex-col">
-                      <span>{match.set2_home_score || 0}</span>
+                    <div className="flex flex-col space-y-2">
+                      <ScoreInput
+                        value={editingMatchId === match.id ? editedScores?.set2_home_score || 0 : match.set2_home_score || 0}
+                        onChange={(value) => handleScoreChange(2, 'home', value)}
+                        isEditing={editingMatchId === match.id}
+                      />
                       <span className="text-gray-500">-</span>
-                      <span>{match.set2_away_score || 0}</span>
+                      <ScoreInput
+                        value={editingMatchId === match.id ? editedScores?.set2_away_score || 0 : match.set2_away_score || 0}
+                        onChange={(value) => handleScoreChange(2, 'away', value)}
+                        isEditing={editingMatchId === match.id}
+                      />
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <div className="flex flex-col">
-                      <span>{match.set3_home_score || 0}</span>
+                    <div className="flex flex-col space-y-2">
+                      <ScoreInput
+                        value={editingMatchId === match.id ? editedScores?.set3_home_score || 0 : match.set3_home_score || 0}
+                        onChange={(value) => handleScoreChange(3, 'home', value)}
+                        isEditing={editingMatchId === match.id}
+                      />
                       <span className="text-gray-500">-</span>
-                      <span>{match.set3_away_score || 0}</span>
+                      <ScoreInput
+                        value={editingMatchId === match.id ? editedScores?.set3_away_score || 0 : match.set3_away_score || 0}
+                        onChange={(value) => handleScoreChange(3, 'away', value)}
+                        isEditing={editingMatchId === match.id}
+                      />
                     </div>
                   </TableCell>
                   <TableCell>
@@ -203,6 +300,34 @@ export const AdminDashboard = () => {
                       {match.has_final_score ? "Final Score Saved" : "Match In Progress"}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    {editingMatchId === match.id ? (
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => handleSaveClick(match.id)}
+                          className="bg-green-500 hover:bg-green-600 text-white"
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setEditingMatchId(null);
+                            setEditedScores(null);
+                          }}
+                          variant="outline"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => handleEditClick(match)}
+                        className="bg-volleyball-red hover:bg-volleyball-red/90 text-white"
+                      >
+                        Edit
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -212,4 +337,3 @@ export const AdminDashboard = () => {
     </div>
   );
 };
-
