@@ -32,7 +32,7 @@ export const Timer = ({
   } = useTimer({
     initialMinutes,
     onComplete: () => {
-      console.log('Timer complete with fixture:', fixture);
+      console.log('Timer complete or skipped with fixture:', fixture);
       onComplete();
     },
     onSwitchTeams,
@@ -44,13 +44,19 @@ export const Timer = ({
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
+  const handleSkip = () => {
+    handleSkipPhase();
+    // Ensure the complete callback is triggered when skipping
+    onComplete();
+  };
+
   return (
     <div className="text-center relative">
       <div className="absolute top-0 right-0">
         <Button
           variant="outline"
           size="sm"
-          onClick={handleSkipPhase}
+          onClick={handleSkip}
           disabled={isMatchComplete}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
@@ -75,3 +81,4 @@ export const Timer = ({
     </div>
   );
 };
+
