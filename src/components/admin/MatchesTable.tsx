@@ -17,7 +17,7 @@ interface MatchesTableProps {
       away: number[];
     };
   };
-  onScoreChange: (matchId: string, team: 'home' | 'away', setIndex: number, value: string) => void;
+  onScoreChange: (matchId: string, team: 'home' | 'away', setIndex: number, value: number) => void;
   onSave: (match: Fixture) => void;
 }
 
