@@ -5,7 +5,8 @@ import { format, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -22,6 +23,7 @@ export const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [selectedDay, setSelectedDay] = useState<string>("all");
+  const [searchTeam, setSearchTeam] = useState<string>("");
 
   // Fetch match progress data from the new view
   const { data: matchProgress = [], isLoading } = useQuery({
@@ -50,10 +52,11 @@ export const AdminDashboard = () => {
 
   const days = ["all", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
-  // Filter matches based on selected day
-  const filteredMatches = selectedDay === "all" 
-    ? matchProgress 
-    : matchProgress.filter(match => {
+  // Filter matches based on selected day and search term
+  const filteredMatches = matchProgress
+    .filter(match => {
+      // First apply day filter
+      if (selectedDay !== "all") {
         if (!match.start_time) {
           console.log('AdminDashboard: Match missing start_time:', match);
           return false;
@@ -62,21 +65,24 @@ export const AdminDashboard = () => {
         try {
           const matchDate = parseISO(match.start_time);
           const dayMatch = format(matchDate, 'EEEE') === selectedDay;
-          console.log('AdminDashboard: Filtering match:', {
-            matchId: match.id,
-            startTime: match.start_time,
-            dayOfWeek: format(matchDate, 'EEEE'),
-            selectedDay,
-            matches: dayMatch
-          });
-          return dayMatch;
+          if (!dayMatch) return false;
         } catch (error) {
           console.error('AdminDashboard: Error parsing date for match:', match, error);
           return false;
         }
-      });
-
-  console.log('AdminDashboard: Filtered matches:', filteredMatches);
+      }
+      
+      // Then apply team search filter if there's a search term
+      if (searchTeam) {
+        const searchLower = searchTeam.toLowerCase();
+        return (
+          match.home_team_name.toLowerCase().includes(searchLower) ||
+          match.away_team_name.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return true;
+    });
 
   if (isLoading) {
     return (
@@ -106,19 +112,32 @@ export const AdminDashboard = () => {
               <div className="w-[120px]" />
             </div>
 
-            <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedDay}>
-              <TabsList className="w-full justify-start bg-volleyball-cream mb-4">
-                {days.map((day) => (
-                  <TabsTrigger 
-                    key={day} 
-                    value={day}
-                    className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
-                  >
-                    {day === "all" ? "All Days" : day}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+            <div className="w-full flex flex-col space-y-4">
+              <div className="relative w-full max-w-sm mx-auto">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Search by team name..."
+                  value={searchTeam}
+                  onChange={(e) => setSearchTeam(e.target.value)}
+                  className="pl-10 w-full"
+                />
+              </div>
+
+              <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedDay}>
+                <TabsList className="w-full justify-start bg-volleyball-cream">
+                  {days.map((day) => (
+                    <TabsTrigger 
+                      key={day} 
+                      value={day}
+                      className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
+                    >
+                      {day === "all" ? "All Days" : day}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </div>
 
