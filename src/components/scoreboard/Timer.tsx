@@ -31,7 +31,10 @@ export const Timer = ({
     progressToNextPhase
   } = useTimer({
     initialMinutes,
-    onComplete: () => onComplete(),
+    onComplete: () => {
+      console.log('Timer complete with fixture:', fixture);
+      onComplete();
+    },
     onSwitchTeams,
     isBreak,
     isMatchComplete,

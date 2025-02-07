@@ -1,3 +1,4 @@
+
 import { Timer } from "./Timer";
 import { TeamScore } from "./TeamScore";
 import { SetScoresDisplay } from "./SetScoresDisplay";
@@ -29,6 +30,10 @@ export const ScoreboardLayout = ({
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
+  console.log('ScoreboardLayout - Match data:', match);
+  console.log('ScoreboardLayout - Current scores:', currentScore);
+  console.log('ScoreboardLayout - Set scores:', setScores);
+
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
@@ -37,6 +42,7 @@ export const ScoreboardLayout = ({
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
         isMatchComplete={isMatchComplete}
+        fixture={match}
       />
 
       <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">

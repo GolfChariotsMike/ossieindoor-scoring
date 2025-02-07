@@ -53,6 +53,9 @@ export const ScoreboardContainer = () => {
     },
   });
 
+  console.log('ScoreboardContainer - Match data:', match);
+  console.log('ScoreboardContainer - Fixture:', fixture);
+
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
@@ -172,7 +175,6 @@ export const ScoreboardContainer = () => {
     }
   };
 
-  // Pass fixture along with match to ensure all match data is available
   return (
     <ScoreboardContent
       match={match}
