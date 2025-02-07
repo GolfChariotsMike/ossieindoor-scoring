@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { isMatchCompleted } from "@/utils/scoringLogic";
 import { saveMatchScores } from "@/utils/matchDatabase";
@@ -24,15 +24,6 @@ export const useGameState = () => {
     setIsMatchComplete(false);
     setHasGameStarted(false);
     setFirstSetRecorded(false);
-  };
-
-  const handleScore = (team: "home" | "away", increment: boolean) => {
-    if (isMatchComplete) return;
-    setHasGameStarted(true);
-    setCurrentScore((prev) => ({
-      ...prev,
-      [team]: increment ? prev[team] + 1 : Math.max(0, prev[team] - 1),
-    }));
   };
 
   const recordFirstSetProgress = async (match: Match | Fixture, homeScore: number, awayScore: number) => {
@@ -107,6 +98,32 @@ export const useGameState = () => {
     }
   };
 
+  const handleScore = (team: "home" | "away", increment: boolean) => {
+    if (isMatchComplete) return;
+    
+    const wasGameStarted = hasGameStarted;
+    setHasGameStarted(true);
+    
+    setCurrentScore((prev) => ({
+      ...prev,
+      [team]: increment ? prev[team] + 1 : Math.max(0, prev[team] - 1),
+    }));
+    
+    // If this is the first score of the game, record first set progress
+    if (!wasGameStarted && increment) {
+      console.log('First point scored, recording initial match progress');
+      // We'll record the initial score after the state updates
+      setTimeout(() => {
+        if (window.match) {
+          recordFirstSetProgress(window.match, 
+            team === 'home' ? 1 : 0, 
+            team === 'away' ? 1 : 0
+          );
+        }
+      }, 0);
+    }
+  };
+
   const handleTimerComplete = (match?: Match | Fixture) => {
     console.log('handleTimerComplete called with:', {
       match,
@@ -178,15 +195,6 @@ export const useGameState = () => {
         description: matchComplete ? "The match has ended" : "Starting next set",
       });
     } else {
-      // Only record first set if we have valid scores and match data
-      if (match && !firstSetRecorded && (currentScore.home > 0 || currentScore.away > 0)) {
-        console.log('Recording first set progress with scores:', {
-          home: currentScore.home,
-          away: currentScore.away
-        });
-        recordFirstSetProgress(match, currentScore.home, currentScore.away);
-      }
-      
       setIsBreak(true);
       toast({
         title: "Set Complete",
