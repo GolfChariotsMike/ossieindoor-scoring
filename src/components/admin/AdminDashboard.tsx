@@ -150,7 +150,10 @@ export const AdminDashboard = () => {
                 <TableHead>Court</TableHead>
                 <TableHead>Division</TableHead>
                 <TableHead>Teams</TableHead>
-                <TableHead>First Set Score</TableHead>
+                <TableHead className="text-center">Set 1</TableHead>
+                <TableHead className="text-center">Set 2</TableHead>
+                <TableHead className="text-center">Set 3</TableHead>
+                <TableHead className="text-center">Points Summary</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -166,10 +169,54 @@ export const AdminDashboard = () => {
                   <TableCell>Court {match.court_number}</TableCell>
                   <TableCell>{match.division || 'N/A'}</TableCell>
                   <TableCell>
-                    {match.home_team_name} vs {match.away_team_name}
+                    <div>
+                      <div className="font-semibold">{match.home_team_name}</div>
+                      <div className="text-gray-500">vs</div>
+                      <div className="font-semibold">{match.away_team_name}</div>
+                    </div>
                   </TableCell>
-                  <TableCell>
-                    {match.first_set_home_score || 0} - {match.first_set_away_score || 0}
+                  <TableCell className="text-center">
+                    <div className="flex flex-col">
+                      <span>{match.set1_home_score || 0}</span>
+                      <span className="text-gray-500">-</span>
+                      <span>{match.set1_away_score || 0}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex flex-col">
+                      <span>{match.set2_home_score || 0}</span>
+                      <span className="text-gray-500">-</span>
+                      <span>{match.set2_away_score || 0}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex flex-col">
+                      <span>{match.set3_home_score || 0}</span>
+                      <span className="text-gray-500">-</span>
+                      <span>{match.set3_away_score || 0}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {match.has_final_score && (
+                      <div className="flex flex-col text-sm">
+                        <div className="mb-1">
+                          <span className="font-semibold">{match.home_team_name}:</span>
+                          <div className="text-xs">
+                            <div>Set Points: {match.home_total_match_points - (match.home_bonus_points || 0)}</div>
+                            <div>Bonus Points: {match.home_bonus_points || 0}</div>
+                            <div className="font-semibold">Total: {match.home_total_match_points}</div>
+                          </div>
+                        </div>
+                        <div className="mt-1">
+                          <span className="font-semibold">{match.away_team_name}:</span>
+                          <div className="text-xs">
+                            <div>Set Points: {match.away_total_match_points - (match.away_bonus_points || 0)}</div>
+                            <div>Bonus Points: {match.away_bonus_points || 0}</div>
+                            <div className="font-semibold">Total: {match.away_total_match_points}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -188,3 +235,4 @@ export const AdminDashboard = () => {
     </div>
   );
 };
+
