@@ -37,7 +37,12 @@ export const useGameState = () => {
 
   const recordFirstSetProgress = async (match: Match | Fixture, homeScore: number, awayScore: number) => {
     try {
-      console.log('Starting recordFirstSetProgress with match:', match);
+      console.log('Starting recordFirstSetProgress with:', {
+        match,
+        homeScore,
+        awayScore,
+        isTeamsSwitched
+      });
       
       // Determine if we're dealing with a Match or Fixture type
       const isFixture = 'DateTime' in match;
@@ -47,24 +52,22 @@ export const useGameState = () => {
         ? new Date(match.DateTime)
         : new Date(match.startTime);
       
-      console.log('Match date parsed:', matchDate);
-
       // Extract court number
       const courtNumber = isFixture
         ? parseInt(match.PlayingAreaName.replace('Court ', ''))
         : match.court;
       
-      console.log('Court number parsed:', courtNumber);
-      
       const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
       const matchCode = `${courtNumber}-${formattedDate}`;
-
-      console.log('Generated match code:', matchCode);
 
       // Extract team names
       const homeTeamName = isFixture ? match.HomeTeam : match.homeTeam.name;
       const awayTeamName = isFixture ? match.AwayTeam : match.awayTeam.name;
       const division = isFixture ? match.DivisionName : match.division;
+
+      // Adjust scores based on team switching
+      const finalHomeScore = isTeamsSwitched ? awayScore : homeScore;
+      const finalAwayScore = isTeamsSwitched ? homeScore : awayScore;
 
       const insertData = {
         match_code: matchCode,
@@ -73,14 +76,14 @@ export const useGameState = () => {
         home_team_name: homeTeamName,
         away_team_name: awayTeamName,
         start_time: matchDate.toISOString(),
-        first_set_home_score: homeScore,
-        first_set_away_score: awayScore,
+        first_set_home_score: finalHomeScore,
+        first_set_away_score: finalAwayScore,
         has_final_score: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
-      console.log('Attempting to insert match progress with data:', insertData);
+      console.log('Inserting match progress with data:', insertData);
 
       const { data, error } = await supabase
         .from('match_progress')
@@ -92,6 +95,7 @@ export const useGameState = () => {
       }
 
       console.log('Successfully recorded first set progress:', data);
+      setFirstSetRecorded(true);
       
       toast({
         title: "First Set Recorded",
@@ -107,15 +111,20 @@ export const useGameState = () => {
     }
   };
 
-  const handleTimerComplete = (match?: any) => {
-    console.log('handleTimerComplete called with match:', match);
-    console.log('Current state:', {
+  const handleTimerComplete = (match?: Match | Fixture) => {
+    console.log('handleTimerComplete called with:', {
+      match,
       isBreak,
       currentScore,
       isTeamsSwitched,
       firstSetRecorded,
-      setScores
+      hasGameStarted
     });
+
+    if (!hasGameStarted) {
+      console.log('Game has not started yet, skipping timer complete handling');
+      return;
+    }
 
     if (isBreak) {
       const newSetScores = {
@@ -131,39 +140,37 @@ export const useGameState = () => {
       const matchComplete = isMatchCompleted(newSetScores);
       setIsMatchComplete(matchComplete);
       
-      if (matchComplete) {
+      if (matchComplete && match) {
         console.log('Match complete, saving final scores');
-        saveMatchScores(match?.id, newSetScores.home, newSetScores.away);
+        saveMatchScores(match.id, newSetScores.home, newSetScores.away);
         
         // Update match_progress to indicate final scores are saved
-        if (match) {
-          const updateMatchProgress = async () => {
-            try {
-              const matchDate = new Date(match.DateTime || match.startTime);
-              const courtNumber = match.PlayingAreaName 
-                ? parseInt(match.PlayingAreaName.replace('Court ', '')) 
-                : match.court;
-              const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
-              const matchCode = `${courtNumber}-${formattedDate}`;
-              
-              console.log('Updating match progress with has_final_score=true for match code:', matchCode);
-              
-              const { error } = await supabase
-                .from('match_progress')
-                .update({ has_final_score: true })
-                .eq('match_code', matchCode);
+        const updateMatchProgress = async () => {
+          try {
+            const matchDate = new Date(match.DateTime || match.startTime);
+            const courtNumber = match.PlayingAreaName 
+              ? parseInt(match.PlayingAreaName.replace('Court ', '')) 
+              : match.court;
+            const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
+            const matchCode = `${courtNumber}-${formattedDate}`;
+            
+            console.log('Updating match progress with has_final_score=true for match code:', matchCode);
+            
+            const { error } = await supabase
+              .from('match_progress')
+              .update({ has_final_score: true })
+              .eq('match_code', matchCode);
 
-              if (error) {
-                console.error('Error updating match progress:', error);
-                throw error;
-              }
-              console.log('Successfully updated match progress has_final_score to true');
-            } catch (error) {
+            if (error) {
               console.error('Error updating match progress:', error);
+              throw error;
             }
-          };
-          updateMatchProgress();
-        }
+            console.log('Successfully updated match progress has_final_score to true');
+          } catch (error) {
+            console.error('Error updating match progress:', error);
+          }
+        };
+        updateMatchProgress();
       }
       
       toast({
@@ -171,23 +178,16 @@ export const useGameState = () => {
         description: matchComplete ? "The match has ended" : "Starting next set",
       });
     } else {
-      if (currentScore.home === 0 && currentScore.away === 0) {
-        console.log('Skipping timer complete - no scores recorded');
-        return;
-      }
-
-      if (!firstSetRecorded && match) {
-        console.log('Recording first set progress');
-        setFirstSetRecorded(true);
-        recordFirstSetProgress(
-          match,
-          isTeamsSwitched ? currentScore.away : currentScore.home,
-          isTeamsSwitched ? currentScore.home : currentScore.away
-        );
+      // Only record first set if we have valid scores and match data
+      if (match && !firstSetRecorded && (currentScore.home > 0 || currentScore.away > 0)) {
+        console.log('Recording first set progress with scores:', {
+          home: currentScore.home,
+          away: currentScore.away
+        });
+        recordFirstSetProgress(match, currentScore.home, currentScore.away);
       }
       
       setIsBreak(true);
-      setHasGameStarted(true);
       toast({
         title: "Set Complete",
         description: "Starting 1 minute break",
@@ -218,4 +218,3 @@ export const useGameState = () => {
     resetGameState,
   };
 };
-
