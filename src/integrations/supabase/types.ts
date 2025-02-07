@@ -183,55 +183,17 @@ export type Database = {
             foreignKeyName: "match_data_v2_match_id_fkey"
             columns: ["match_id"]
             isOneToOne: true
+            referencedRelation: "match_progress_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_data_v2_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
             referencedRelation: "matches_v2"
             referencedColumns: ["id"]
           },
         ]
-      }
-      match_progress: {
-        Row: {
-          away_team_name: string
-          court_number: number
-          created_at: string | null
-          division: string | null
-          first_set_away_score: number | null
-          first_set_home_score: number | null
-          has_final_score: boolean | null
-          home_team_name: string
-          id: string
-          match_code: string
-          start_time: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          away_team_name: string
-          court_number: number
-          created_at?: string | null
-          division?: string | null
-          first_set_away_score?: number | null
-          first_set_home_score?: number | null
-          has_final_score?: boolean | null
-          home_team_name: string
-          id?: string
-          match_code: string
-          start_time?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          away_team_name?: string
-          court_number?: number
-          created_at?: string | null
-          division?: string | null
-          first_set_away_score?: number | null
-          first_set_home_score?: number | null
-          has_final_score?: boolean | null
-          home_team_name?: string
-          id?: string
-          match_code?: string
-          start_time?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       matches_v2: {
         Row: {
@@ -309,7 +271,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      match_progress_view: {
+        Row: {
+          away_team_name: string | null
+          court_number: number | null
+          division: string | null
+          first_set_away_score: number | null
+          first_set_home_score: number | null
+          has_final_score: boolean | null
+          home_team_name: string | null
+          id: string | null
+          start_time: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

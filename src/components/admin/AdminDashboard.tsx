@@ -23,15 +23,15 @@ export const AdminDashboard = () => {
   const navigate = useNavigate();
   const [selectedDay, setSelectedDay] = useState<string>("all");
 
-  // Fetch match progress data
+  // Fetch match progress data from the new view
   const { data: matchProgress = [], isLoading } = useQuery({
     queryKey: ["match-progress", selectedDay],
     queryFn: async () => {
       console.log('AdminDashboard: Fetching match progress data');
       const { data, error } = await supabase
-        .from('match_progress')
+        .from('match_progress_view')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('start_time', { ascending: false });
 
       if (error) {
         console.error('AdminDashboard: Error fetching match progress:', error);
@@ -150,7 +150,7 @@ export const AdminDashboard = () => {
                     {match.home_team_name} vs {match.away_team_name}
                   </TableCell>
                   <TableCell>
-                    {match.first_set_home_score} - {match.first_set_away_score}
+                    {match.first_set_home_score || 0} - {match.first_set_away_score || 0}
                   </TableCell>
                   <TableCell>
                     <Badge
@@ -169,4 +169,3 @@ export const AdminDashboard = () => {
     </div>
   );
 };
-
