@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { isMatchCompleted } from "@/utils/scoringLogic";
@@ -44,9 +43,6 @@ export const useGameState = () => {
         ? parseInt(match.PlayingAreaName.replace('Court ', ''))
         : match.court;
       
-      const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
-      const matchCode = `${courtNumber}-${formattedDate}`;
-
       // Extract team names and division based on type
       const homeTeamName = 'HomeTeam' in match ? match.HomeTeam : match.homeTeam.name;
       const awayTeamName = 'AwayTeam' in match ? match.AwayTeam : match.awayTeam.name;
@@ -56,32 +52,51 @@ export const useGameState = () => {
       const finalHomeScore = isTeamsSwitched ? awayScore : homeScore;
       const finalAwayScore = isTeamsSwitched ? homeScore : awayScore;
 
-      const insertData = {
-        match_code: matchCode,
-        court_number: courtNumber,
-        division: division,
-        home_team_name: homeTeamName,
-        away_team_name: awayTeamName,
-        start_time: matchDate.toISOString(),
-        first_set_home_score: finalHomeScore,
-        first_set_away_score: finalAwayScore,
-        has_final_score: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      // Generate match code
+      const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
+      const matchCode = `${courtNumber}-${formattedDate}`;
 
-      console.log('Inserting match progress with data:', insertData);
+      // Insert into matches_v2 first
+      const { data: matchData, error: matchError } = await supabase
+        .from('matches_v2')
+        .insert({
+          match_code: matchCode,
+          court_number: courtNumber,
+          division: division,
+          home_team_id: 'Id' in match ? match.HomeTeamId : match.homeTeam.id,
+          home_team_name: homeTeamName,
+          away_team_id: 'Id' in match ? match.AwayTeamId : match.awayTeam.id,
+          away_team_name: awayTeamName,
+          start_time: matchDate.toISOString()
+        })
+        .select()
+        .single();
 
-      const { data, error } = await supabase
-        .from('match_progress')
-        .insert(insertData);
-
-      if (error) {
-        console.error('Supabase error inserting match progress:', error);
-        throw error;
+      if (matchError) {
+        console.error('Error inserting match:', matchError);
+        throw matchError;
       }
 
-      console.log('Successfully recorded first set progress:', data);
+      // Then insert into match_data_v2
+      const { error: dataError } = await supabase
+        .from('match_data_v2')
+        .insert({
+          match_id: matchData.id,
+          court_number: courtNumber,
+          division: division,
+          home_team_name: homeTeamName,
+          away_team_name: awayTeamName,
+          set1_home_score: finalHomeScore,
+          set1_away_score: finalAwayScore,
+          match_date: matchDate.toISOString()
+        });
+
+      if (dataError) {
+        console.error('Error inserting match data:', dataError);
+        throw dataError;
+      }
+
+      console.log('Successfully recorded first set progress');
       setFirstSetRecorded(true);
       
       toast({
@@ -154,38 +169,6 @@ export const useGameState = () => {
       if (matchComplete && match) {
         console.log('Match complete, saving final scores');
         saveMatchScores(match.id, newSetScores.home, newSetScores.away);
-        
-        // Update match_progress to indicate final scores are saved
-        const updateMatchProgress = async () => {
-          try {
-            const matchDate = 'DateTime' in match 
-              ? new Date(match.DateTime)
-              : new Date(match.startTime);
-              
-            const courtNumber = 'PlayingAreaName' in match
-              ? parseInt(match.PlayingAreaName.replace('Court ', ''))
-              : match.court;
-              
-            const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
-            const matchCode = `${courtNumber}-${formattedDate}`;
-            
-            console.log('Updating match progress with has_final_score=true for match code:', matchCode);
-            
-            const { error } = await supabase
-              .from('match_progress')
-              .update({ has_final_score: true })
-              .eq('match_code', matchCode);
-
-            if (error) {
-              console.error('Error updating match progress:', error);
-              throw error;
-            }
-            console.log('Successfully updated match progress has_final_score to true');
-          } catch (error) {
-            console.error('Error updating match progress:', error);
-          }
-        };
-        updateMatchProgress();
       }
       
       toast({
