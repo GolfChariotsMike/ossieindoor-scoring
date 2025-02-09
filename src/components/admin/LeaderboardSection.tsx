@@ -40,19 +40,19 @@ export const LeaderboardSection = () => {
         const isDivB = b.name.startsWith('DIV');
         const isMixA = a.name.includes('MIX');
         const isMixB = b.name.includes('MIX');
-        const isDuosA = a.name.includes('DUOS');
-        const isDuosB = b.name.includes('DUOS');
+        const isDuoA = a.name.startsWith('DUO');
+        const isDuoB = b.name.startsWith('DUO');
 
         // Sort by division type first
         if (isDivA && !isDivB) return -1;
         if (!isDivA && isDivB) return 1;
         if (isMixA && !isMixB) return -1;
         if (!isMixA && isMixB) return 1;
-        if (isDuosA && !isDuosB) return -1;
-        if (!isDuosA && isDuosB) return 1;
+        if (isDuoA && !isDuoB) return -1;
+        if (!isDuoA && isDuoB) return 1;
 
         // If both are numbered divisions, sort by number
-        if (isDivA && isDivB) {
+        if ((isDivA && isDivB) || (isDuoA && isDuoB)) {
           return getNumericValue(a.name) - getNumericValue(b.name);
         }
 
