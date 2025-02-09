@@ -234,6 +234,72 @@ export type Database = {
         }
         Relationships: []
       }
+      team_statistics: {
+        Row: {
+          bonus_points: number | null
+          created_at: string | null
+          division_id: string | null
+          draws: number | null
+          games_played: number | null
+          id: string
+          losses: number | null
+          points_against: number | null
+          points_for: number | null
+          points_percentage: number | null
+          team_id: string
+          total_points: number | null
+          updated_at: string | null
+          wins: number | null
+        }
+        Insert: {
+          bonus_points?: number | null
+          created_at?: string | null
+          division_id?: string | null
+          draws?: number | null
+          games_played?: number | null
+          id?: string
+          losses?: number | null
+          points_against?: number | null
+          points_for?: number | null
+          points_percentage?: number | null
+          team_id: string
+          total_points?: number | null
+          updated_at?: string | null
+          wins?: number | null
+        }
+        Update: {
+          bonus_points?: number | null
+          created_at?: string | null
+          division_id?: string | null
+          draws?: number | null
+          games_played?: number | null
+          id?: string
+          losses?: number | null
+          points_against?: number | null
+          points_for?: number | null
+          points_percentage?: number | null
+          team_id?: string
+          total_points?: number | null
+          updated_at?: string | null
+          wins?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_statistics_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_statistics_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           created_at: string | null
