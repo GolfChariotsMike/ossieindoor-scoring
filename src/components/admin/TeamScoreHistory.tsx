@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format, parseISO } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
 
 interface TeamScoreHistoryProps {
   teamId: string;
@@ -23,16 +24,35 @@ interface TeamScoreHistoryProps {
 }
 
 export const TeamScoreHistory = ({ teamId, onClose }: TeamScoreHistoryProps) => {
-  const { data: team } = useQuery({
+  const { toast } = useToast();
+
+  const { data: team, isError: isTeamError } = useQuery({
     queryKey: ["team", teamId],
     queryFn: async () => {
+      console.log('TeamScoreHistory: Fetching team data for ID:', teamId);
       const { data, error } = await supabase
         .from("teams")
         .select("*, division:divisions(*)")
         .eq("id", teamId)
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('TeamScoreHistory: Error fetching team:', error);
+        throw error;
+      }
+
+      if (!data) {
+        console.log('TeamScoreHistory: No team found for ID:', teamId);
+        toast({
+          title: "Team not found",
+          description: "The selected team could not be found.",
+          variant: "destructive",
+        });
+        onClose();
+        return null;
+      }
+      
+      console.log('TeamScoreHistory: Found team:', data);
       return data;
     },
   });
@@ -40,18 +60,33 @@ export const TeamScoreHistory = ({ teamId, onClose }: TeamScoreHistoryProps) => 
   const { data: matches = [], isLoading } = useQuery({
     queryKey: ["team-matches", teamId],
     queryFn: async () => {
+      if (!team?.division?.name) {
+        console.log('TeamScoreHistory: No division found for team');
+        return [];
+      }
+
+      console.log('TeamScoreHistory: Fetching matches for team:', team.team_name, 'in division:', team.division.name);
       const { data, error } = await supabase
         .from("match_data_v2")
         .select("*")
-        .eq("division", team?.division?.name)
-        .or(`home_team_name.eq.${team?.team_name},away_team_name.eq.${team?.team_name}`)
+        .eq("division", team.division.name)
+        .or(`home_team_name.eq.${team.team_name},away_team_name.eq.${team.team_name}`)
         .order("match_date", { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('TeamScoreHistory: Error fetching matches:', error);
+        throw error;
+      }
+
+      console.log('TeamScoreHistory: Found matches:', data);
       return data;
     },
-    enabled: !!team,
+    enabled: !!team?.division?.name,
   });
+
+  if (isTeamError) {
+    return null;
+  }
 
   return (
     <Dialog open={true} onOpenChange={() => onClose()}>
@@ -62,7 +97,7 @@ export const TeamScoreHistory = ({ teamId, onClose }: TeamScoreHistoryProps) => 
 
         {isLoading ? (
           <div>Loading match history...</div>
-        ) : (
+        ) : matches.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -113,6 +148,10 @@ export const TeamScoreHistory = ({ teamId, onClose }: TeamScoreHistoryProps) => 
               })}
             </TableBody>
           </Table>
+        ) : (
+          <div className="text-center py-4 text-gray-500">
+            No match history found for this team.
+          </div>
         )}
       </DialogContent>
     </Dialog>
