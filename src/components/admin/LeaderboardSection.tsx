@@ -41,6 +41,7 @@ export const LeaderboardSection = () => {
           *,
           team:teams(*)
         `)
+        .in('division_id', divisions.map(d => d.id))
         .order("total_points", { ascending: false });
       
       if (error) {
@@ -50,6 +51,7 @@ export const LeaderboardSection = () => {
       console.log('LeaderboardSection: Fetched team statistics:', data);
       return data;
     },
+    enabled: divisions.length > 0,
   });
 
   if (isDivisionsLoading || isStatsLoading) {

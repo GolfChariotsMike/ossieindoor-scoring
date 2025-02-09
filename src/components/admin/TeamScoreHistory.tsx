@@ -28,7 +28,7 @@ export const TeamScoreHistory = ({ teamId, onClose }: TeamScoreHistoryProps) => 
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("*")
+        .select("*, division:divisions(*)")
         .eq("id", teamId)
         .single();
       
@@ -43,6 +43,7 @@ export const TeamScoreHistory = ({ teamId, onClose }: TeamScoreHistoryProps) => 
       const { data, error } = await supabase
         .from("match_data_v2")
         .select("*")
+        .eq("division", team?.division?.name)
         .or(`home_team_name.eq.${team?.team_name},away_team_name.eq.${team?.team_name}`)
         .order("match_date", { ascending: false });
       
