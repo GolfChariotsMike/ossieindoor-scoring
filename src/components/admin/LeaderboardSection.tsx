@@ -26,8 +26,42 @@ export const LeaderboardSection = () => {
         console.error('LeaderboardSection: Error fetching divisions:', error);
         throw error;
       }
-      console.log('LeaderboardSection: Fetched divisions:', data);
-      return data;
+      
+      // Sort divisions in a natural order
+      const sortedDivisions = data.sort((a, b) => {
+        // Function to extract numeric value from division name
+        const getNumericValue = (name: string) => {
+          const match = name.match(/\d+/);
+          return match ? parseInt(match[0]) : Infinity;
+        };
+
+        // Special handling for different division types
+        const isDivA = a.name.startsWith('DIV');
+        const isDivB = b.name.startsWith('DIV');
+        const isMixA = a.name.includes('MIX');
+        const isMixB = b.name.includes('MIX');
+        const isDuosA = a.name.includes('DUOS');
+        const isDuosB = b.name.includes('DUOS');
+
+        // Sort by division type first
+        if (isDivA && !isDivB) return -1;
+        if (!isDivA && isDivB) return 1;
+        if (isMixA && !isMixB) return -1;
+        if (!isMixA && isMixB) return 1;
+        if (isDuosA && !isDuosB) return -1;
+        if (!isDuosA && isDuosB) return 1;
+
+        // If both are numbered divisions, sort by number
+        if (isDivA && isDivB) {
+          return getNumericValue(a.name) - getNumericValue(b.name);
+        }
+
+        // For other cases, sort alphabetically
+        return a.name.localeCompare(b.name);
+      });
+
+      console.log('LeaderboardSection: Sorted divisions:', sortedDivisions);
+      return sortedDivisions;
     },
   });
 
