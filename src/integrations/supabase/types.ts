@@ -234,6 +234,48 @@ export type Database = {
         }
         Relationships: []
       }
+      team_clashes: {
+        Row: {
+          clash_team_id: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          reason: string | null
+          team_id: string | null
+        }
+        Insert: {
+          clash_team_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          team_id?: string | null
+        }
+        Update: {
+          clash_team_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_clashes_clash_team_id_fkey"
+            columns: ["clash_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_clashes_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_statistics: {
         Row: {
           bonus_points: number | null
@@ -335,6 +377,85 @@ export type Database = {
           },
         ]
       }
+      teams_v2: {
+        Row: {
+          cannot_play_after: string | null
+          cannot_play_before: string | null
+          created_at: string | null
+          day_of_week: string
+          division_id: string | null
+          id: string
+          notes: string | null
+          preferred_time_slot: string | null
+          team_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          cannot_play_after?: string | null
+          cannot_play_before?: string | null
+          created_at?: string | null
+          day_of_week: string
+          division_id?: string | null
+          id?: string
+          notes?: string | null
+          preferred_time_slot?: string | null
+          team_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          cannot_play_after?: string | null
+          cannot_play_before?: string | null
+          created_at?: string | null
+          day_of_week?: string
+          division_id?: string | null
+          id?: string
+          notes?: string | null
+          preferred_time_slot?: string | null
+          team_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_v2_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_slot_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          preference_type: Database["public"]["Enums"]["time_preference_type"]
+          team_id: string
+          time_slot: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          preference_type: Database["public"]["Enums"]["time_preference_type"]
+          team_id: string
+          time_slot: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          preference_type?: Database["public"]["Enums"]["time_preference_type"]
+          team_id?: string
+          time_slot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_slot_preferences_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       match_progress_view: {
@@ -360,7 +481,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      time_preference_type: "good" | "bad"
     }
     CompositeTypes: {
       [_ in never]: never

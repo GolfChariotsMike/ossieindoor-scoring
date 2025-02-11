@@ -5,6 +5,17 @@ import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useTimer } from "./timer/useTimer";
 import { Fixture } from "@/types/volleyball";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TimerProps {
   initialMinutes: number;
@@ -53,16 +64,32 @@ export const Timer = ({
   return (
     <div className="text-center relative">
       <div className="absolute top-0 right-0">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSkip}
-          disabled={isMatchComplete}
-          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-        >
-          <FastForward className="w-4 h-4 mr-1" />
-          Skip Phase
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isMatchComplete}
+              className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+            >
+              <FastForward className="w-4 h-4 mr-1" />
+              Skip Phase
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to skip this phase?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action should only be used if something has gone wrong with the timer or match flow. 
+                Skipping a phase cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleSkip}>Skip Phase</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       
       <TimerDisplay 
