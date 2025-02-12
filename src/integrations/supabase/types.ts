@@ -115,6 +115,7 @@ export type Database = {
           home_total_match_points: number | null
           home_total_points: number | null
           id: string
+          is_active: boolean | null
           match_date: string | null
           match_id: string | null
           points_percentage: number | null
@@ -141,6 +142,7 @@ export type Database = {
           home_total_match_points?: number | null
           home_total_points?: number | null
           id?: string
+          is_active?: boolean | null
           match_date?: string | null
           match_id?: string | null
           points_percentage?: number | null
@@ -167,6 +169,7 @@ export type Database = {
           home_total_match_points?: number | null
           home_total_points?: number | null
           id?: string
+          is_active?: boolean | null
           match_date?: string | null
           match_id?: string | null
           points_percentage?: number | null
