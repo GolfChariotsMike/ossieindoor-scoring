@@ -66,23 +66,20 @@ export const LeaderboardSection = () => {
   });
 
   const { data: teamStats = [], isLoading: isStatsLoading } = useQuery({
-    queryKey: ["team-statistics", selectedDay],
+    queryKey: ["team-standings", selectedDay],
     queryFn: async () => {
-      console.log('LeaderboardSection: Fetching team statistics');
+      console.log('LeaderboardSection: Fetching team standings');
       const { data, error } = await supabase
-        .from("team_statistics")
-        .select(`
-          *,
-          team:teams(*)
-        `)
-        .in('division_id', divisions.map(d => d.id))
+        .from("team_standings")
+        .select("*")
+        .in('division', divisions.map(d => d.name))
         .order("total_points", { ascending: false });
       
       if (error) {
-        console.error('LeaderboardSection: Error fetching team statistics:', error);
+        console.error('LeaderboardSection: Error fetching team standings:', error);
         throw error;
       }
-      console.log('LeaderboardSection: Fetched team statistics:', data);
+      console.log('LeaderboardSection: Fetched team standings:', data);
       return data;
     },
     enabled: divisions.length > 0,
@@ -114,13 +111,13 @@ export const LeaderboardSection = () => {
       </div>
 
       {divisions.length > 0 ? (
-        <Tabs defaultValue={divisions[0]?.id} className="w-full">
+        <Tabs defaultValue={divisions[0]?.name} className="w-full">
           <ScrollArea className="w-full">
             <TabsList className="w-full justify-start bg-volleyball-cream">
               {divisions.map((division) => (
                 <TabsTrigger 
                   key={division.id} 
-                  value={division.id}
+                  value={division.name}
                   className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
                 >
                   {division.name}
@@ -130,9 +127,9 @@ export const LeaderboardSection = () => {
           </ScrollArea>
 
           {divisions.map((division) => (
-            <TabsContent key={division.id} value={division.id} className="space-y-6">
+            <TabsContent key={division.id} value={division.name} className="space-y-6">
               <LeaderboardTable 
-                stats={teamStats.filter(stat => stat.division_id === division.id)}
+                stats={teamStats.filter(stat => stat.division === division.name)}
                 onTeamClick={setSelectedTeamId}
               />
               
