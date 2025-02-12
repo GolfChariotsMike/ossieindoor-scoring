@@ -1,6 +1,5 @@
-
-import { format, parseISO } from "date-fns";
-import { Search } from "lucide-react";
+import { format } from "date-fns";
+import { Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -16,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { MatchScore, MatchProgressItem } from "./types";
 import { MatchScoreEditor } from "./MatchScoreEditor";
 
@@ -26,6 +36,7 @@ export const MatchProgressSection = () => {
   const [searchTeam, setSearchTeam] = useState<string>("");
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const [editedScores, setEditedScores] = useState<MatchScore | null>(null);
+  const [deleteMatchId, setDeleteMatchId] = useState<string | null>(null);
 
   const { data: matchProgress = [], isLoading } = useQuery({
     queryKey: ["match-progress", selectedDay],
@@ -94,6 +105,33 @@ export const MatchProgressSection = () => {
     },
   });
 
+  const deleteMatchMutation = useMutation({
+    mutationFn: async (matchId: string) => {
+      const { error } = await supabase
+        .from('match_data_v2')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('match_id', matchId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["match-progress"] });
+      toast({
+        title: "Success",
+        description: "Match record deleted successfully",
+      });
+      setDeleteMatchId(null);
+    },
+    onError: (error) => {
+      console.error('Error deleting match:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete match record",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEditClick = (match: MatchProgressItem) => {
     setEditingMatchId(match.id);
     setEditedScores({
@@ -118,6 +156,16 @@ export const MatchProgressSection = () => {
   const handleSaveClick = (matchId: string) => {
     if (!editedScores) return;
     updateScoresMutation.mutate({ matchId, scores: editedScores });
+  };
+
+  const handleDeleteClick = (matchId: string) => {
+    setDeleteMatchId(matchId);
+  };
+
+  const confirmDelete = () => {
+    if (deleteMatchId) {
+      deleteMatchMutation.mutate(deleteMatchId);
+    }
   };
 
   const days = ["all", "Monday", "Tuesday", "Wednesday", "Thursday"];
@@ -200,7 +248,7 @@ export const MatchProgressSection = () => {
             <TableHead className="text-center">Set 2</TableHead>
             <TableHead className="text-center">Set 3</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -264,22 +312,21 @@ export const MatchProgressSection = () => {
                       {match.has_final_score ? "Final Score Saved" : "Match In Progress"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <MatchScoreEditor
-                      matchId={match.id}
-                      currentScores={{
-                        set1_home_score: match.set1_home_score || 0,
-                        set1_away_score: match.set1_away_score || 0,
-                        set2_home_score: match.set2_home_score || 0,
-                        set2_away_score: match.set2_away_score || 0,
-                        set3_home_score: match.set3_home_score || 0,
-                        set3_away_score: match.set3_away_score || 0,
-                      }}
-                      isEditing={false}
-                      onScoreChange={handleScoreChange}
-                      onSave={() => {}}
-                      onCancel={() => handleEditClick(match)}
-                    />
+                  <TableCell className="space-x-2 text-right">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleEditClick(match)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDeleteClick(match.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </>
               )}
@@ -287,6 +334,26 @@ export const MatchProgressSection = () => {
           ))}
         </TableBody>
       </Table>
+
+      <AlertDialog open={!!deleteMatchId} onOpenChange={() => setDeleteMatchId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the match record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

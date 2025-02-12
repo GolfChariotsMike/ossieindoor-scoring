@@ -108,6 +108,7 @@ export type Database = {
           away_total_points: number | null
           court_number: number
           created_at: string | null
+          deleted_at: string | null
           division: string | null
           home_bonus_points: number | null
           home_result: string | null
@@ -134,6 +135,7 @@ export type Database = {
           away_total_points?: number | null
           court_number: number
           created_at?: string | null
+          deleted_at?: string | null
           division?: string | null
           home_bonus_points?: number | null
           home_result?: string | null
@@ -160,6 +162,7 @@ export type Database = {
           away_total_points?: number | null
           court_number?: number
           created_at?: string | null
+          deleted_at?: string | null
           division?: string | null
           home_bonus_points?: number | null
           home_result?: string | null
