@@ -14,7 +14,7 @@ export const saveMatchScores = async (
 
   // Start a Supabase transaction
   const { error: transactionError } = await supabase.rpc('handle_match_data_update', {
-    p_match_id: matchId as unknown as string,
+    p_match_id: matchId,
     p_set1_home_score: homeScores[0] || 0,
     p_set1_away_score: awayScores[0] || 0,
     p_set2_home_score: homeScores[1] || 0,
@@ -38,3 +38,4 @@ export const saveMatchScores = async (
     description: "The match scores have been successfully recorded",
   });
 };
+
