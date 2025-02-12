@@ -1,7 +1,19 @@
+
 import { Match, SetScores } from "@/types/volleyball";
 import { Fireworks } from "./Fireworks";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useState, useRef } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ResultsScreenProps {
   match: Match;
@@ -11,6 +23,11 @@ interface ResultsScreenProps {
 }
 
 export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch }: ResultsScreenProps) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isLongPress, setIsLongPress] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout>();
+  const longPressDelay = 500;
+
   const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
     let setPoints = 0;
     let drawPoints = 0;
@@ -58,6 +75,43 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
     return "It's a Draw!";
   };
 
+  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Touch start');
+    timerRef.current = setTimeout(() => {
+      console.log('Long press detected');
+      setIsLongPress(true);
+      setDialogOpen(true);
+    }, longPressDelay);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Touch end, isLongPress:', isLongPress);
+    
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    
+    setIsLongPress(false);
+  };
+
+  const handleTouchCancel = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Touch cancelled');
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    setIsLongPress(false);
+  };
+
+  const handleStartNext = () => {
+    if (onStartNextMatch) {
+      onStartNextMatch();
+      setDialogOpen(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center">
       <div className="absolute inset-0">
@@ -97,13 +151,35 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
               onClick={(e) => {
                 e.stopPropagation();
                 console.log('Next match button clicked');
-                onStartNextMatch();
               }}
-              className="bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchCancel}
+              onMouseDown={handleTouchStart}
+              onMouseUp={handleTouchEnd}
+              onMouseLeave={handleTouchCancel}
+              className={`bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale
+                ${isLongPress ? 'bg-volleyball-red/70' : 'bg-volleyball-red'}`}
             >
               <ArrowRight className="w-8 h-8 mr-3" />
               Start Next Match
             </Button>
+
+            <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure you want to start the next match?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action should only be used if you are ready to proceed to the next match. 
+                    Make sure all scores and results have been recorded correctly before proceeding.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleStartNext}>Start Next Match</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
       </div>
