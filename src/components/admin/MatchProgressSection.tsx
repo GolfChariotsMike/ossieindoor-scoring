@@ -131,7 +131,7 @@ export const MatchProgressSection = () => {
         }
         
         try {
-          const matchDate = parseISO(match.start_time);
+          const matchDate = new Date(match.start_time);
           const dayMatch = format(matchDate, 'EEEE') === selectedDay;
           if (!dayMatch) return false;
         } catch (error) {
@@ -207,10 +207,10 @@ export const MatchProgressSection = () => {
           {filteredMatches.map((match) => (
             <TableRow key={match.id}>
               <TableCell>
-                {format(parseISO(match.start_time), 'dd/MM/yyyy HH:mm')}
+                {match.start_time ? format(new Date(match.start_time), 'dd/MM/yyyy HH:mm') : 'N/A'}
               </TableCell>
               <TableCell>
-                {format(parseISO(match.start_time), 'EEEE')}
+                {match.start_time ? format(new Date(match.start_time), 'EEEE') : 'N/A'}
               </TableCell>
               <TableCell>Court {match.court_number}</TableCell>
               <TableCell>{match.division || 'N/A'}</TableCell>

@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -28,8 +29,8 @@ const CourtFixtures = () => {
     ? matches
         .filter((match: Fixture) => match.PlayingAreaName === `Court ${courtId}`)
         .sort((a: Fixture, b: Fixture) => {
-          const timeA = parse(a.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-          const timeB = parse(b.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+          const timeA = new Date(a.DateTime);
+          const timeB = new Date(b.DateTime);
           return timeA.getTime() - timeB.getTime();
         })
     : [];
@@ -97,7 +98,7 @@ const CourtFixtures = () => {
                 <div className="flex flex-col w-full">
                   <div className="flex justify-between items-center w-full">
                     <div className="font-semibold text-2xl min-w-[120px]">
-                      {format(parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date()), 'h:mm a')}
+                      {format(new Date(fixture.DateTime), 'HH:mm')}
                     </div>
                     <div className="text-center flex-1 px-4 text-2xl">
                       {fixture.HomeTeam} vs {fixture.AwayTeam}
