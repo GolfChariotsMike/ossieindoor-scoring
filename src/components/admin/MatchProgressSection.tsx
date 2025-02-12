@@ -98,9 +98,10 @@ export const MatchProgressSection = () => {
 
       if (!matchData) throw new Error('Match not found');
 
+      // Create a new record instead of updating existing one
       const { data, error } = await supabase
         .from('match_data_v2')
-        .upsert({
+        .insert({
           match_id: variables.matchId,
           court_number: matchData.court_number,
           division: matchData.division,
@@ -134,10 +135,30 @@ export const MatchProgressSection = () => {
 
   const deleteMatchMutation = useMutation({
     mutationFn: async (matchId: string) => {
+      // Instead of deleting, we'll create a new record with null scores
+      const { data: matchData } = await supabase
+        .from('matches_v2')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
+      if (!matchData) throw new Error('Match not found');
+
       const { error } = await supabase
         .from('match_data_v2')
-        .delete()
-        .eq('match_id', matchId);
+        .insert({
+          match_id: matchId,
+          court_number: matchData.court_number,
+          division: matchData.division,
+          home_team_name: matchData.home_team_name,
+          away_team_name: matchData.away_team_name,
+          set1_home_score: null,
+          set1_away_score: null,
+          set2_home_score: null,
+          set2_away_score: null,
+          set3_home_score: null,
+          set3_away_score: null
+        });
 
       if (error) throw error;
     },
@@ -145,15 +166,15 @@ export const MatchProgressSection = () => {
       queryClient.invalidateQueries({ queryKey: ["match-progress"] });
       toast({
         title: "Success",
-        description: "Match record deleted successfully",
+        description: "Match record cleared successfully",
       });
       setDeleteMatchId(null);
     },
     onError: (error) => {
-      console.error('Error deleting match:', error);
+      console.error('Error clearing match:', error);
       toast({
         title: "Error",
-        description: "Failed to delete match record",
+        description: "Failed to clear match record",
         variant: "destructive",
       });
     },
