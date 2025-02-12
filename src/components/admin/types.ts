@@ -23,3 +23,4 @@ export interface MatchProgressItem {
   set3_away_score?: number;
   has_final_score: boolean;
 }
+

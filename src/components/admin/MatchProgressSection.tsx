@@ -62,6 +62,32 @@ export const MatchProgressSection = () => {
     },
   });
 
+  const handleEditClick = (match: MatchProgressItem) => {
+    setEditingMatchId(match.id);
+    setEditedScores({
+      set1_home_score: match.set1_home_score || 0,
+      set1_away_score: match.set1_away_score || 0,
+      set2_home_score: match.set2_home_score || 0,
+      set2_away_score: match.set2_away_score || 0,
+      set3_home_score: match.set3_home_score || 0,
+      set3_away_score: match.set3_away_score || 0,
+    });
+  };
+
+  const handleScoreChange = (setNumber: 1 | 2 | 3, team: 'home' | 'away', value: number) => {
+    if (!editedScores) return;
+    
+    setEditedScores({
+      ...editedScores,
+      [`set${setNumber}_${team}_score`]: value,
+    });
+  };
+
+  const handleSaveClick = (matchId: string) => {
+    if (!editedScores) return;
+    updateScoresMutation.mutate({ matchId, scores: editedScores });
+  };
+
   const updateScoresMutation = useMutation({
     mutationFn: async (variables: { matchId: string; scores: MatchScore }) => {
       const { data: matchData } = await supabase
@@ -132,32 +158,6 @@ export const MatchProgressSection = () => {
       });
     },
   });
-
-  const handleEditClick = (match: MatchProgressItem) => {
-    setEditingMatchId(match.id);
-    setEditedScores({
-      set1_home_score: match.set1_home_score || 0,
-      set1_away_score: match.set1_away_score || 0,
-      set2_home_score: match.set2_home_score || 0,
-      set2_away_score: match.set2_away_score || 0,
-      set3_home_score: match.set3_home_score || 0,
-      set3_away_score: match.set3_away_score || 0,
-    });
-  };
-
-  const handleScoreChange = (setNumber: 1 | 2 | 3, team: 'home' | 'away', value: number) => {
-    if (!editedScores) return;
-    
-    setEditedScores({
-      ...editedScores,
-      [`set${setNumber}_${team}_score`]: value,
-    });
-  };
-
-  const handleSaveClick = (matchId: string) => {
-    if (!editedScores) return;
-    updateScoresMutation.mutate({ matchId, scores: editedScores });
-  };
 
   const handleDeleteClick = (matchId: string) => {
     setDeleteMatchId(matchId);
@@ -358,4 +358,3 @@ export const MatchProgressSection = () => {
     </div>
   );
 };
-
