@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 import { Search, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -109,7 +110,7 @@ export const MatchProgressSection = () => {
     mutationFn: async (matchId: string) => {
       const { error } = await supabase
         .from('match_data_v2')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq('match_id', matchId);
 
       if (error) throw error;
@@ -357,3 +358,4 @@ export const MatchProgressSection = () => {
     </div>
   );
 };
+
