@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 import { Search, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -43,9 +44,8 @@ export const MatchProgressSection = () => {
     queryFn: async () => {
       console.log('MatchProgressSection: Fetching match progress data');
       const { data, error } = await supabase
-        .from('match_progress_view')
+        .from('matches_v2')
         .select('*')
-        .eq('is_active', true)
         .order('start_time', { ascending: false });
 
       if (error) {
@@ -92,7 +92,7 @@ export const MatchProgressSection = () => {
     mutationFn: async (variables: { matchId: string; scores: MatchScore }) => {
       console.log('Updating match scores:', variables);
       
-      const { error } = await supabase.rpc('handle_match_data_update', {
+      const { error } = await supabase.rpc('update_match_scores', {
         p_match_id: variables.matchId,
         p_set1_home_score: variables.scores.set1_home_score,
         p_set1_away_score: variables.scores.set1_away_score,
@@ -103,7 +103,7 @@ export const MatchProgressSection = () => {
       });
 
       if (error) {
-        console.error('Error in handle_match_data_update:', error);
+        console.error('Error in update_match_scores:', error);
         throw error;
       }
     },
@@ -129,9 +129,9 @@ export const MatchProgressSection = () => {
   const deleteMatchMutation = useMutation({
     mutationFn: async (matchId: string) => {
       const { error } = await supabase
-        .from('match_data_v2')
-        .update({ is_active: false })
-        .eq('match_id', matchId);
+        .from('matches_v2')
+        .update({ match_status: 'deleted' })
+        .eq('id', matchId);
 
       if (error) throw error;
     },
@@ -166,6 +166,7 @@ export const MatchProgressSection = () => {
   const days = ["all", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
   const filteredMatches = matchProgress
+    .filter(match => match.match_status !== 'deleted')
     .filter(match => {
       if (selectedDay !== "all") {
         if (!match.start_time) {
@@ -301,10 +302,20 @@ export const MatchProgressSection = () => {
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={match.has_final_score ? "default" : "secondary"}
-                      className={match.has_final_score ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}
+                      variant={match.match_status === 'completed' ? "default" : "secondary"}
+                      className={
+                        match.match_status === 'completed' 
+                          ? "bg-green-100 text-green-800" 
+                          : match.match_status === 'in_progress'
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
+                      }
                     >
-                      {match.has_final_score ? "Final Score Saved" : "Match In Progress"}
+                      {match.match_status === 'completed' 
+                        ? "Final Score" 
+                        : match.match_status === 'in_progress'
+                        ? "In Progress"
+                        : "Pending"}
                     </Badge>
                   </TableCell>
                   <TableCell className="space-x-2 text-right">
