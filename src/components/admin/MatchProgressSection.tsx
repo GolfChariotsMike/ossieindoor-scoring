@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 import { Search, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -27,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MatchScore, MatchProgressItem } from "./types";
+import { MatchScore, MatchProgressItem, MatchStatus } from "./types";
 import { MatchScoreEditor } from "./MatchScoreEditor";
 
 export const MatchProgressSection = () => {
@@ -58,7 +57,10 @@ export const MatchProgressSection = () => {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(match => ({
+        ...match,
+        match_status: (match.match_status || 'pending') as MatchStatus
+      }));
     },
   });
 
@@ -130,7 +132,7 @@ export const MatchProgressSection = () => {
     mutationFn: async (matchId: string) => {
       const { error } = await supabase
         .from('matches_v2')
-        .update({ match_status: 'deleted' })
+        .update({ match_status: 'deleted' as MatchStatus })
         .eq('id', matchId);
 
       if (error) throw error;
