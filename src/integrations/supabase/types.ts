@@ -481,7 +481,18 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      handle_match_data_update: {
+        Args: {
+          p_match_id: string
+          p_set1_home_score: number
+          p_set1_away_score: number
+          p_set2_home_score: number
+          p_set2_away_score: number
+          p_set3_home_score: number
+          p_set3_away_score: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       time_preference_type: "good" | "bad"
