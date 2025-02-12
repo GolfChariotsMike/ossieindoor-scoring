@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 import { Search, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -90,29 +89,18 @@ export const MatchProgressSection = () => {
 
   const updateScoresMutation = useMutation({
     mutationFn: async (variables: { matchId: string; scores: MatchScore }) => {
-      const { data: matchData } = await supabase
-        .from('matches_v2')
-        .select('*')
-        .eq('id', variables.matchId)
-        .single();
-
-      if (!matchData) throw new Error('Match not found');
-
-      // Create a new record instead of updating existing one
-      const { data, error } = await supabase
-        .from('match_data_v2')
-        .insert({
-          match_id: variables.matchId,
-          court_number: matchData.court_number,
-          division: matchData.division,
-          home_team_name: matchData.home_team_name,
-          away_team_name: matchData.away_team_name,
-          ...variables.scores,
-        })
-        .select();
+      const { error } = await supabase.rpc('handle_match_data_update', {
+        p_match_id: variables.matchId,
+        p_set1_home_score: variables.scores.set1_home_score,
+        p_set1_away_score: variables.scores.set1_away_score,
+        p_set2_home_score: variables.scores.set2_home_score,
+        p_set2_away_score: variables.scores.set2_away_score,
+        p_set3_home_score: variables.scores.set3_home_score,
+        p_set3_away_score: variables.scores.set3_away_score
+      });
 
       if (error) throw error;
-      return data;
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["match-progress"] });
@@ -135,32 +123,33 @@ export const MatchProgressSection = () => {
 
   const deleteMatchMutation = useMutation({
     mutationFn: async (matchId: string) => {
-      // Instead of deleting, we'll create a new record with null scores
-      const { data: matchData } = await supabase
+      const { error } = await supabase
         .from('matches_v2')
         .select('*')
         .eq('id', matchId)
         .single();
 
-      if (!matchData) throw new Error('Match not found');
+      if (!error) {
+        const { error: deleteError } = await supabase
+          .from('match_data_v2')
+          .insert({
+            match_id: matchId,
+            court_number: null,
+            division: null,
+            home_team_name: null,
+            away_team_name: null,
+            set1_home_score: null,
+            set1_away_score: null,
+            set2_home_score: null,
+            set2_away_score: null,
+            set3_home_score: null,
+            set3_away_score: null
+          });
 
-      const { error } = await supabase
-        .from('match_data_v2')
-        .insert({
-          match_id: matchId,
-          court_number: matchData.court_number,
-          division: matchData.division,
-          home_team_name: matchData.home_team_name,
-          away_team_name: matchData.away_team_name,
-          set1_home_score: null,
-          set1_away_score: null,
-          set2_home_score: null,
-          set2_away_score: null,
-          set3_home_score: null,
-          set3_away_score: null
-        });
-
-      if (error) throw error;
+        if (deleteError) throw deleteError;
+      } else {
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["match-progress"] });
