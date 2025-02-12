@@ -69,19 +69,6 @@ export const LeaderboardSection = () => {
     queryKey: ["team-statistics", selectedDay],
     queryFn: async () => {
       console.log('LeaderboardSection: Fetching team statistics');
-      
-      // First get distinct match IDs with their latest record
-      const { data: latestMatchData, error: latestMatchError } = await supabase
-        .from('match_data_v2')
-        .select('match_id, created_at')
-        .order('created_at', { ascending: false });
-
-      if (latestMatchError) throw latestMatchError;
-
-      // Get unique latest records for each match
-      const latestMatchIds = Array.from(new Set(latestMatchData.map(m => m.match_id)));
-
-      // Now fetch the team statistics using only the latest match records
       const { data, error } = await supabase
         .from("team_statistics")
         .select(`
