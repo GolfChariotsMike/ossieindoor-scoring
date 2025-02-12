@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 import { Search, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -91,14 +90,8 @@ export const MatchProgressSection = () => {
 
   const updateScoresMutation = useMutation({
     mutationFn: async (variables: { matchId: string; scores: MatchScore }) => {
-      const { data: matchData } = await supabase
-        .from('matches_v2')
-        .select('*')
-        .eq('id', variables.matchId)
-        .single();
-
-      if (!matchData) throw new Error('Match not found');
-
+      console.log('Updating match scores:', variables);
+      
       const { error } = await supabase.rpc('handle_match_data_update', {
         p_match_id: variables.matchId,
         p_set1_home_score: variables.scores.set1_home_score,
@@ -109,7 +102,10 @@ export const MatchProgressSection = () => {
         p_set3_away_score: variables.scores.set3_away_score
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error in handle_match_data_update:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["match-progress"] });
@@ -124,7 +120,7 @@ export const MatchProgressSection = () => {
       console.error('Error updating scores:', error);
       toast({
         title: "Error",
-        description: "Failed to update match scores",
+        description: "Failed to update match scores. Please try again.",
         variant: "destructive",
       });
     },
