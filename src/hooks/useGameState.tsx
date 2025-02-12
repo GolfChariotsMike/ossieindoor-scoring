@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { isMatchCompleted } from "@/utils/scoringLogic";
@@ -124,10 +125,8 @@ export const useGameState = () => {
       [team]: increment ? prev[team] + 1 : Math.max(0, prev[team] - 1),
     }));
     
-    // If this is the first score of the game, record first set progress
     if (!wasGameStarted && increment && match) {
       console.log('First point scored, recording initial match progress');
-      // We'll record the initial score after the state updates
       setTimeout(() => {
         recordFirstSetProgress(match, 
           team === 'home' ? 1 : 0, 
@@ -144,7 +143,8 @@ export const useGameState = () => {
       currentScore,
       isTeamsSwitched,
       firstSetRecorded,
-      hasGameStarted
+      hasGameStarted,
+      setScores
     });
 
     if (!hasGameStarted) {
@@ -158,6 +158,7 @@ export const useGameState = () => {
         away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
       };
       
+      console.log('Break ended, recording set scores:', newSetScores);
       setSetScores(newSetScores);
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 });
@@ -167,7 +168,11 @@ export const useGameState = () => {
       setIsMatchComplete(matchComplete);
       
       if (matchComplete && match) {
-        console.log('Match complete, saving final scores');
+        console.log('Match complete, saving final scores:', {
+          matchId: match.id,
+          homeScores: newSetScores.home,
+          awayScores: newSetScores.away
+        });
         saveMatchScores(match.id, newSetScores.home, newSetScores.away);
       }
       
@@ -176,11 +181,39 @@ export const useGameState = () => {
         description: matchComplete ? "The match has ended" : "Starting next set",
       });
     } else {
+      // Only proceed if there are actual scores
+      if (currentScore.home === 0 && currentScore.away === 0) {
+        console.log('Skipping set completion - no scores recorded');
+        return;
+      }
+
+      const currentSetScores = {
+        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
+        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
+      };
+
+      console.log('Set completed, current scores:', currentSetScores);
+      
+      // Save current set scores even if we're going to break
+      setSetScores(currentSetScores);
       setIsBreak(true);
-      toast({
-        title: "Set Complete",
-        description: "Starting 1 minute break",
-      });
+
+      // Check if this was the final set
+      if (currentSetScores.home.length >= 3 && match) {
+        console.log('Final set completed, saving match scores');
+        setIsMatchComplete(true);
+        saveMatchScores(match.id, currentSetScores.home, currentSetScores.away);
+        
+        toast({
+          title: "Match Complete",
+          description: "The match has ended and scores have been saved",
+        });
+      } else {
+        toast({
+          title: "Set Complete",
+          description: "Starting 1 minute break",
+        });
+      }
     }
   };
 

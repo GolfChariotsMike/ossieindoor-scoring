@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MatchPhase } from "./types";
 
@@ -38,7 +39,7 @@ export const useTimer = ({
     const currentIndex = phases.indexOf(matchPhase);
     const nextPhase = phases[currentIndex + 1];
     
-    console.log('Current phase:', matchPhase, 'Next phase:', nextPhase);
+    console.log('Timer - Current phase:', matchPhase, 'Next phase:', nextPhase);
     
     if (nextPhase) {
       if (nextPhase.startsWith('set')) {
@@ -149,7 +150,11 @@ export const useTimer = ({
   };
 
   const handleSkipPhase = () => {
-    console.log('Skipping current phase:', matchPhase);
+    console.log('Timer - Skipping current phase:', matchPhase);
+    if (matchPhase === "set3" || matchPhase === "final_break") {
+      // Ensure onComplete is called before skipping to save scores
+      onComplete();
+    }
     setTimeLeft(0);
     progressToNextPhase();
   };
