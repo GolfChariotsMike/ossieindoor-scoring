@@ -46,6 +46,7 @@ export const MatchProgressSection = () => {
       const { data, error } = await supabase
         .from('match_progress_view')
         .select('*')
+        .eq('is_active', true)
         .order('start_time', { ascending: false });
 
       if (error) {
@@ -98,20 +99,17 @@ export const MatchProgressSection = () => {
 
       if (!matchData) throw new Error('Match not found');
 
-      const { data, error } = await supabase
-        .from('match_data_v2')
-        .upsert({
-          match_id: variables.matchId,
-          court_number: matchData.court_number,
-          division: matchData.division,
-          home_team_name: matchData.home_team_name,
-          away_team_name: matchData.away_team_name,
-          ...variables.scores,
-        })
-        .select();
+      const { error } = await supabase.rpc('handle_match_data_update', {
+        p_match_id: variables.matchId,
+        p_set1_home_score: variables.scores.set1_home_score,
+        p_set1_away_score: variables.scores.set1_away_score,
+        p_set2_home_score: variables.scores.set2_home_score,
+        p_set2_away_score: variables.scores.set2_away_score,
+        p_set3_home_score: variables.scores.set3_home_score,
+        p_set3_away_score: variables.scores.set3_away_score
+      });
 
       if (error) throw error;
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["match-progress"] });
@@ -136,7 +134,7 @@ export const MatchProgressSection = () => {
     mutationFn: async (matchId: string) => {
       const { error } = await supabase
         .from('match_data_v2')
-        .delete()
+        .update({ is_active: false })
         .eq('match_id', matchId);
 
       if (error) throw error;

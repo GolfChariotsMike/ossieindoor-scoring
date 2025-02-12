@@ -22,5 +22,13 @@ export interface MatchProgressItem {
   set3_home_score?: number;
   set3_away_score?: number;
   has_final_score: boolean;
+  home_total_points?: number;
+  away_total_points?: number;
+  home_result?: string;
+  away_result?: string;
+  home_bonus_points?: number;
+  away_bonus_points?: number;
+  home_total_match_points?: number;
+  away_total_match_points?: number;
+  is_active: boolean;
 }
-

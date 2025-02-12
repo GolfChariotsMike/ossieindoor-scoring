@@ -463,12 +463,21 @@ export type Database = {
     Views: {
       match_progress_view: {
         Row: {
+          away_bonus_points: number | null
+          away_result: string | null
           away_team_name: string | null
+          away_total_match_points: number | null
+          away_total_points: number | null
           court_number: number | null
           division: string | null
           has_final_score: boolean | null
+          home_bonus_points: number | null
+          home_result: string | null
           home_team_name: string | null
+          home_total_match_points: number | null
+          home_total_points: number | null
           id: string | null
+          is_active: boolean | null
           set1_away_score: number | null
           set1_home_score: number | null
           set2_away_score: number | null
