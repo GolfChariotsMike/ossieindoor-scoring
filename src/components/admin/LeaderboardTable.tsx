@@ -25,6 +25,7 @@ export const LeaderboardTable = ({ stats, onTeamClick }: LeaderboardTableProps) 
             <TableHead className="text-center">Played</TableHead>
             <TableHead className="text-center">Won</TableHead>
             <TableHead className="text-center">Lost</TableHead>
+            <TableHead className="text-center">Drawn</TableHead>
             <TableHead className="text-center">Points For</TableHead>
             <TableHead className="text-center">Points Against</TableHead>
             <TableHead className="text-center">%</TableHead>
@@ -35,20 +36,21 @@ export const LeaderboardTable = ({ stats, onTeamClick }: LeaderboardTableProps) 
         </TableHeader>
         <TableBody>
           {stats.map((stat, index) => (
-            <TableRow key={stat.team_name}>
+            <TableRow key={stat.id}>
               <TableCell>{index + 1}</TableCell>
-              <TableCell className="font-medium">{stat.team_name}</TableCell>
-              <TableCell className="text-center">{stat.matches_played}</TableCell>
-              <TableCell className="text-center">{Number(stat.wins).toFixed(1)}</TableCell>
-              <TableCell className="text-center">{Number(stat.losses).toFixed(1)}</TableCell>
-              <TableCell className="text-center">{stat.total_points_for}</TableCell>
-              <TableCell className="text-center">{stat.total_points_against}</TableCell>
-              <TableCell className="text-center">{stat.points_percentage}%</TableCell>
+              <TableCell className="font-medium">{stat.team.team_name}</TableCell>
+              <TableCell className="text-center">{stat.games_played}</TableCell>
+              <TableCell className="text-center">{stat.wins}</TableCell>
+              <TableCell className="text-center">{stat.losses}</TableCell>
+              <TableCell className="text-center">{stat.draws}</TableCell>
+              <TableCell className="text-center">{stat.points_for}</TableCell>
+              <TableCell className="text-center">{stat.points_against}</TableCell>
+              <TableCell className="text-center">{stat.points_percentage.toFixed(1)}%</TableCell>
               <TableCell className="text-center">{stat.bonus_points}</TableCell>
               <TableCell className="text-center font-bold">{stat.total_points}</TableCell>
               <TableCell>
                 <Button
-                  onClick={() => onTeamClick(stat.team_name)}
+                  onClick={() => onTeamClick(stat.team_id)}
                   variant="outline"
                   size="sm"
                 >

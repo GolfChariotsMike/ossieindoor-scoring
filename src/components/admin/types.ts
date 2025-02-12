@@ -8,8 +8,6 @@ export interface MatchScore {
   set3_away_score: number;
 }
 
-export type MatchStatus = 'pending' | 'in_progress' | 'completed' | 'deleted';
-
 export interface MatchProgressItem {
   id: string;
   start_time: string;
@@ -23,11 +21,5 @@ export interface MatchProgressItem {
   set2_away_score?: number;
   set3_home_score?: number;
   set3_away_score?: number;
-  match_status: MatchStatus;
-  home_total_points?: number;
-  away_total_points?: number;
-  home_sets_won?: number;
-  away_sets_won?: number;
-  home_bonus_points?: number;
-  away_bonus_points?: number;
+  has_final_score: boolean;
 }

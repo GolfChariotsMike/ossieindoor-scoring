@@ -118,9 +118,7 @@ export const TeamScoreHistory = ({ teamId, onClose }: TeamScoreHistoryProps) => 
                 
                 return (
                   <TableRow key={match.id}>
-                    <TableCell>
-                      {format(new Date(match.match_date), "dd/MM/yyyy")}
-                    </TableCell>
+                    <TableCell>{format(parseISO(match.match_date), "dd/MM/yyyy")}</TableCell>
                     <TableCell>
                       <div className={isHomeTeam ? "font-bold" : ""}>
                         {match.home_team_name}
