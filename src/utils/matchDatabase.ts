@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
@@ -21,15 +22,21 @@ export const saveMatchScores = async (
 
     if (matchError) throw matchError;
 
-    // Calculate total points
-    const homePointsFor = homeScores.reduce((acc, score) => acc + score, 0);
-    const awayPointsFor = awayScores.reduce((acc, score) => acc + score, 0);
+    // Calculate bonus points per set (1 point for scoring 10+ points in a set)
+    const homeBonusPoints = homeScores.reduce((acc, score) => 
+      acc + (score >= 10 ? 1 : 0), 0);
+    const awayBonusPoints = awayScores.reduce((acc, score) => 
+      acc + (score >= 10 ? 1 : 0), 0);
 
     // Calculate sets won
     const homeSetsWon = homeScores.reduce((acc, score, index) => 
       acc + (score > awayScores[index] ? 1 : 0), 0);
     const awaySetsWon = homeScores.reduce((acc, score, index) => 
       acc + (score < awayScores[index] ? 1 : 0), 0);
+
+    // Calculate match points (2 points per set won + bonus points)
+    const homeMatchPoints = (homeSetsWon * 2) + homeBonusPoints;
+    const awayMatchPoints = (awaySetsWon * 2) + awayBonusPoints;
 
     // Determine match result
     const getResult = (isHomeTeam: boolean) => {
@@ -39,14 +46,6 @@ export const saveMatchScores = async (
       if (teamSetsWon < opponentSetsWon) return 'L';
       return 'D';
     };
-
-    // Calculate bonus points (1 point per 10 points scored)
-    const homeBonusPoints = Math.floor(homePointsFor / 10);
-    const awayBonusPoints = Math.floor(awayPointsFor / 10);
-
-    // Calculate total match points (bonus points + set points)
-    const homeMatchPoints = homeBonusPoints + (homeSetsWon * 2);
-    const awayMatchPoints = awayBonusPoints + (awaySetsWon * 2);
 
     // Check for existing match data
     const { data: existingData } = await supabase
@@ -66,8 +65,8 @@ export const saveMatchScores = async (
           set2_away_score: awayScores[1] || 0,
           set3_home_score: homeScores[2] || 0,
           set3_away_score: awayScores[2] || 0,
-          home_total_points: homePointsFor,
-          away_total_points: awayPointsFor,
+          home_total_points: homeScores.reduce((acc, score) => acc + score, 0),
+          away_total_points: awayScores.reduce((acc, score) => acc + score, 0),
           home_result: getResult(true),
           away_result: getResult(false),
           home_bonus_points: homeBonusPoints,
@@ -94,8 +93,8 @@ export const saveMatchScores = async (
           set2_away_score: awayScores[1] || 0,
           set3_home_score: homeScores[2] || 0,
           set3_away_score: awayScores[2] || 0,
-          home_total_points: homePointsFor,
-          away_total_points: awayPointsFor,
+          home_total_points: homeScores.reduce((acc, score) => acc + score, 0),
+          away_total_points: awayScores.reduce((acc, score) => acc + score, 0),
           home_result: getResult(true),
           away_result: getResult(false),
           home_bonus_points: homeBonusPoints,
