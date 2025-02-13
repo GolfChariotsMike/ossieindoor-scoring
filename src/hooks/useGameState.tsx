@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { isMatchCompleted } from "@/utils/scoringLogic";
 import { saveMatchScores } from "@/utils/matchDatabase";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 
@@ -16,6 +17,7 @@ export const useGameState = () => {
   const [firstSetRecorded, setFirstSetRecorded] = useState(false);
 
   const resetGameState = () => {
+    console.log('Resetting game state');
     setCurrentScore({ home: 0, away: 0 });
     setSetScores({ home: [], away: [] });
     setIsBreak(false);
@@ -27,7 +29,7 @@ export const useGameState = () => {
 
   const recordFirstSetProgress = async (match: Match | Fixture, homeScore: number, awayScore: number) => {
     try {
-      console.log('Starting recordFirstSetProgress with:', {
+      console.log('Recording first set progress:', {
         match,
         homeScore,
         awayScore,
@@ -56,16 +58,14 @@ export const useGameState = () => {
       const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
       const matchCode = `${courtNumber}-${formattedDate}`;
 
-      // Insert into matches_v2 first
+      // Insert or update match record
       const { data: matchData, error: matchError } = await supabase
         .from('matches_v2')
-        .insert({
+        .upsert({
           match_code: matchCode,
           court_number: courtNumber,
           division: division,
-          home_team_id: 'Id' in match ? match.HomeTeamId : match.homeTeam.id,
           home_team_name: homeTeamName,
-          away_team_id: 'Id' in match ? match.AwayTeamId : match.awayTeam.id,
           away_team_name: awayTeamName,
           start_time: matchDate.toISOString()
         })
@@ -73,11 +73,11 @@ export const useGameState = () => {
         .single();
 
       if (matchError) {
-        console.error('Error inserting match:', matchError);
+        console.error('Error recording match:', matchError);
         throw matchError;
       }
 
-      // Then insert into match_data_v2
+      // Record initial scores
       const { error: dataError } = await supabase
         .from('match_data_v2')
         .insert({
@@ -88,21 +88,18 @@ export const useGameState = () => {
           away_team_name: awayTeamName,
           set1_home_score: finalHomeScore,
           set1_away_score: finalAwayScore,
-          match_date: matchDate.toISOString()
+          match_date: matchDate.toISOString(),
+          has_final_score: false
         });
 
       if (dataError) {
-        console.error('Error inserting match data:', dataError);
+        console.error('Error recording match data:', dataError);
         throw dataError;
       }
 
       console.log('Successfully recorded first set progress');
       setFirstSetRecorded(true);
       
-      toast({
-        title: "First Set Recorded",
-        description: "The first set scores have been saved",
-      });
     } catch (error) {
       console.error('Error in recordFirstSetProgress:', error);
       toast({
@@ -114,20 +111,26 @@ export const useGameState = () => {
   };
 
   const handleScore = (team: "home" | "away", increment: boolean, match?: Match | Fixture) => {
-    if (isMatchComplete) return;
+    if (isMatchComplete) {
+      console.log('Match is complete, ignoring score update');
+      return;
+    }
     
     const wasGameStarted = hasGameStarted;
     setHasGameStarted(true);
     
-    setCurrentScore((prev) => ({
-      ...prev,
-      [team]: increment ? prev[team] + 1 : Math.max(0, prev[team] - 1),
-    }));
+    setCurrentScore((prev) => {
+      const newScore = {
+        ...prev,
+        [team]: increment ? prev[team] + 1 : Math.max(0, prev[team] - 1),
+      };
+      console.log('Updated score:', newScore);
+      return newScore;
+    });
     
     // If this is the first score of the game, record first set progress
     if (!wasGameStarted && increment && match) {
       console.log('First point scored, recording initial match progress');
-      // We'll record the initial score after the state updates
       setTimeout(() => {
         recordFirstSetProgress(match, 
           team === 'home' ? 1 : 0, 
@@ -138,7 +141,7 @@ export const useGameState = () => {
   };
 
   const handleTimerComplete = (match?: Match | Fixture) => {
-    console.log('handleTimerComplete called with:', {
+    console.log('Timer complete:', {
       match,
       isBreak,
       currentScore,
@@ -158,6 +161,7 @@ export const useGameState = () => {
         away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
       };
       
+      console.log('New set scores:', newSetScores);
       setSetScores(newSetScores);
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 });
@@ -185,7 +189,11 @@ export const useGameState = () => {
   };
 
   const handleSwitchTeams = () => {
-    if (isMatchComplete) return;
+    if (isMatchComplete) {
+      console.log('Match is complete, ignoring team switch');
+      return;
+    }
+    console.log('Switching teams');
     setIsTeamsSwitched(!isTeamsSwitched);
     setCurrentScore((prev) => ({
       home: prev.away,
