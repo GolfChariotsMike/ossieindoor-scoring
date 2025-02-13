@@ -54,20 +54,26 @@ export const useGameState = () => {
       const finalHomeScore = isTeamsSwitched ? awayScore : homeScore;
       const finalAwayScore = isTeamsSwitched ? homeScore : awayScore;
 
-      // Generate match code
-      const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
-      const matchCode = `${courtNumber}-${formattedDate}`;
+      // Generate IDs for teams if not available
+      const generateTeamId = (teamName: string) => {
+        return `team_${teamName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+      };
+
+      const homeTeamId = 'id' in match.homeTeam ? match.homeTeam.id : generateTeamId(homeTeamName);
+      const awayTeamId = 'id' in match.awayTeam ? match.awayTeam.id : generateTeamId(awayTeamName);
 
       // Insert or update match record
       const { data: matchData, error: matchError } = await supabase
         .from('matches_v2')
         .upsert({
-          match_code: matchCode,
           court_number: courtNumber,
           division: division,
           home_team_name: homeTeamName,
           away_team_name: awayTeamName,
-          start_time: matchDate.toISOString()
+          home_team_id: homeTeamId,
+          away_team_id: awayTeamId,
+          start_time: matchDate.toISOString(),
+          match_status: 'in_progress'
         })
         .select()
         .single();
