@@ -8,13 +8,26 @@ export const saveMatchScores = async (
   homeScores: number[], 
   awayScores: number[]
 ) => {
+  // Log initial input
+  console.log('Starting saveMatchScores with:', {
+    matchId,
+    homeScores,
+    awayScores,
+    timestamp: new Date().toISOString()
+  });
+
   if (!matchId || !homeScores.length || !awayScores.length) {
     console.error('Invalid match data:', { matchId, homeScores, awayScores });
+    toast({
+      title: "Error saving scores",
+      description: "Invalid match data provided",
+      variant: "destructive",
+    });
     return;
   }
 
   try {
-    console.log('Saving match scores:', { matchId, homeScores, awayScores });
+    console.log('Fetching match details for ID:', matchId);
     
     // Get match details
     const { data: matchData, error: matchError } = await supabase
@@ -32,6 +45,8 @@ export const saveMatchScores = async (
       console.error('No match found with ID:', matchId);
       throw new Error('Match not found');
     }
+
+    console.log('Found match data:', matchData);
 
     // Calculate total points
     const homePointsFor = homeScores.reduce((acc, score) => acc + score, 0);
@@ -70,7 +85,11 @@ export const saveMatchScores = async (
       homeBonusPoints,
       awayBonusPoints,
       homeMatchPoints,
-      awayMatchPoints
+      awayMatchPoints,
+      allScores: {
+        home: homeScores,
+        away: awayScores
+      }
     });
 
     // Prepare match data record
@@ -99,15 +118,25 @@ export const saveMatchScores = async (
       save_attempted_at: new Date().toISOString()
     };
 
+    console.log('Prepared match data record:', matchDataRecord);
+
     // Check for existing match data
-    const { data: existingData } = await supabase
+    const { data: existingData, error: existingError } = await supabase
       .from('match_data_v2')
       .select('id')
       .eq('match_id', matchId)
       .maybeSingle();
 
+    if (existingError) {
+      console.error('Error checking existing match data:', existingError);
+      throw existingError;
+    }
+
+    console.log('Existing data check result:', existingData);
+
     if (existingData) {
       // Update existing record
+      console.log('Updating existing record with ID:', existingData.id);
       const { error: updateError } = await supabase
         .from('match_data_v2')
         .update(matchDataRecord)
@@ -119,6 +148,7 @@ export const saveMatchScores = async (
       }
     } else {
       // Insert new record
+      console.log('Inserting new match data record');
       const { error: insertError } = await supabase
         .from('match_data_v2')
         .insert(matchDataRecord);
@@ -139,7 +169,7 @@ export const saveMatchScores = async (
     console.error('Error saving match scores:', error);
     toast({
       title: "Error saving scores",
-      description: "There was a problem saving the match scores",
+      description: "There was a problem saving the match scores. Please check the console for details.",
       variant: "destructive",
     });
   }
