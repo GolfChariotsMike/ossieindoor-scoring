@@ -52,9 +52,11 @@ export const saveMatchScores = async (
       return 'D';
     };
 
-    // Calculate bonus points (1 point per 10 points scored)
-    const homeBonusPoints = Math.floor(homePointsFor / 10);
-    const awayBonusPoints = Math.floor(awayPointsFor / 10);
+    // Calculate bonus points per set (1 point per 10 points in each set)
+    const homeBonusPoints = homeScores.reduce((total, setScore) => 
+      total + Math.floor(setScore / 10), 0);
+    const awayBonusPoints = awayScores.reduce((total, setScore) => 
+      total + Math.floor(setScore / 10), 0);
 
     // Calculate total match points (bonus points + set points)
     const homeMatchPoints = homeBonusPoints + (homeSetsWon * 2);
