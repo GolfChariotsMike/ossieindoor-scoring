@@ -62,10 +62,15 @@ export const useGameState = () => {
       const homeTeamId = 'id' in match.homeTeam ? match.homeTeam.id : generateTeamId(homeTeamName);
       const awayTeamId = 'id' in match.awayTeam ? match.awayTeam.id : generateTeamId(awayTeamName);
 
+      // Generate match code
+      const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
+      const matchCode = `${courtNumber}-${formattedDate}`;
+
       // Insert or update match record
       const { data: matchData, error: matchError } = await supabase
         .from('matches_v2')
         .upsert({
+          match_code: matchCode,
           court_number: courtNumber,
           division: division,
           home_team_name: homeTeamName,
@@ -73,7 +78,19 @@ export const useGameState = () => {
           home_team_id: homeTeamId,
           away_team_id: awayTeamId,
           start_time: matchDate.toISOString(),
-          match_status: 'in_progress'
+          match_status: 'in_progress',
+          home_sets_won: 0,
+          away_sets_won: 0,
+          home_bonus_points: 0,
+          away_bonus_points: 0,
+          home_total_points: 0,
+          away_total_points: 0,
+          set1_home_score: 0,
+          set1_away_score: 0,
+          set2_home_score: 0,
+          set2_away_score: 0,
+          set3_home_score: 0,
+          set3_away_score: 0
         })
         .select()
         .single();
