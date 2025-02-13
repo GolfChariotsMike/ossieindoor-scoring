@@ -9,6 +9,7 @@ export const useScoring = () => {
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
   const [firstSetRecorded, setFirstSetRecorded] = useState(false);
+  const [isMatchComplete, setIsMatchComplete] = useState(false);
 
   const { recordFirstSetProgress } = useMatchRecording(isTeamsSwitched);
 
@@ -57,10 +58,16 @@ export const useScoring = () => {
 
   return {
     currentScore,
+    setCurrentScore,
     setScores,
     isTeamsSwitched,
+    setIsTeamsSwitched,
     hasGameStarted,
+    setHasGameStarted,
     firstSetRecorded,
+    setFirstSetRecorded,
+    isMatchComplete,
+    setIsMatchComplete,
     handleScore,
     handleSwitchTeams,
     setSetScores

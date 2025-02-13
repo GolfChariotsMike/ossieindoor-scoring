@@ -8,13 +8,18 @@ import { useScoring } from "./useScoring";
 
 export const useGameState = () => {
   const [isBreak, setIsBreak] = useState(false);
-  const [isMatchComplete, setIsMatchComplete] = useState(false);
 
   const {
     currentScore,
+    setCurrentScore,
     setScores,
     isTeamsSwitched,
+    setIsTeamsSwitched,
     hasGameStarted,
+    setHasGameStarted,
+    setFirstSetRecorded,
+    isMatchComplete,
+    setIsMatchComplete,
     handleScore,
     handleSwitchTeams,
     setSetScores
