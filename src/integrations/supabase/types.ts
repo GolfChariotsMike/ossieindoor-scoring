@@ -79,6 +79,7 @@ export type Database = {
           id: string
           league_url: string | null
           name: string
+          season: string | null
           updated_at: string | null
         }
         Insert: {
@@ -87,6 +88,7 @@ export type Database = {
           id?: string
           league_url?: string | null
           name: string
+          season?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -95,6 +97,7 @@ export type Database = {
           id?: string
           league_url?: string | null
           name?: string
+          season?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -576,6 +579,7 @@ export type Database = {
           id: string
           notes: string | null
           preferred_time_slot: string | null
+          season: string | null
           team_name: string
           updated_at: string | null
         }
@@ -588,6 +592,7 @@ export type Database = {
           id?: string
           notes?: string | null
           preferred_time_slot?: string | null
+          season?: string | null
           team_name: string
           updated_at?: string | null
         }
@@ -600,6 +605,7 @@ export type Database = {
           id?: string
           notes?: string | null
           preferred_time_slot?: string | null
+          season?: string | null
           team_name?: string
           updated_at?: string | null
         }

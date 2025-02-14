@@ -1,15 +1,11 @@
 
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LeaderboardSection } from "./LeaderboardSection";
 import { MatchProgressSection } from "./MatchProgressSection";
 
 export const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [selectedSection, setSelectedSection] = useState<string>("matches");
 
   return (
     <div className="min-h-screen bg-volleyball-cream">
@@ -29,30 +25,7 @@ export const AdminDashboard = () => {
               <div className="w-[120px]" />
             </div>
 
-            <Tabs value={selectedSection} onValueChange={setSelectedSection} className="w-full">
-              <TabsList className="w-full justify-start bg-volleyball-cream">
-                <TabsTrigger 
-                  value="matches"
-                  className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
-                >
-                  Match Progress
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="leaderboards"
-                  className="data-[state=active]:bg-volleyball-black data-[state=active]:text-volleyball-cream"
-                >
-                  Leaderboards
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="matches">
-                <MatchProgressSection />
-              </TabsContent>
-
-              <TabsContent value="leaderboards">
-                <LeaderboardSection />
-              </TabsContent>
-            </Tabs>
+            <MatchProgressSection />
           </div>
         </div>
       </div>
