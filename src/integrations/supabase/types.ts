@@ -480,6 +480,7 @@ export type Database = {
           points_against: number | null
           points_for: number | null
           points_percentage: number | null
+          season: string | null
           team_id: string
           total_points: number | null
           updated_at: string | null
@@ -496,6 +497,7 @@ export type Database = {
           points_against?: number | null
           points_for?: number | null
           points_percentage?: number | null
+          season?: string | null
           team_id: string
           total_points?: number | null
           updated_at?: string | null
@@ -512,12 +514,20 @@ export type Database = {
           points_against?: number | null
           points_for?: number | null
           points_percentage?: number | null
+          season?: string | null
           team_id?: string
           total_points?: number | null
           updated_at?: string | null
           wins?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_team_statistics_team"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams_v2"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "team_statistics_division_id_fkey"
             columns: ["division_id"]
