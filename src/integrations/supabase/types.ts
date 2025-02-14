@@ -109,6 +109,7 @@ export type Database = {
           court_number: number
           created_at: string | null
           division: string | null
+          has_final_score: boolean | null
           home_bonus_points: number | null
           home_result: string | null
           home_team_name: string
@@ -136,6 +137,7 @@ export type Database = {
           court_number: number
           created_at?: string | null
           division?: string | null
+          has_final_score?: boolean | null
           home_bonus_points?: number | null
           home_result?: string | null
           home_team_name: string
@@ -163,6 +165,7 @@ export type Database = {
           court_number?: number
           created_at?: string | null
           division?: string | null
+          has_final_score?: boolean | null
           home_bonus_points?: number | null
           home_result?: string | null
           home_team_name?: string

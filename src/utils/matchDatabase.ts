@@ -114,8 +114,7 @@ export const saveMatchScores = async (
       home_total_match_points: homeMatchPoints,
       away_total_match_points: awayMatchPoints,
       match_date: matchData.start_time,
-      has_final_score: true,
-      save_attempted_at: new Date().toISOString()
+      has_final_score: true
     };
 
     console.log('Prepared match data record:', matchDataRecord);
