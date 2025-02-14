@@ -41,6 +41,7 @@ export const useGameState = () => {
       match,
       isBreak,
       currentScore,
+      setScores,
       isTeamsSwitched,
       hasGameStarted
     });
@@ -63,11 +64,25 @@ export const useGameState = () => {
       handleSwitchTeams();
       
       const matchComplete = isMatchCompleted(newSetScores);
+      console.log('Match completion check:', { matchComplete, newSetScores });
       setIsMatchComplete(matchComplete);
       
       if (matchComplete && match) {
-        console.log('Match complete, saving final scores');
-        saveMatchScores(match.id, newSetScores.home, newSetScores.away);
+        console.log('Match complete, saving final scores:', {
+          matchId: match.id,
+          newSetScores,
+          timestamp: new Date().toISOString()
+        });
+        try {
+          saveMatchScores(match.id, newSetScores.home, newSetScores.away);
+        } catch (error) {
+          console.error('Error while trying to save match scores:', error);
+          toast({
+            title: "Error Saving Scores",
+            description: "There was a problem saving the match scores. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
       
       toast({
