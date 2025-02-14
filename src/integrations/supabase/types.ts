@@ -102,6 +102,103 @@ export type Database = {
         }
         Relationships: []
       }
+      fixture_settings: {
+        Row: {
+          courts_per_slot: number
+          created_at: string | null
+          id: string
+          number_of_weeks: number
+          season: string
+          start_date: string
+          time_slots: number
+          updated_at: string | null
+        }
+        Insert: {
+          courts_per_slot: number
+          created_at?: string | null
+          id?: string
+          number_of_weeks: number
+          season: string
+          start_date: string
+          time_slots: number
+          updated_at?: string | null
+        }
+        Update: {
+          courts_per_slot?: number
+          created_at?: string | null
+          id?: string
+          number_of_weeks?: number
+          season?: string
+          start_date?: string
+          time_slots?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      fixtures: {
+        Row: {
+          away_team_id: string
+          court_number: number
+          created_at: string | null
+          division_id: string | null
+          fixture_date: string
+          home_team_id: string
+          id: string
+          round_number: number
+          season: string
+          time_slot: Database["public"]["Enums"]["time_slot_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          away_team_id: string
+          court_number: number
+          created_at?: string | null
+          division_id?: string | null
+          fixture_date: string
+          home_team_id: string
+          id?: string
+          round_number: number
+          season: string
+          time_slot: Database["public"]["Enums"]["time_slot_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          away_team_id?: string
+          court_number?: number
+          created_at?: string | null
+          division_id?: string | null
+          fixture_date?: string
+          home_team_id?: string
+          id?: string
+          round_number?: number
+          season?: string
+          time_slot?: Database["public"]["Enums"]["time_slot_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixtures_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixtures_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixtures_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_data_v2: {
         Row: {
           away_bonus_points: number | null
@@ -735,6 +832,7 @@ export type Database = {
     }
     Enums: {
       time_preference_type: "good" | "bad"
+      time_slot_type: "early" | "middle" | "late"
     }
     CompositeTypes: {
       [_ in never]: never
