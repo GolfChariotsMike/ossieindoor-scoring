@@ -1,7 +1,11 @@
+
 import { useEffect, useState } from 'react';
 import { FireworkParticle } from './FireworkParticle';
 import { FireworkLaunch } from './FireworkLaunch';
 import { FIREWORK_COLORS } from './fireworksUtils';
+
+let nextFireworkId = 1;
+const getUniqueId = () => `firework-${nextFireworkId++}`;
 
 export const Fireworks = () => {
   const [particles, setParticles] = useState<JSX.Element[]>([]);
@@ -12,11 +16,12 @@ export const Fireworks = () => {
       const centerY = window.innerHeight;
       const targetY = Math.random() * (window.innerHeight * 0.4) + window.innerHeight * 0.2;
       const color = FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)];
+      const fireworkId = getUniqueId();
 
       const handleExplode = () => {
-        const newParticles = Array.from({ length: 50 }, () => (
+        const newParticles = Array.from({ length: 50 }, (_, index) => (
           <FireworkParticle
-            key={Date.now() + Math.random()}
+            key={`${fireworkId}-particle-${index}`}
             x={centerX}
             y={targetY}
             color={color}
@@ -27,7 +32,7 @@ export const Fireworks = () => {
 
       return (
         <FireworkLaunch
-          key={Date.now()}
+          key={fireworkId}
           x={centerX}
           y={centerY}
           targetY={targetY}
