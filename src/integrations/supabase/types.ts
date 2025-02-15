@@ -636,7 +636,7 @@ export type Database = {
             foreignKeyName: "team_statistics_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: true
-            referencedRelation: "teams"
+            referencedRelation: "teams_v2"
             referencedColumns: ["id"]
           },
         ]
