@@ -133,29 +133,25 @@ export const saveMatchScores = async (
 
     console.log('Existing data check result:', existingData);
 
+    let result;
     if (existingData) {
       // Update existing record
       console.log('Updating existing record with ID:', existingData.id);
-      const { error: updateError } = await supabase
+      result = await supabase
         .from('match_data_v2')
         .update(matchDataRecord)
         .eq('id', existingData.id);
-
-      if (updateError) {
-        console.error('Error updating match data:', updateError);
-        throw updateError;
-      }
     } else {
       // Insert new record
       console.log('Inserting new match data record');
-      const { error: insertError } = await supabase
+      result = await supabase
         .from('match_data_v2')
         .insert(matchDataRecord);
+    }
 
-      if (insertError) {
-        console.error('Error inserting match data:', insertError);
-        throw insertError;
-      }
+    if (result.error) {
+      console.error('Error saving match data:', result.error);
+      throw result.error;
     }
 
     console.log('Successfully saved match scores');
