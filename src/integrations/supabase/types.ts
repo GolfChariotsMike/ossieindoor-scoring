@@ -621,7 +621,7 @@ export type Database = {
           {
             foreignKeyName: "fk_team_statistics_team"
             columns: ["team_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "teams_v2"
             referencedColumns: ["id"]
           },
@@ -635,7 +635,7 @@ export type Database = {
           {
             foreignKeyName: "team_statistics_team_id_fkey"
             columns: ["team_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
@@ -815,6 +815,10 @@ export type Database = {
           p_set3_home_score: number
           p_set3_away_score: number
         }
+        Returns: undefined
+      }
+      refresh_team_statistics_safe: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       update_match_scores: {
