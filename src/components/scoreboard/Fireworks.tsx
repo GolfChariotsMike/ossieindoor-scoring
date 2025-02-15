@@ -1,4 +1,8 @@
+
 import { useEffect, useState, CSSProperties } from 'react';
+
+let nextFireworkId = 1;
+const getUniqueId = () => `firework-${nextFireworkId++}`;
 
 export const Fireworks = () => {
   const [fireworks, setFireworks] = useState<JSX.Element[]>([]);
@@ -17,13 +21,12 @@ export const Fireworks = () => {
       '#ff69b4', // Hot Pink
     ];
 
-    const createParticle = (x: number, y: number, color: string) => {
+    const createParticle = (x: number, y: number, color: string, baseId: string) => {
       const angle = Math.random() * Math.PI * 2;
       const velocity = Math.random() * 7 + 5;
       const size = Math.random() * 6 + 4;
-      const duration = Math.random() * 2 + 8; // Changed from 18 to 8 seconds base duration
+      const duration = Math.random() * 2 + 8;
       const spread = Math.random() * 40 + 30;
-      const id = Date.now() + Math.random();
 
       const style: CSSProperties = {
         position: 'absolute',
@@ -45,7 +48,7 @@ export const Fireworks = () => {
 
       return (
         <div
-          key={id}
+          key={`${baseId}-particle-${angle}-${velocity}`}
           style={style}
         />
       );
@@ -57,7 +60,7 @@ export const Fireworks = () => {
       const centerY = window.innerHeight;
       const targetY = Math.random() * (window.innerHeight * 0.4) + window.innerHeight * 0.2;
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const id = Date.now();
+      const fireworkId = getUniqueId();
 
       const launchStyle: CSSProperties = {
         position: 'absolute',
@@ -76,12 +79,12 @@ export const Fireworks = () => {
 
       particles.push(
         <div
-          key={`launch-${id}`}
+          key={fireworkId}
           style={launchStyle}
           onAnimationEnd={(e) => {
             if (e.animationName === 'launch') {
-              const newParticles = Array.from({ length: 50 }, () =>
-                createParticle(centerX, targetY, color)
+              const newParticles = Array.from({ length: 50 }, (_, index) =>
+                createParticle(centerX, targetY, color, `${fireworkId}-${index}`)
               );
               setFireworks(prev => [...prev, ...newParticles]);
             }
