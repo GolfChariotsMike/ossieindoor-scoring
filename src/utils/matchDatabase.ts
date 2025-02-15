@@ -92,75 +92,36 @@ export const saveMatchScores = async (
       }
     });
 
-    // First check if a record exists
-    const { data: existingData } = await supabase
+    // Use upsert with match_id as the constraint
+    const { error: upsertError } = await supabase
       .from('match_data_v2')
-      .select('id')
-      .eq('match_id', matchId)
-      .single();
+      .upsert({
+        match_id: matchId,
+        court_number: matchData.court_number,
+        division: matchData.division,
+        home_team_name: matchData.home_team_name,
+        away_team_name: matchData.away_team_name,
+        set1_home_score: homeScores[0] || 0,
+        set1_away_score: awayScores[0] || 0,
+        set2_home_score: homeScores[1] || 0,
+        set2_away_score: awayScores[1] || 0,
+        set3_home_score: homeScores[2] || 0,
+        set3_away_score: awayScores[2] || 0,
+        home_total_points: homePointsFor,
+        away_total_points: awayPointsFor,
+        home_result: getResult(true),
+        away_result: getResult(false),
+        home_bonus_points: homeBonusPoints,
+        away_bonus_points: awayBonusPoints,
+        home_total_match_points: homeMatchPoints,
+        away_total_match_points: awayMatchPoints,
+        match_date: matchData.start_time,
+        has_final_score: true
+      });
 
-    let saveOperation;
-    if (existingData) {
-      // Update existing record
-      saveOperation = supabase
-        .from('match_data_v2')
-        .update({
-          court_number: matchData.court_number,
-          division: matchData.division,
-          home_team_name: matchData.home_team_name,
-          away_team_name: matchData.away_team_name,
-          set1_home_score: homeScores[0] || 0,
-          set1_away_score: awayScores[0] || 0,
-          set2_home_score: homeScores[1] || 0,
-          set2_away_score: awayScores[1] || 0,
-          set3_home_score: homeScores[2] || 0,
-          set3_away_score: awayScores[2] || 0,
-          home_total_points: homePointsFor,
-          away_total_points: awayPointsFor,
-          home_result: getResult(true),
-          away_result: getResult(false),
-          home_bonus_points: homeBonusPoints,
-          away_bonus_points: awayBonusPoints,
-          home_total_match_points: homeMatchPoints,
-          away_total_match_points: awayMatchPoints,
-          match_date: matchData.start_time,
-          has_final_score: true
-        })
-        .eq('match_id', matchId);
-    } else {
-      // Insert new record
-      saveOperation = supabase
-        .from('match_data_v2')
-        .insert({
-          match_id: matchId,
-          court_number: matchData.court_number,
-          division: matchData.division,
-          home_team_name: matchData.home_team_name,
-          away_team_name: matchData.away_team_name,
-          set1_home_score: homeScores[0] || 0,
-          set1_away_score: awayScores[0] || 0,
-          set2_home_score: homeScores[1] || 0,
-          set2_away_score: awayScores[1] || 0,
-          set3_home_score: homeScores[2] || 0,
-          set3_away_score: awayScores[2] || 0,
-          home_total_points: homePointsFor,
-          away_total_points: awayPointsFor,
-          home_result: getResult(true),
-          away_result: getResult(false),
-          home_bonus_points: homeBonusPoints,
-          away_bonus_points: awayBonusPoints,
-          home_total_match_points: homeMatchPoints,
-          away_total_match_points: awayMatchPoints,
-          match_date: matchData.start_time,
-          has_final_score: true
-        });
-    }
-
-    const { error: saveError } = await saveOperation;
-
-    if (saveError) {
-      console.error('Error saving match data:', saveError);
-      throw saveError;
+    if (upsertError) {
+      console.error('Error saving match data:', upsertError);
+      throw upsertError;
     }
 
     console.log('Successfully saved match scores');
