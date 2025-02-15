@@ -92,37 +92,32 @@ export const saveMatchScores = async (
       }
     });
 
-    // Prepare match data record
-    const matchDataRecord = {
-      match_id: matchId,
-      court_number: matchData.court_number,
-      division: matchData.division,
-      home_team_name: matchData.home_team_name,
-      away_team_name: matchData.away_team_name,
-      set1_home_score: homeScores[0] || 0,
-      set1_away_score: awayScores[0] || 0,
-      set2_home_score: homeScores[1] || 0,
-      set2_away_score: awayScores[1] || 0,
-      set3_home_score: homeScores[2] || 0,
-      set3_away_score: awayScores[2] || 0,
-      home_total_points: homePointsFor,
-      away_total_points: awayPointsFor,
-      home_result: getResult(true),
-      away_result: getResult(false),
-      home_bonus_points: homeBonusPoints,
-      away_bonus_points: awayBonusPoints,
-      home_total_match_points: homeMatchPoints,
-      away_total_match_points: awayMatchPoints,
-      match_date: matchData.start_time,
-      has_final_score: true
-    };
-
-    console.log('Prepared match data record:', matchDataRecord);
-
-    // Use upsert operation with match_id as the unique key
+    // Use insert operation with on_conflict parameter
     const { error: upsertError } = await supabase
       .from('match_data_v2')
-      .upsert(matchDataRecord, {
+      .upsert({
+        match_id: matchId,
+        court_number: matchData.court_number,
+        division: matchData.division,
+        home_team_name: matchData.home_team_name,
+        away_team_name: matchData.away_team_name,
+        set1_home_score: homeScores[0] || 0,
+        set1_away_score: awayScores[0] || 0,
+        set2_home_score: homeScores[1] || 0,
+        set2_away_score: awayScores[1] || 0,
+        set3_home_score: homeScores[2] || 0,
+        set3_away_score: awayScores[2] || 0,
+        home_total_points: homePointsFor,
+        away_total_points: awayPointsFor,
+        home_result: getResult(true),
+        away_result: getResult(false),
+        home_bonus_points: homeBonusPoints,
+        away_bonus_points: awayBonusPoints,
+        home_total_match_points: homeMatchPoints,
+        away_total_match_points: awayMatchPoints,
+        match_date: matchData.start_time,
+        has_final_score: true
+      }, {
         onConflict: 'match_id'
       });
 
