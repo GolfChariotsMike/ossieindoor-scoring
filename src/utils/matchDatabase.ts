@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
@@ -118,38 +119,16 @@ export const saveMatchScores = async (
 
     console.log('Prepared match data record:', matchDataRecord);
 
-    // Check for existing match data using select count
-    const { count, error: countError } = await supabase
+    // Use upsert operation with match_id as the unique key
+    const { error: upsertError } = await supabase
       .from('match_data_v2')
-      .select('*', { count: 'exact', head: true })
-      .eq('match_id', matchId);
+      .upsert(matchDataRecord, {
+        onConflict: 'match_id'
+      });
 
-    if (countError) {
-      console.error('Error checking existing match data:', countError);
-      throw countError;
-    }
-
-    console.log('Record count for match_id:', count);
-
-    let result;
-    if (count && count > 0) {
-      // Update existing record using match_id
-      console.log('Updating existing record for match_id:', matchId);
-      result = await supabase
-        .from('match_data_v2')
-        .update(matchDataRecord)
-        .eq('match_id', matchId);
-    } else {
-      // Insert new record
-      console.log('Inserting new match data record');
-      result = await supabase
-        .from('match_data_v2')
-        .insert(matchDataRecord);
-    }
-
-    if (result.error) {
-      console.error('Error saving match data:', result.error);
-      throw result.error;
+    if (upsertError) {
+      console.error('Error saving match data:', upsertError);
+      throw upsertError;
     }
 
     console.log('Successfully saved match scores');
