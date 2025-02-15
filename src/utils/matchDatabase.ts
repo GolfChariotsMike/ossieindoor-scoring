@@ -125,15 +125,60 @@ export const saveMatchScores = async (
     }
 
     // After successful save, update team statistics
+    console.log('Match data saved, updating team statistics...');
     try {
       const { error: statsError } = await supabase.rpc('refresh_team_statistics_safe');
       if (statsError) {
         console.error('Error updating team statistics:', statsError);
-        // Don't throw the error, just log it as this is a non-critical operation
+        
+        // Log the error to crash_logs
+        await supabase.from('crash_logs').insert({
+          error_type: 'team_statistics_update_error',
+          error_message: statsError.message,
+          error_stack: JSON.stringify({
+            matchId,
+            homeScores,
+            awayScores,
+            statsError
+          }),
+          browser_info: {
+            userAgent: navigator.userAgent,
+            url: window.location.href
+          }
+        });
+        
+        toast({
+          title: "Warning",
+          description: "Match scores saved but team statistics update failed. This will be automatically retried.",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Team statistics successfully updated');
       }
     } catch (statsError) {
       console.error('Failed to refresh team statistics:', statsError);
-      // Don't throw the error as this shouldn't affect the match completion
+      
+      // Log the error to crash_logs
+      await supabase.from('crash_logs').insert({
+        error_type: 'team_statistics_update_error',
+        error_message: statsError instanceof Error ? statsError.message : 'Unknown error',
+        error_stack: JSON.stringify({
+          matchId,
+          homeScores,
+          awayScores,
+          statsError
+        }),
+        browser_info: {
+          userAgent: navigator.userAgent,
+          url: window.location.href
+        }
+      });
+      
+      toast({
+        title: "Warning",
+        description: "Match scores saved but team statistics update failed. This will be automatically retried.",
+        variant: "destructive",
+      });
     }
 
     console.log('Successfully saved match scores');
@@ -144,6 +189,23 @@ export const saveMatchScores = async (
 
   } catch (error) {
     console.error('Error saving match scores:', error);
+    
+    // Log the error to crash_logs
+    await supabase.from('crash_logs').insert({
+      error_type: 'match_score_save_error',
+      error_message: error instanceof Error ? error.message : 'Unknown error',
+      error_stack: JSON.stringify({
+        matchId,
+        homeScores,
+        awayScores,
+        error
+      }),
+      browser_info: {
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      }
+    });
+    
     toast({
       title: "Error saving scores",
       description: "There was a problem saving the match scores. Please check the console for details.",
@@ -151,3 +213,4 @@ export const saveMatchScores = async (
     });
   }
 };
+
