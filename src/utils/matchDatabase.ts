@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
@@ -119,28 +118,27 @@ export const saveMatchScores = async (
 
     console.log('Prepared match data record:', matchDataRecord);
 
-    // Check for existing match data
-    const { data: existingData, error: existingError } = await supabase
+    // Check for existing match data using select count
+    const { count, error: countError } = await supabase
       .from('match_data_v2')
-      .select('id')
-      .eq('match_id', matchId)
-      .maybeSingle();
+      .select('*', { count: 'exact', head: true })
+      .eq('match_id', matchId);
 
-    if (existingError) {
-      console.error('Error checking existing match data:', existingError);
-      throw existingError;
+    if (countError) {
+      console.error('Error checking existing match data:', countError);
+      throw countError;
     }
 
-    console.log('Existing data check result:', existingData);
+    console.log('Record count for match_id:', count);
 
     let result;
-    if (existingData) {
-      // Update existing record
-      console.log('Updating existing record with ID:', existingData.id);
+    if (count && count > 0) {
+      // Update existing record using match_id
+      console.log('Updating existing record for match_id:', matchId);
       result = await supabase
         .from('match_data_v2')
         .update(matchDataRecord)
-        .eq('id', existingData.id);
+        .eq('match_id', matchId);
     } else {
       // Insert new record
       console.log('Inserting new match data record');
