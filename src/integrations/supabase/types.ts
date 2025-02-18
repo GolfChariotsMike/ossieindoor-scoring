@@ -209,6 +209,7 @@ export type Database = {
           court_number: number
           created_at: string | null
           division: string | null
+          fixture_start_time: string | null
           has_final_score: boolean | null
           home_bonus_points: number | null
           home_result: string | null
@@ -237,6 +238,7 @@ export type Database = {
           court_number: number
           created_at?: string | null
           division?: string | null
+          fixture_start_time?: string | null
           has_final_score?: boolean | null
           home_bonus_points?: number | null
           home_result?: string | null
@@ -265,6 +267,7 @@ export type Database = {
           court_number?: number
           created_at?: string | null
           division?: string | null
+          fixture_start_time?: string | null
           has_final_score?: boolean | null
           home_bonus_points?: number | null
           home_result?: string | null
@@ -455,6 +458,7 @@ export type Database = {
           court_number: number
           created_at: string | null
           division: string | null
+          fixture_start_time: string | null
           home_bonus_points: number | null
           home_sets_won: number | null
           home_team_id: string
@@ -480,6 +484,7 @@ export type Database = {
           court_number: number
           created_at?: string | null
           division?: string | null
+          fixture_start_time?: string | null
           home_bonus_points?: number | null
           home_sets_won?: number | null
           home_team_id: string
@@ -505,6 +510,7 @@ export type Database = {
           court_number?: number
           created_at?: string | null
           division?: string | null
+          fixture_start_time?: string | null
           home_bonus_points?: number | null
           home_sets_won?: number | null
           home_team_id?: string
