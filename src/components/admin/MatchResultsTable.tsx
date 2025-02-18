@@ -48,53 +48,27 @@ export const MatchResultsTable = () => {
           set2_away_score,
           set3_home_score,
           set3_away_score,
-          division,
-          matches_v2!match_data_v2_match_id_fkey (
-            fixture_start_time,
-            match_code
-          )
+          division
         `)
-        .eq('is_active', true)
-        .not('matches_v2.fixture_start_time', 'is', null);
+        .eq('is_active', true);
 
       if (error) {
         console.error('Error fetching match results:', error);
         throw error;
       }
 
-      // Transform and log each match for debugging
-      const transformedData = data?.map(match => {
-        // Use fixture_start_time from match_data_v2 if available, otherwise from matches_v2
-        const fixtureTime = match.fixture_start_time || match.matches_v2?.fixture_start_time;
-        
-        console.log('Match data:', {
-          id: match.id,
-          match_code: match.matches_v2?.match_code,
-          recorded_date: match.match_date,
-          fixture_time: fixtureTime,
-          time_difference_minutes: match.match_date && fixtureTime ? 
-            Math.round((new Date(match.match_date).getTime() - new Date(fixtureTime).getTime()) / (1000 * 60))
-            : null
-        });
-        
-        return {
-          ...match,
-          fixture_start_time: fixtureTime
-        };
+      // Sort matches by fixture date and court number
+      const sortedMatches = data?.sort((a, b) => {
+        // First sort by fixture date
+        const dateA = a.fixture_start_time ? new Date(a.fixture_start_time) : new Date(a.match_date);
+        const dateB = b.fixture_start_time ? new Date(b.fixture_start_time) : new Date(b.match_date);
+        const dateCompare = dateA.getTime() - dateB.getTime();
+        if (dateCompare !== 0) return dateCompare;
+        // Then by court number
+        return a.court_number - b.court_number;
       });
 
-      // Filter valid matches and sort them by fixture date and court number
-      const validMatches = transformedData
-        ?.filter(match => match.fixture_start_time)
-        .sort((a, b) => {
-          // First sort by fixture date
-          const dateCompare = new Date(a.fixture_start_time!).getTime() - new Date(b.fixture_start_time!).getTime();
-          if (dateCompare !== 0) return dateCompare;
-          // Then by court number
-          return a.court_number - b.court_number;
-        });
-
-      return validMatches as MatchResult[];
+      return sortedMatches as MatchResult[];
     },
   });
 
@@ -147,10 +121,10 @@ export const MatchResultsTable = () => {
           {matches?.map((match) => (
             <TableRow key={match.id}>
               <TableCell>
-                {formatDate(match.fixture_start_time)}
+                {formatDate(match.fixture_start_time || match.match_date)}
               </TableCell>
               <TableCell>
-                {formatTime(match.fixture_start_time)}
+                {formatTime(match.fixture_start_time || match.match_date)}
               </TableCell>
               <TableCell>
                 {match.court_number}
