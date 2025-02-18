@@ -74,7 +74,7 @@ export const MatchResultsTable = () => {
     if (!dateString) return '';
     try {
       const date = parseISO(dateString);
-      return format(date, 'h:mmaa');
+      return format(date, 'h:mmaa').toLowerCase();
     } catch (error) {
       console.error('Error formatting time:', dateString, error);
       return '';
@@ -106,7 +106,6 @@ export const MatchResultsTable = () => {
         </TableHeader>
         <TableBody>
           {matches?.map((match) => {
-            console.log('Match start_time:', match.start_time); // Debug log
             return (
               <TableRow key={match.id}>
                 <TableCell>
