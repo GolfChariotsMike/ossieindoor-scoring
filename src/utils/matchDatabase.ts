@@ -3,12 +3,76 @@ import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
 
+const PENDING_SCORES_KEY = 'volleyball_pending_scores';
+
+interface PendingScore {
+  id: string;
+  matchId: string;
+  homeScores: number[];
+  awayScores: number[];
+  timestamp: string;
+  retryCount: number;
+}
+
+const savePendingScore = (pendingScore: PendingScore) => {
+  const existingScores = getPendingScores();
+  const updatedScores = [...existingScores, pendingScore];
+  localStorage.setItem(PENDING_SCORES_KEY, JSON.stringify(updatedScores));
+  console.log('Saved pending score to local storage:', pendingScore);
+};
+
+const getPendingScores = (): PendingScore[] => {
+  try {
+    const scores = localStorage.getItem(PENDING_SCORES_KEY);
+    return scores ? JSON.parse(scores) : [];
+  } catch (error) {
+    console.error('Error reading pending scores:', error);
+    return [];
+  }
+};
+
+const removePendingScore = (scoreId: string) => {
+  const scores = getPendingScores();
+  const updatedScores = scores.filter(score => score.id !== scoreId);
+  localStorage.setItem(PENDING_SCORES_KEY, JSON.stringify(updatedScores));
+  console.log('Removed pending score:', scoreId);
+};
+
+const processPendingScores = async () => {
+  const pendingScores = getPendingScores();
+  console.log('Processing pending scores:', pendingScores.length);
+
+  for (const score of pendingScores) {
+    try {
+      console.log('Attempting to save pending score:', score.id);
+      await saveMatchScores(score.matchId, score.homeScores, score.awayScores);
+      removePendingScore(score.id);
+      console.log('Successfully processed pending score:', score.id);
+    } catch (error) {
+      console.error('Failed to process pending score:', score.id, error);
+      // Update retry count
+      score.retryCount += 1;
+      if (score.retryCount > 5) {
+        console.error('Max retries reached for score:', score.id);
+        removePendingScore(score.id);
+        toast({
+          title: "Warning",
+          description: "Some scores could not be saved due to connection issues. Please check the match history.",
+          variant: "destructive",
+        });
+      }
+    }
+  }
+};
+
+// Set up periodic check for pending scores
+setInterval(processPendingScores, 30000); // Check every 30 seconds
+
 export const saveMatchScores = async (
   matchId: string, 
   homeScores: number[], 
   awayScores: number[]
 ) => {
-  // Log initial input
   console.log('Starting saveMatchScores with:', {
     matchId,
     homeScores,
@@ -27,6 +91,17 @@ export const saveMatchScores = async (
   }
 
   try {
+    // First, save to local storage as backup
+    const pendingScore: PendingScore = {
+      id: `${matchId}-${Date.now()}`,
+      matchId,
+      homeScores,
+      awayScores,
+      timestamp: new Date().toISOString(),
+      retryCount: 0
+    };
+    savePendingScore(pendingScore);
+
     console.log('Fetching match details for ID:', matchId);
     
     // Get match details
@@ -131,7 +206,6 @@ export const saveMatchScores = async (
       if (statsError) {
         console.error('Error updating team statistics:', statsError);
         
-        // Log the error to crash_logs
         await supabase.from('crash_logs').insert({
           error_type: 'team_statistics_update_error',
           error_message: statsError.message,
@@ -154,11 +228,12 @@ export const saveMatchScores = async (
         });
       } else {
         console.log('Team statistics successfully updated');
+        // Remove from pending scores if everything was successful
+        removePendingScore(pendingScore.id);
       }
     } catch (statsError) {
       console.error('Failed to refresh team statistics:', statsError);
       
-      // Log the error to crash_logs
       await supabase.from('crash_logs').insert({
         error_type: 'team_statistics_update_error',
         error_message: statsError instanceof Error ? statsError.message : 'Unknown error',
@@ -173,12 +248,6 @@ export const saveMatchScores = async (
           url: window.location.href
         }
       });
-      
-      toast({
-        title: "Warning",
-        description: "Match scores saved but team statistics update failed. This will be automatically retried.",
-        variant: "destructive",
-      });
     }
 
     console.log('Successfully saved match scores');
@@ -190,7 +259,6 @@ export const saveMatchScores = async (
   } catch (error) {
     console.error('Error saving match scores:', error);
     
-    // Log the error to crash_logs
     await supabase.from('crash_logs').insert({
       error_type: 'match_score_save_error',
       error_message: error instanceof Error ? error.message : 'Unknown error',
@@ -207,10 +275,9 @@ export const saveMatchScores = async (
     });
     
     toast({
-      title: "Error saving scores",
-      description: "There was a problem saving the match scores. Please check the console for details.",
-      variant: "destructive",
+      title: "Connection Issues",
+      description: "Scores saved locally and will be uploaded when connection is restored.",
+      variant: "warning",
     });
   }
 };
-
