@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
@@ -277,7 +276,7 @@ export const saveMatchScores = async (
     toast({
       title: "Connection Issues",
       description: "Scores saved locally and will be uploaded when connection is restored.",
-      variant: "warning",
+      variant: "default",
     });
   }
 };
