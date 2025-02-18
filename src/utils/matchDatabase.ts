@@ -1,8 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
-
-const PENDING_SCORES_KEY = 'volleyball_pending_scores';
+import { initDB, savePendingScore, getPendingScores, removePendingScore } from "@/services/indexedDB";
 
 interface PendingScore {
   id: string;
@@ -13,54 +12,37 @@ interface PendingScore {
   retryCount: number;
 }
 
-const savePendingScore = (pendingScore: PendingScore) => {
-  const existingScores = getPendingScores();
-  const updatedScores = [...existingScores, pendingScore];
-  localStorage.setItem(PENDING_SCORES_KEY, JSON.stringify(updatedScores));
-  console.log('Saved pending score to local storage:', pendingScore);
-};
-
-const getPendingScores = (): PendingScore[] => {
-  try {
-    const scores = localStorage.getItem(PENDING_SCORES_KEY);
-    return scores ? JSON.parse(scores) : [];
-  } catch (error) {
-    console.error('Error reading pending scores:', error);
-    return [];
-  }
-};
-
-const removePendingScore = (scoreId: string) => {
-  const scores = getPendingScores();
-  const updatedScores = scores.filter(score => score.id !== scoreId);
-  localStorage.setItem(PENDING_SCORES_KEY, JSON.stringify(updatedScores));
-  console.log('Removed pending score:', scoreId);
-};
-
 const processPendingScores = async () => {
-  const pendingScores = getPendingScores();
-  console.log('Processing pending scores:', pendingScores.length);
+  try {
+    const pendingScores = await getPendingScores();
+    console.log('Processing pending scores:', pendingScores.length);
 
-  for (const score of pendingScores) {
-    try {
-      console.log('Attempting to save pending score:', score.id);
-      await saveMatchScores(score.matchId, score.homeScores, score.awayScores);
-      removePendingScore(score.id);
-      console.log('Successfully processed pending score:', score.id);
-    } catch (error) {
-      console.error('Failed to process pending score:', score.id, error);
-      // Update retry count
-      score.retryCount += 1;
-      if (score.retryCount > 5) {
-        console.error('Max retries reached for score:', score.id);
-        removePendingScore(score.id);
-        toast({
-          title: "Warning",
-          description: "Some scores could not be saved due to connection issues. Please check the match history.",
-          variant: "destructive",
-        });
+    for (const score of pendingScores) {
+      try {
+        console.log('Attempting to save pending score:', score.id);
+        await saveMatchScores(score.matchId, score.homeScores, score.awayScores);
+        await removePendingScore(score.id);
+        console.log('Successfully processed pending score:', score.id);
+      } catch (error) {
+        console.error('Failed to process pending score:', score.id, error);
+        // Update retry count
+        score.retryCount += 1;
+        if (score.retryCount > 5) {
+          console.error('Max retries reached for score:', score.id);
+          await removePendingScore(score.id);
+          toast({
+            title: "Warning",
+            description: "Some scores could not be saved due to connection issues. Please check the match history.",
+            variant: "destructive",
+          });
+        } else {
+          // Save the updated retry count
+          await savePendingScore(score);
+        }
       }
     }
+  } catch (error) {
+    console.error('Error processing pending scores:', error);
   }
 };
 
@@ -90,7 +72,7 @@ export const saveMatchScores = async (
   }
 
   try {
-    // First, save to local storage as backup
+    // First, save to IndexedDB as backup
     const pendingScore: PendingScore = {
       id: `${matchId}-${Date.now()}`,
       matchId,
@@ -99,7 +81,7 @@ export const saveMatchScores = async (
       timestamp: new Date().toISOString(),
       retryCount: 0
     };
-    savePendingScore(pendingScore);
+    await savePendingScore(pendingScore);
 
     console.log('Fetching match details for ID:', matchId);
     
@@ -228,7 +210,7 @@ export const saveMatchScores = async (
       } else {
         console.log('Team statistics successfully updated');
         // Remove from pending scores if everything was successful
-        removePendingScore(pendingScore.id);
+        await removePendingScore(pendingScore.id);
       }
     } catch (statsError) {
       console.error('Failed to refresh team statistics:', statsError);
