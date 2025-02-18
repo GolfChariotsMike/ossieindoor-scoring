@@ -31,10 +31,10 @@ export const MatchResultsTable = () => {
     queryKey: ["match-results"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('matches_v2')
+        .from('match_results')
         .select(`
           id,
-          start_time,
+          match_date as start_time,
           court_number,
           home_team_name,
           away_team_name,
@@ -46,7 +46,8 @@ export const MatchResultsTable = () => {
           set3_away_score,
           division
         `)
-        .order('start_time', { ascending: true })
+        .eq('is_current_result', true)
+        .order('match_date', { ascending: true })
         .order('court_number', { ascending: true });
 
       if (error) {
@@ -61,7 +62,6 @@ export const MatchResultsTable = () => {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
     try {
-      // Use parseISO instead of new Date() for more reliable ISO date parsing
       const date = parseISO(dateString);
       return format(date, 'dd/MM/yyyy');
     } catch (error) {
@@ -105,42 +105,40 @@ export const MatchResultsTable = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {matches?.map((match) => {
-            return (
-              <TableRow key={match.id}>
-                <TableCell>
-                  {formatDate(match.start_time)}
-                </TableCell>
-                <TableCell>
-                  {formatTime(match.start_time)}
-                </TableCell>
-                <TableCell>
-                  {match.court_number}
-                </TableCell>
-                <TableCell>{match.home_team_name}</TableCell>
-                <TableCell className="text-center px-1">
-                  <span className="w-6 text-center">{match.set1_home_score}</span>
-                </TableCell>
-                <TableCell className="text-center px-1">
-                  <span className="w-6 text-center">{match.set2_home_score}</span>
-                </TableCell>
-                <TableCell className="text-center px-1">
-                  <span className="w-6 text-center">{match.set3_home_score}</span>
-                </TableCell>
-                <TableCell className="w-[100px]"></TableCell>
-                <TableCell className="text-center px-1">
-                  <span className="w-6 text-center">{match.set1_away_score}</span>
-                </TableCell>
-                <TableCell className="text-center px-1">
-                  <span className="w-6 text-center">{match.set2_away_score}</span>
-                </TableCell>
-                <TableCell className="text-center px-1">
-                  <span className="w-6 text-center">{match.set3_away_score}</span>
-                </TableCell>
-                <TableCell>{match.away_team_name}</TableCell>
-              </TableRow>
-            );
-          })}
+          {matches?.map((match) => (
+            <TableRow key={match.id}>
+              <TableCell>
+                {formatDate(match.start_time)}
+              </TableCell>
+              <TableCell>
+                {formatTime(match.start_time)}
+              </TableCell>
+              <TableCell>
+                {match.court_number}
+              </TableCell>
+              <TableCell>{match.home_team_name}</TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set1_home_score}</span>
+              </TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set2_home_score}</span>
+              </TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set3_home_score}</span>
+              </TableCell>
+              <TableCell className="w-[100px]"></TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set1_away_score}</span>
+              </TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set2_away_score}</span>
+              </TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set3_away_score}</span>
+              </TableCell>
+              <TableCell>{match.away_team_name}</TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>
