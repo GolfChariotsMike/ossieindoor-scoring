@@ -14,6 +14,7 @@ import {
 interface MatchResult {
   id: string;
   match_date: string;
+  start_time: string;
   court_number: number;
   home_team_name: string;
   away_team_name: string;
@@ -31,9 +32,22 @@ export const MatchResultsTable = () => {
     queryKey: ["match-results"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('match_data_v2')
-        .select('*')
-        .order('match_date', { ascending: true })
+        .from('matches_v2')
+        .select(`
+          id,
+          start_time,
+          court_number,
+          home_team_name,
+          away_team_name,
+          set1_home_score,
+          set1_away_score,
+          set2_home_score,
+          set2_away_score,
+          set3_home_score,
+          set3_away_score,
+          division
+        `)
+        .order('start_time', { ascending: true })
         .order('court_number', { ascending: true });
 
       if (error) {
@@ -72,10 +86,10 @@ export const MatchResultsTable = () => {
           {matches?.map((match) => (
             <TableRow key={match.id}>
               <TableCell>
-                {format(new Date(match.match_date), 'dd/MM/yyyy')}
+                {format(new Date(match.start_time), 'dd/MM/yyyy')}
               </TableCell>
               <TableCell>
-                {format(new Date(match.match_date), 'h:mmaa')}
+                {format(new Date(match.start_time), 'h:mmaa')}
               </TableCell>
               <TableCell>
                 {match.court_number}
