@@ -53,6 +53,7 @@ export const MatchResultsTable = () => {
           )
         `)
         .eq('is_active', true)
+        .not('matches_v2.start_time', 'is', null)  // Only get matches with fixture times
         .order('match_date', { ascending: true })
         .order('court_number', { ascending: true });
 
@@ -67,7 +68,12 @@ export const MatchResultsTable = () => {
         fixture_date: match.matches_v2?.start_time
       }));
 
-      return transformedData as MatchResult[];
+      // Filter out any matches that don't have a valid fixture date
+      const validMatches = transformedData?.filter(match => match.fixture_date);
+
+      console.log('Matches with fixture times:', validMatches);
+
+      return validMatches as MatchResult[];
     },
   });
 
