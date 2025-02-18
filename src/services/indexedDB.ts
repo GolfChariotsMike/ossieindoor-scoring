@@ -160,3 +160,45 @@ export const getCourtMatches = async (courtNumber: string, date: string): Promis
     };
   });
 };
+
+export const cleanOldMatches = async (): Promise<void> => {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['courtMatches'], 'readwrite');
+    const store = transaction.objectStore('courtMatches');
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const now = new Date();
+      const matches = request.result;
+      const deletePromises = matches
+        .filter(match => {
+          const matchDate = new Date(match.DateTime.split(' ')[0]);
+          const daysDiff = (now.getTime() - matchDate.getTime()) / (1000 * 3600 * 24);
+          return daysDiff > 7; // Delete matches older than 7 days
+        })
+        .map(match => 
+          new Promise<void>((res, rej) => {
+            const deleteRequest = store.delete(match.id);
+            deleteRequest.onsuccess = () => res();
+            deleteRequest.onerror = () => rej(deleteRequest.error);
+          })
+        );
+
+      Promise.all(deletePromises)
+        .then(() => {
+          console.log('Cleaned old matches from IndexedDB');
+          resolve();
+        })
+        .catch(error => {
+          console.error('Error cleaning old matches:', error);
+          reject(error);
+        });
+    };
+
+    request.onerror = () => {
+      console.error('Error reading matches for cleaning:', request.error);
+      reject(request.error);
+    };
+  });
+};

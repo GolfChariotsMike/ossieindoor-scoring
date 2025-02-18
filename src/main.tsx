@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import './index.css';
 import { supabase } from './integrations/supabase/client';
+import { cleanOldMatches } from './services/indexedDB';
 
 const queryClient = new QueryClient();
 const root = createRoot(document.getElementById('root')!);
@@ -70,6 +71,11 @@ window.addEventListener('unhandledrejection', async (event) => {
   }
 });
 
+// Clean old matches when the app starts
+cleanOldMatches().catch(error => {
+  console.error('Failed to clean old matches:', error);
+});
+
 root.render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -77,3 +83,4 @@ root.render(
     </QueryClientProvider>
   </StrictMode>
 );
+
