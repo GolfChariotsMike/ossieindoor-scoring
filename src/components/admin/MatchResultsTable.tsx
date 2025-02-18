@@ -49,12 +49,13 @@ export const MatchResultsTable = () => {
           set3_away_score,
           division,
           matches_v2!match_data_v2_match_id_fkey (
-            start_time
+            start_time,
+            match_code
           )
         `)
         .eq('is_active', true)
-        .not('matches_v2.start_time', 'is', null)  // Only get matches with fixture times
-        .order('match_date', { ascending: true })
+        .not('matches_v2.start_time', 'is', null)
+        .order('matches_v2.start_time', { ascending: true })  // Order by fixture time instead
         .order('court_number', { ascending: true });
 
       if (error) {
@@ -62,16 +63,27 @@ export const MatchResultsTable = () => {
         throw error;
       }
 
-      // Transform the data to flatten the nested structure
-      const transformedData = data?.map(match => ({
-        ...match,
-        fixture_date: match.matches_v2?.start_time
-      }));
+      // Transform and log each match for debugging
+      const transformedData = data?.map(match => {
+        const result = {
+          ...match,
+          fixture_date: match.matches_v2?.start_time
+        };
+        
+        console.log('Match data:', {
+          id: match.id,
+          match_code: match.matches_v2?.match_code,
+          recorded_date: match.match_date,
+          fixture_date: match.matches_v2?.start_time,
+          time_difference_minutes: match.match_date && match.matches_v2?.start_time ? 
+            Math.round((new Date(match.match_date).getTime() - new Date(match.matches_v2.start_time).getTime()) / (1000 * 60))
+            : null
+        });
+        
+        return result;
+      });
 
-      // Filter out any matches that don't have a valid fixture date
       const validMatches = transformedData?.filter(match => match.fixture_date);
-
-      console.log('Matches with fixture times:', validMatches);
 
       return validMatches as MatchResult[];
     },
