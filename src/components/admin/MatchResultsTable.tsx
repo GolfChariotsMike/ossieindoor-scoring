@@ -58,10 +58,10 @@ export const MatchResultsTable = () => {
             <TableHead className="w-[100px]">Time</TableHead>
             <TableHead className="w-[80px]">Court</TableHead>
             <TableHead className="w-[200px]">Team 1</TableHead>
+            <TableHead className="w-[200px]">Team 2</TableHead>
             <TableHead className="text-center">1st Set</TableHead>
             <TableHead className="text-center">2nd Set</TableHead>
             <TableHead className="text-center">3rd Set</TableHead>
-            <TableHead className="w-[200px]">Team 2</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -77,6 +77,7 @@ export const MatchResultsTable = () => {
                 {match.court_number}
               </TableCell>
               <TableCell>{match.home_team_name}</TableCell>
+              <TableCell>{match.away_team_name}</TableCell>
               <TableCell className="text-center">
                 <div className="flex justify-center space-x-1">
                   <span className="w-8 text-center">{match.set1_home_score}</span>
@@ -98,7 +99,6 @@ export const MatchResultsTable = () => {
                   <span className="w-8 text-center">{match.set3_away_score}</span>
                 </div>
               </TableCell>
-              <TableCell>{match.away_team_name}</TableCell>
             </TableRow>
           ))}
         </TableBody>
