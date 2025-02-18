@@ -13,7 +13,8 @@ import {
 
 interface MatchResult {
   id: string;
-  start_time: string;
+  match_id: string;
+  match_date: string;
   court_number: number;
   home_team_name: string;
   away_team_name: string;
@@ -24,6 +25,7 @@ interface MatchResult {
   set3_home_score: number;
   set3_away_score: number;
   division: string;
+  fixture_date: string;
 }
 
 export const MatchResultsTable = () => {
@@ -31,10 +33,11 @@ export const MatchResultsTable = () => {
     queryKey: ["match-results"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('match_results')
+        .from('match_data_v2')
         .select(`
           id,
-          match_date as start_time,
+          match_id,
+          match_date,
           court_number,
           home_team_name,
           away_team_name,
@@ -44,9 +47,12 @@ export const MatchResultsTable = () => {
           set2_away_score,
           set3_home_score,
           set3_away_score,
-          division
+          division,
+          matches_v2!match_data_v2_match_id_fkey (
+            start_time
+          )
         `)
-        .eq('is_current_result', true)
+        .eq('is_active', true)
         .order('match_date', { ascending: true })
         .order('court_number', { ascending: true });
 
@@ -55,7 +61,13 @@ export const MatchResultsTable = () => {
         throw error;
       }
 
-      return data as MatchResult[];
+      // Transform the data to flatten the nested structure
+      const transformedData = data?.map(match => ({
+        ...match,
+        fixture_date: match.matches_v2?.start_time
+      }));
+
+      return transformedData as MatchResult[];
     },
   });
 
@@ -108,10 +120,10 @@ export const MatchResultsTable = () => {
           {matches?.map((match) => (
             <TableRow key={match.id}>
               <TableCell>
-                {formatDate(match.start_time)}
+                {formatDate(match.fixture_date)}
               </TableCell>
               <TableCell>
-                {formatTime(match.start_time)}
+                {formatTime(match.fixture_date)}
               </TableCell>
               <TableCell>
                 {match.court_number}
