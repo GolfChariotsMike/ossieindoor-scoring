@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 
 interface TeamScoreProps {
@@ -33,7 +34,15 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
 
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
-    console.log('Touch start');
+    
+    // Check if it's a touch event and has multiple touches
+    if ('touches' in e && e.touches.length > 1) {
+      console.log('Multi-touch detected, ignoring');
+      handleTouchCancel(e);
+      return;
+    }
+    
+    console.log('Touch start (single touch)');
     timerRef.current = setTimeout(() => {
       console.log('Long press detected');
       setIsLongPress(true);
@@ -45,6 +54,12 @@ export const TeamScore = ({ teamName, score, onScoreUpdate }: TeamScoreProps) =>
   const handleTouchEnd = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
     console.log('Touch end, isLongPress:', isLongPress);
+    
+    // Check if it's a touch event with multiple touches
+    if ('touches' in e && e.touches.length > 1) {
+      console.log('Multi-touch end detected, ignoring');
+      return;
+    }
     
     if (timerRef.current) {
       clearTimeout(timerRef.current);
