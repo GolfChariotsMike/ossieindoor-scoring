@@ -54,9 +54,7 @@ export const MatchResultsTable = () => {
           )
         `)
         .eq('is_active', true)
-        .not('matches_v2.start_time', 'is', null)
-        .order('matches_v2.start_time', { ascending: true })  // Order by fixture time instead
-        .order('court_number', { ascending: true });
+        .not('matches_v2.start_time', 'is', null);
 
       if (error) {
         console.error('Error fetching match results:', error);
@@ -83,7 +81,16 @@ export const MatchResultsTable = () => {
         return result;
       });
 
-      const validMatches = transformedData?.filter(match => match.fixture_date);
+      // Filter valid matches and sort them by fixture date and court number
+      const validMatches = transformedData
+        ?.filter(match => match.fixture_date)
+        .sort((a, b) => {
+          // First sort by fixture date
+          const dateCompare = new Date(a.fixture_date).getTime() - new Date(b.fixture_date).getTime();
+          if (dateCompare !== 0) return dateCompare;
+          // Then by court number
+          return a.court_number - b.court_number;
+        });
 
       return validMatches as MatchResult[];
     },
