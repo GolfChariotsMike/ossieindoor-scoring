@@ -1,8 +1,10 @@
+
 import { toast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { Match, Fixture } from "@/types/volleyball";
 import { LEAGUE_URLS } from "@/config/leagueConfig";
 import { parseXMLResponse } from "@/utils/xmlParser";
+import { saveCourtMatches, getCourtMatches } from "@/services/indexedDB";
 
 const fetchFromUrl = async (url: string, date: string) => {
   try {
@@ -33,6 +35,19 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       courtId,
       selectedDate: selectedDate?.toISOString(),
     });
+
+    // Try to get matches from IndexedDB first
+    if (courtId) {
+      try {
+        const cachedMatches = await getCourtMatches(courtId, formattedDate);
+        if (cachedMatches.length > 0) {
+          console.log('Found cached matches:', cachedMatches.length);
+          return cachedMatches[0]; // Return the first match for this court
+        }
+      } catch (error) {
+        console.error('Error reading from cache:', error);
+      }
+    }
 
     const urls = LEAGUE_URLS[dayOfWeek];
     if (!urls) {
@@ -79,6 +94,14 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
         return false;
       }
     });
+
+    // Save all fixtures to IndexedDB for offline access
+    try {
+      await saveCourtMatches(fixtures);
+      console.log('Saved fixtures to IndexedDB:', fixtures.length);
+    } catch (error) {
+      console.error('Error caching fixtures:', error);
+    }
 
     console.log('Fixtures after date filtering:', fixtures.length);
 

@@ -1,4 +1,3 @@
-
 const DB_NAME = 'volleyball_scores';
 const DB_VERSION = 1;
 
@@ -31,6 +30,12 @@ export const initDB = (): Promise<IDBDatabase> => {
         const store = db.createObjectStore('pendingScores', { keyPath: 'id' });
         store.createIndex('matchId', 'matchId', { unique: false });
         store.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('courtMatches')) {
+        const store = db.createObjectStore('courtMatches', { keyPath: 'id' });
+        store.createIndex('courtNumber', 'PlayingAreaName', { unique: false });
+        store.createIndex('matchDate', 'DateTime', { unique: false });
       }
     };
   });
@@ -93,3 +98,65 @@ export const removePendingScore = async (scoreId: string): Promise<void> => {
   });
 };
 
+export const saveCourtMatches = async (matches: any[]): Promise<void> => {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['courtMatches'], 'readwrite');
+    const store = transaction.objectStore('courtMatches');
+
+    let completed = 0;
+    let errors = 0;
+
+    matches.forEach(match => {
+      const request = store.put(match);
+
+      request.onsuccess = () => {
+        completed++;
+        if (completed + errors === matches.length) {
+          console.log('Saved court matches to IndexedDB:', completed);
+          resolve();
+        }
+      };
+
+      request.onerror = () => {
+        console.error('Error saving match to IndexedDB:', request.error);
+        errors++;
+        if (completed + errors === matches.length) {
+          if (completed > 0) {
+            resolve(); // Some matches were saved
+          } else {
+            reject(request.error); // No matches were saved
+          }
+        }
+      };
+    });
+
+    // Handle empty array case
+    if (matches.length === 0) {
+      resolve();
+    }
+  });
+};
+
+export const getCourtMatches = async (courtNumber: string, date: string): Promise<any[]> => {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['courtMatches'], 'readonly');
+    const store = transaction.objectStore('courtMatches');
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const matches = request.result.filter(match => {
+        const matchCourt = match.PlayingAreaName === `Court ${courtNumber}`;
+        const matchDate = match.DateTime.split(' ')[0] === date;
+        return matchCourt && matchDate;
+      });
+      resolve(matches);
+    };
+
+    request.onerror = () => {
+      console.error('Error reading court matches from IndexedDB:', request.error);
+      reject(request.error);
+    };
+  });
+};
