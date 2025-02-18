@@ -62,7 +62,8 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
           set2_home_score: 0,
           set2_away_score: 0,
           set3_home_score: 0,
-          set3_away_score: 0
+          set3_away_score: 0,
+          fixture_start_time: matchDate.toISOString()
         })
         .select()
         .single();
@@ -83,6 +84,7 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
           set1_home_score: finalHomeScore,
           set1_away_score: finalAwayScore,
           match_date: matchDate.toISOString(),
+          fixture_start_time: matchData.fixture_start_time,
           has_final_score: false
         });
 
