@@ -58,12 +58,13 @@ export const MatchResultsTable = () => {
             <TableHead className="w-[100px]">Time</TableHead>
             <TableHead className="w-[80px]">Court</TableHead>
             <TableHead className="w-[200px]">Team A</TableHead>
-            <TableHead className="text-center">1st Set</TableHead>
-            <TableHead className="text-center">2nd Set</TableHead>
-            <TableHead className="text-center">3rd Set</TableHead>
-            <TableHead className="text-center">1st Set</TableHead>
-            <TableHead className="text-center">2nd Set</TableHead>
-            <TableHead className="text-center">3rd Set</TableHead>
+            <TableHead className="text-center px-1">1st</TableHead>
+            <TableHead className="text-center px-1">2nd</TableHead>
+            <TableHead className="text-center px-1">3rd</TableHead>
+            <TableHead className="w-[100px]"></TableHead>
+            <TableHead className="text-center px-1">1st</TableHead>
+            <TableHead className="text-center px-1">2nd</TableHead>
+            <TableHead className="text-center px-1">3rd</TableHead>
             <TableHead className="w-[200px]">Team B</TableHead>
           </TableRow>
         </TableHeader>
@@ -80,23 +81,24 @@ export const MatchResultsTable = () => {
                 {match.court_number}
               </TableCell>
               <TableCell>{match.home_team_name}</TableCell>
-              <TableCell className="text-center">
-                <span className="w-8 text-center">{match.set1_home_score}</span>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set1_home_score}</span>
               </TableCell>
-              <TableCell className="text-center">
-                <span className="w-8 text-center">{match.set2_home_score}</span>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set2_home_score}</span>
               </TableCell>
-              <TableCell className="text-center">
-                <span className="w-8 text-center">{match.set3_home_score}</span>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set3_home_score}</span>
               </TableCell>
-              <TableCell className="text-center">
-                <span className="w-8 text-center">{match.set1_away_score}</span>
+              <TableCell className="w-[100px]"></TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set1_away_score}</span>
               </TableCell>
-              <TableCell className="text-center">
-                <span className="w-8 text-center">{match.set2_away_score}</span>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set2_away_score}</span>
               </TableCell>
-              <TableCell className="text-center">
-                <span className="w-8 text-center">{match.set3_away_score}</span>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set3_away_score}</span>
               </TableCell>
               <TableCell>{match.away_team_name}</TableCell>
             </TableRow>
