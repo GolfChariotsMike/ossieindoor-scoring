@@ -80,27 +80,54 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
         throw new Error('Failed to create or retrieve match record');
       }
 
-      // Attempt to update existing match data record
-      const { data: updateData, error: updateError } = await supabase
+      // First check if match data already exists
+      const { data: existingMatchData, error: checkError } = await supabase
         .from('match_data_v2')
-        .upsert({
-          match_id: matchData.id,
-          court_number: courtNumber,
-          division: division,
-          home_team_name: homeTeamName,
-          away_team_name: awayTeamName,
-          set1_home_score: finalHomeScore,
-          set1_away_score: finalAwayScore,
-          match_date: matchDate.toISOString(),
-          fixture_start_time: matchData.fixture_start_time,
-          has_final_score: false
-        }, {
-          onConflict: 'match_id'
-        });
+        .select()
+        .eq('match_id', matchData.id)
+        .maybeSingle();
 
-      if (updateError) {
-        console.error('Error recording match data:', updateError);
-        throw updateError;
+      if (checkError) {
+        console.error('Error checking existing match data:', checkError);
+        throw checkError;
+      }
+
+      let result;
+      
+      if (existingMatchData) {
+        // Update existing record
+        console.log('Updating existing match data record');
+        result = await supabase
+          .from('match_data_v2')
+          .update({
+            set1_home_score: finalHomeScore,
+            set1_away_score: finalAwayScore,
+            match_date: matchDate.toISOString(),
+            fixture_start_time: matchData.fixture_start_time,
+          })
+          .eq('match_id', matchData.id);
+      } else {
+        // Insert new record
+        console.log('Creating new match data record');
+        result = await supabase
+          .from('match_data_v2')
+          .insert({
+            match_id: matchData.id,
+            court_number: courtNumber,
+            division: division,
+            home_team_name: homeTeamName,
+            away_team_name: awayTeamName,
+            set1_home_score: finalHomeScore,
+            set1_away_score: finalAwayScore,
+            match_date: matchDate.toISOString(),
+            fixture_start_time: matchData.fixture_start_time,
+            has_final_score: false
+          });
+      }
+
+      if (result.error) {
+        console.error('Error recording match data:', result.error);
+        throw result.error;
       }
 
       console.log('Successfully recorded first set progress');
