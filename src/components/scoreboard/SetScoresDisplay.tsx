@@ -1,10 +1,9 @@
-
 import { SetScores, Match } from "@/types/volleyball";
 
 interface SetScoresDisplayProps {
   setScores: SetScores;
+  match: Match;
   isTeamsSwitched: boolean;
-  match?: Match; // Making match optional since it's not used in this component
 }
 
 export const SetScoresDisplay = ({ setScores, isTeamsSwitched }: SetScoresDisplayProps) => {

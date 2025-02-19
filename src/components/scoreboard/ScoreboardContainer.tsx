@@ -70,13 +70,7 @@ export const ScoreboardContainer = () => {
     if (gameState.isMatchComplete && match && gameState.hasGameStarted && !hasTriedSavingScores.current) {
       console.log('Match complete, attempting to save scores');
       hasTriedSavingScores.current = true;
-      
-      // Start the results display timer immediately
-      const startTime = Date.now();
-      setResultsDisplayStartTime(startTime);
-      console.log('Started results display timer at:', startTime);
 
-      // Attempt to save scores in the background
       gameState.saveMatchScores(match.id, gameState.setScores.home, gameState.setScores.away)
         .catch(error => {
           console.error('Error saving match scores:', error);
@@ -85,6 +79,11 @@ export const ScoreboardContainer = () => {
             description: "Scores saved locally and will be uploaded when connection is restored.",
             variant: "default",
           });
+        })
+        .finally(() => {
+          // Always start the results display timer, regardless of save success
+          console.log('Starting results display timer');
+          setResultsDisplayStartTime(Date.now());
         });
     }
   }, [gameState.isMatchComplete, match, gameState.setScores, gameState.saveMatchScores, gameState.hasGameStarted]);
@@ -203,7 +202,6 @@ export const ScoreboardContainer = () => {
       onExitConfirmationChange={setShowExitConfirmation}
       onConfirmExit={confirmExit}
       fixture={fixture}
-      resultsDisplayStartTime={resultsDisplayStartTime}
     />
   );
 };
