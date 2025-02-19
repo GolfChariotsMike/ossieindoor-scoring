@@ -64,6 +64,8 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
           set3_home_score: 0,
           set3_away_score: 0,
           fixture_start_time: matchDate.toISOString()
+        }, {
+          onConflict: 'match_code'
         })
         .select()
         .single();
@@ -73,11 +75,24 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
         throw matchError;
       }
 
-      // Specify match_id in the onConflict parameter for upsert
-      const { error: dataError } = await supabase
+      // First try to update existing record
+      const { data: updateData, error: updateError } = await supabase
         .from('match_data_v2')
-        .upsert(
-          {
+        .update({
+          set1_home_score: finalHomeScore,
+          set1_away_score: finalAwayScore,
+          match_date: matchDate.toISOString(),
+          fixture_start_time: matchData.fixture_start_time,
+          has_final_score: false
+        })
+        .eq('match_id', matchData.id)
+        .select();
+
+      // If no rows were updated, insert a new record
+      if (!updateData || updateData.length === 0) {
+        const { error: insertError } = await supabase
+          .from('match_data_v2')
+          .insert({
             match_id: matchData.id,
             court_number: courtNumber,
             division: division,
@@ -88,15 +103,15 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
             match_date: matchDate.toISOString(),
             fixture_start_time: matchData.fixture_start_time,
             has_final_score: false
-          },
-          {
-            onConflict: 'match_id'
-          }
-        );
+          });
 
-      if (dataError) {
-        console.error('Error recording match data:', dataError);
-        throw dataError;
+        if (insertError) {
+          console.error('Error inserting match data:', insertError);
+          throw insertError;
+        }
+      } else if (updateError) {
+        console.error('Error updating match data:', updateError);
+        throw updateError;
       }
 
       console.log('Successfully recorded first set progress');
