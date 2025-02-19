@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
@@ -19,13 +20,48 @@ const processPendingScores = async () => {
 
     for (const score of pendingScores) {
       try {
-        console.log('Attempting to save pending score:', score.id);
-        await saveMatchScores(score.matchId, score.homeScores, score.awayScores);
+        // Check if a record already exists for this match
+        const { data: existingData, error: checkError } = await supabase
+          .from('match_data_v2')
+          .select()
+          .eq('match_id', score.matchId)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error checking existing match data:', checkError);
+          continue;
+        }
+
+        // If record exists, update it instead of creating new
+        if (existingData) {
+          console.log('Updating existing match data:', existingData.id);
+          const { error: updateError } = await supabase
+            .from('match_data_v2')
+            .update({
+              home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
+              away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
+              set1_home_score: score.homeScores[0] || 0,
+              set1_away_score: score.awayScores[0] || 0,
+              set2_home_score: score.homeScores[1] || 0,
+              set2_away_score: score.awayScores[1] || 0,
+              set3_home_score: score.homeScores[2] || 0,
+              set3_away_score: score.awayScores[2] || 0,
+            })
+            .eq('id', existingData.id);
+
+          if (updateError) {
+            throw updateError;
+          }
+        } else {
+          // Only attempt to save if no record exists
+          console.log('Saving new match data for match:', score.matchId);
+          await saveMatchScores(score.matchId, score.homeScores, score.awayScores);
+        }
+
         await removePendingScore(score.id);
         console.log('Successfully processed pending score:', score.id);
       } catch (error) {
         console.error('Failed to process pending score:', score.id, error);
-        // Update retry count
         score.retryCount += 1;
         if (score.retryCount > 5) {
           console.error('Max retries reached for score:', score.id);
@@ -36,7 +72,6 @@ const processPendingScores = async () => {
             variant: "destructive",
           });
         } else {
-          // Save the updated retry count
           await savePendingScore(score);
         }
       }
