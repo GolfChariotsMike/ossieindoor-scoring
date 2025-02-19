@@ -39,6 +39,7 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
       const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
       const matchCode = `${courtNumber}-${formattedDate}`;
 
+      // First ensure we have the match record
       const { data: matchData, error: matchError } = await supabase
         .from('matches_v2')
         .upsert({
@@ -64,18 +65,25 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
           set3_home_score: 0,
           set3_away_score: 0,
           fixture_start_time: matchDate.toISOString()
+        }, {
+          onConflict: 'match_code'
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (matchError) {
         console.error('Error recording match:', matchError);
         throw matchError;
       }
 
-      const { error: dataError } = await supabase
+      if (!matchData) {
+        throw new Error('Failed to create or retrieve match record');
+      }
+
+      // Attempt to update existing match data record
+      const { data: updateData, error: updateError } = await supabase
         .from('match_data_v2')
-        .insert({
+        .upsert({
           match_id: matchData.id,
           court_number: courtNumber,
           division: division,
@@ -86,11 +94,13 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
           match_date: matchDate.toISOString(),
           fixture_start_time: matchData.fixture_start_time,
           has_final_score: false
+        }, {
+          onConflict: 'match_id'
         });
 
-      if (dataError) {
-        console.error('Error recording match data:', dataError);
-        throw dataError;
+      if (updateError) {
+        console.error('Error recording match data:', updateError);
+        throw updateError;
       }
 
       console.log('Successfully recorded first set progress');
