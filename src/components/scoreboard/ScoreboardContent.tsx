@@ -12,13 +12,14 @@ import { useNavigate } from "react-router-dom";
 interface ScoreboardContentProps {
   match: Match | undefined;
   isLoading: boolean;
-  gameState: any; // Using any here as the gameState type is complex and internal
+  gameState: any;
   onBack: () => void;
   onManualNextMatch: () => void;
   showExitConfirmation: boolean;
   onExitConfirmationChange: (show: boolean) => void;
   onConfirmExit: () => void;
   fixture?: Fixture;
+  resultsDisplayStartTime?: number | null;
 }
 
 export const ScoreboardContent = ({
@@ -30,7 +31,8 @@ export const ScoreboardContent = ({
   showExitConfirmation,
   onExitConfirmationChange,
   onConfirmExit,
-  fixture
+  fixture,
+  resultsDisplayStartTime
 }: ScoreboardContentProps) => {
   const navigate = useNavigate();
 
@@ -64,6 +66,7 @@ export const ScoreboardContent = ({
               setScores={gameState.setScores}
               isTeamsSwitched={gameState.isTeamsSwitched}
               onStartNextMatch={onManualNextMatch}
+              resultsDisplayStartTime={resultsDisplayStartTime}
             />
           ) : (
             <>
