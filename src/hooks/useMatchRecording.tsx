@@ -73,9 +73,10 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
         throw matchError;
       }
 
+      // Use upsert instead of insert for match_data_v2
       const { error: dataError } = await supabase
         .from('match_data_v2')
-        .insert({
+        .upsert({
           match_id: matchData.id,
           court_number: courtNumber,
           division: division,
@@ -85,7 +86,10 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
           set1_away_score: finalAwayScore,
           match_date: matchDate.toISOString(),
           fixture_start_time: matchData.fixture_start_time,
-          has_final_score: false
+          has_final_score: false,
+          is_active: true
+        }, {
+          onConflict: 'match_id'
         });
 
       if (dataError) {
