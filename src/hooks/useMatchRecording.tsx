@@ -73,21 +73,26 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
         throw matchError;
       }
 
+      // Specify match_id in the onConflict parameter for upsert
       const { error: dataError } = await supabase
         .from('match_data_v2')
-        .upsert({
-          match_id: matchData.id,
-          court_number: courtNumber,
-          division: division,
-          home_team_name: homeTeamName,
-          away_team_name: awayTeamName,
-          set1_home_score: finalHomeScore,
-          set1_away_score: finalAwayScore,
-          match_date: matchDate.toISOString(),
-          fixture_start_time: matchData.fixture_start_time,
-          has_final_score: false
-        })
-        .select();
+        .upsert(
+          {
+            match_id: matchData.id,
+            court_number: courtNumber,
+            division: division,
+            home_team_name: homeTeamName,
+            away_team_name: awayTeamName,
+            set1_home_score: finalHomeScore,
+            set1_away_score: finalAwayScore,
+            match_date: matchDate.toISOString(),
+            fixture_start_time: matchData.fixture_start_time,
+            has_final_score: false
+          },
+          {
+            onConflict: 'match_id'
+          }
+        );
 
       if (dataError) {
         console.error('Error recording match data:', dataError);
