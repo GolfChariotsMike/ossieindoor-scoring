@@ -26,7 +26,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   const [isLongPress, setIsLongPress] = useState(false);
   const [countdown, setCountdown] = useState<string>("");
   const timerRef = useRef<NodeJS.Timeout>();
-  const longPressDelay = 500;
+  const longPressDelay = 10000; // Increased to 10 seconds
 
   const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
     let setPoints = 0;
