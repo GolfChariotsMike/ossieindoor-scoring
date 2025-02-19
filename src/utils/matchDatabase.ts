@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
@@ -66,11 +65,6 @@ const processPendingScores = async () => {
         if (score.retryCount > 5) {
           console.error('Max retries reached for score:', score.id);
           await removePendingScore(score.id);
-          toast({
-            title: "Warning",
-            description: "Some scores could not be saved due to connection issues. Please check the match history.",
-            variant: "destructive",
-          });
         } else {
           await savePendingScore(score);
         }
