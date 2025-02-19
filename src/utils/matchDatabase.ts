@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
@@ -178,81 +177,36 @@ export const saveMatchScores = async (
       }
     });
 
-    // Check if a record already exists
-    const { data: existingData, error: checkError } = await supabase
+    // Use upsert with match_id as the constraint
+    const { error: upsertError } = await supabase
       .from('match_data_v2')
-      .select()
-      .eq('match_id', matchId)
-      .maybeSingle();
+      .upsert({
+        match_id: matchId,
+        court_number: matchData.court_number,
+        division: matchData.division,
+        home_team_name: matchData.home_team_name,
+        away_team_name: matchData.away_team_name,
+        set1_home_score: homeScores[0] || 0,
+        set1_away_score: awayScores[0] || 0,
+        set2_home_score: homeScores[1] || 0,
+        set2_away_score: awayScores[1] || 0,
+        set3_home_score: homeScores[2] || 0,
+        set3_away_score: awayScores[2] || 0,
+        home_total_points: homePointsFor,
+        away_total_points: awayPointsFor,
+        home_result: getResult(true),
+        away_result: getResult(false),
+        home_bonus_points: homeBonusPoints,
+        away_bonus_points: awayBonusPoints,
+        home_total_match_points: homeMatchPoints,
+        away_total_match_points: awayMatchPoints,
+        match_date: matchData.start_time,
+        has_final_score: true
+      });
 
-    if (checkError) {
-      console.error('Error checking existing match data:', checkError);
-      throw checkError;
-    }
-
-    let upsertResult;
-    
-    if (existingData) {
-      // Update existing record
-      console.log('Updating existing match data:', existingData.id);
-      upsertResult = await supabase
-        .from('match_data_v2')
-        .update({
-          court_number: matchData.court_number,
-          division: matchData.division,
-          home_team_name: matchData.home_team_name,
-          away_team_name: matchData.away_team_name,
-          set1_home_score: homeScores[0] || 0,
-          set1_away_score: awayScores[0] || 0,
-          set2_home_score: homeScores[1] || 0,
-          set2_away_score: awayScores[1] || 0,
-          set3_home_score: homeScores[2] || 0,
-          set3_away_score: awayScores[2] || 0,
-          home_total_points: homePointsFor,
-          away_total_points: awayPointsFor,
-          home_result: getResult(true),
-          away_result: getResult(false),
-          home_bonus_points: homeBonusPoints,
-          away_bonus_points: awayBonusPoints,
-          home_total_match_points: homeMatchPoints,
-          away_total_match_points: awayMatchPoints,
-          match_date: matchData.start_time,
-          has_final_score: true
-        })
-        .eq('id', existingData.id);
-    } else {
-      // Insert new record
-      console.log('Creating new match data record');
-      upsertResult = await supabase
-        .from('match_data_v2')
-        .insert({
-          match_id: matchId,
-          court_number: matchData.court_number,
-          division: matchData.division,
-          home_team_name: matchData.home_team_name,
-          away_team_name: matchData.away_team_name,
-          set1_home_score: homeScores[0] || 0,
-          set1_away_score: awayScores[0] || 0,
-          set2_home_score: homeScores[1] || 0,
-          set2_away_score: awayScores[1] || 0,
-          set3_home_score: homeScores[2] || 0,
-          set3_away_score: awayScores[2] || 0,
-          home_total_points: homePointsFor,
-          away_total_points: awayPointsFor,
-          home_result: getResult(true),
-          away_result: getResult(false),
-          home_bonus_points: homeBonusPoints,
-          away_bonus_points: awayBonusPoints,
-          home_total_match_points: homeMatchPoints,
-          away_total_match_points: awayMatchPoints,
-          match_date: matchData.start_time,
-          has_final_score: true
-        });
-    }
-
-    if (upsertResult.error) {
-      console.error('Error saving match data:', upsertResult.error);
-      throw upsertResult.error;
+    if (upsertError) {
+      console.error('Error saving match data:', upsertError);
+      throw upsertError;
     }
 
     // After successful save, update team statistics
@@ -337,4 +291,3 @@ export const saveMatchScores = async (
     });
   }
 };
-
