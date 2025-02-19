@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { format, parseISO, isValid } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
@@ -26,10 +26,6 @@ interface MatchResult {
   set3_home_score: number;
   set3_away_score: number;
   division: string;
-}
-
-interface GroupedMatches {
-  [key: string]: MatchResult[];
 }
 
 export const MatchResultsTable = () => {
@@ -61,7 +57,18 @@ export const MatchResultsTable = () => {
         throw error;
       }
 
-      return data as MatchResult[];
+      // Sort matches by fixture date and court number
+      const sortedMatches = data?.sort((a, b) => {
+        // First sort by fixture date
+        const dateA = a.fixture_start_time ? new Date(a.fixture_start_time) : new Date(a.match_date);
+        const dateB = b.fixture_start_time ? new Date(b.fixture_start_time) : new Date(b.match_date);
+        const dateCompare = dateA.getTime() - dateB.getTime();
+        if (dateCompare !== 0) return dateCompare;
+        // Then by court number
+        return a.court_number - b.court_number;
+      });
+
+      return sortedMatches as MatchResult[];
     },
   });
 
@@ -69,7 +76,7 @@ export const MatchResultsTable = () => {
     if (!dateString) return '';
     try {
       const date = parseISO(dateString);
-      return isValid(date) ? format(date, 'dd/MM/yyyy') : '';
+      return format(date, 'dd/MM/yyyy');
     } catch (error) {
       console.error('Error formatting date:', dateString, error);
       return '';
@@ -80,108 +87,73 @@ export const MatchResultsTable = () => {
     if (!dateString) return '';
     try {
       const date = parseISO(dateString);
-      return isValid(date) ? format(date, 'h:mmaa').toLowerCase() : '';
+      return format(date, 'h:mmaa').toLowerCase();
     } catch (error) {
       console.error('Error formatting time:', dateString, error);
       return '';
     }
   };
 
-  const groupMatchesByDay = (matches: MatchResult[] | undefined): GroupedMatches => {
-    if (!matches) return {};
-
-    const grouped = matches.reduce((acc: GroupedMatches, match) => {
-      const dateString = formatDate(match.fixture_start_time || match.match_date);
-      if (!acc[dateString]) {
-        acc[dateString] = [];
-      }
-      acc[dateString].push(match);
-      return acc;
-    }, {});
-
-    // Sort matches within each day by time and court number
-    Object.keys(grouped).forEach(date => {
-      grouped[date].sort((a, b) => {
-        const timeA = new Date(a.fixture_start_time || a.match_date).getTime();
-        const timeB = new Date(b.fixture_start_time || b.match_date).getTime();
-        if (timeA !== timeB) return timeA - timeB;
-        return a.court_number - b.court_number;
-      });
-    });
-
-    return grouped;
-  };
-
-  const groupedMatches = groupMatchesByDay(matches);
-  const sortedDates = Object.keys(groupedMatches).sort((a, b) => {
-    const dateA = parseISO(a.split('/').reverse().join('-'));
-    const dateB = parseISO(b.split('/').reverse().join('-'));
-    return dateB.getTime() - dateA.getTime(); // Most recent first
-  });
-
   if (isLoading) {
     return <div className="text-center p-4">Loading match results...</div>;
   }
 
   return (
-    <div className="space-y-8">
-      {sortedDates.map(date => (
-        <div key={date} className="rounded-lg border bg-card">
-          <div className="px-4 py-2 font-semibold text-lg border-b">
-            {date}
-          </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px]">Time</TableHead>
-                <TableHead className="w-[80px]">Court</TableHead>
-                <TableHead className="w-[200px]">Team A</TableHead>
-                <TableHead className="text-center px-1">1st</TableHead>
-                <TableHead className="text-center px-1">2nd</TableHead>
-                <TableHead className="text-center px-1">3rd</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
-                <TableHead className="text-center px-1">1st</TableHead>
-                <TableHead className="text-center px-1">2nd</TableHead>
-                <TableHead className="text-center px-1">3rd</TableHead>
-                <TableHead className="w-[200px]">Team B</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {groupedMatches[date].map((match) => (
-                <TableRow key={match.id}>
-                  <TableCell>
-                    {formatTime(match.fixture_start_time || match.match_date)}
-                  </TableCell>
-                  <TableCell>
-                    {match.court_number}
-                  </TableCell>
-                  <TableCell>{match.home_team_name}</TableCell>
-                  <TableCell className="text-center px-1">
-                    <span className="w-6 text-center">{match.set1_home_score}</span>
-                  </TableCell>
-                  <TableCell className="text-center px-1">
-                    <span className="w-6 text-center">{match.set2_home_score}</span>
-                  </TableCell>
-                  <TableCell className="text-center px-1">
-                    <span className="w-6 text-center">{match.set3_home_score}</span>
-                  </TableCell>
-                  <TableCell className="w-[100px]"></TableCell>
-                  <TableCell className="text-center px-1">
-                    <span className="w-6 text-center">{match.set1_away_score}</span>
-                  </TableCell>
-                  <TableCell className="text-center px-1">
-                    <span className="w-6 text-center">{match.set2_away_score}</span>
-                  </TableCell>
-                  <TableCell className="text-center px-1">
-                    <span className="w-6 text-center">{match.set3_away_score}</span>
-                  </TableCell>
-                  <TableCell>{match.away_team_name}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ))}
+    <div className="rounded-lg border bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[100px]">Date</TableHead>
+            <TableHead className="w-[100px]">Time</TableHead>
+            <TableHead className="w-[80px]">Court</TableHead>
+            <TableHead className="w-[200px]">Team A</TableHead>
+            <TableHead className="text-center px-1">1st</TableHead>
+            <TableHead className="text-center px-1">2nd</TableHead>
+            <TableHead className="text-center px-1">3rd</TableHead>
+            <TableHead className="w-[100px]"></TableHead>
+            <TableHead className="text-center px-1">1st</TableHead>
+            <TableHead className="text-center px-1">2nd</TableHead>
+            <TableHead className="text-center px-1">3rd</TableHead>
+            <TableHead className="w-[200px]">Team B</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {matches?.map((match) => (
+            <TableRow key={match.id}>
+              <TableCell>
+                {formatDate(match.fixture_start_time || match.match_date)}
+              </TableCell>
+              <TableCell>
+                {formatTime(match.fixture_start_time || match.match_date)}
+              </TableCell>
+              <TableCell>
+                {match.court_number}
+              </TableCell>
+              <TableCell>{match.home_team_name}</TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set1_home_score}</span>
+              </TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set2_home_score}</span>
+              </TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set3_home_score}</span>
+              </TableCell>
+              <TableCell className="w-[100px]"></TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set1_away_score}</span>
+              </TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set2_away_score}</span>
+              </TableCell>
+              <TableCell className="text-center px-1">
+                <span className="w-6 text-center">{match.set3_away_score}</span>
+              </TableCell>
+              <TableCell>{match.away_team_name}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
