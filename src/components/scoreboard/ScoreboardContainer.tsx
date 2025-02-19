@@ -36,6 +36,7 @@ export const ScoreboardContainer = () => {
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousFixtureIdRef = useRef<string | null>(null);
+  const hasTriedSavingScores = useRef<boolean>(false);
 
   const gameState = useGameState();
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
@@ -61,14 +62,29 @@ export const ScoreboardContainer = () => {
       console.log('New fixture detected, resetting game state:', fixture.Id);
       gameState.resetGameState();
       previousFixtureIdRef.current = fixture.Id;
+      hasTriedSavingScores.current = false;
     }
   }, [fixture?.Id, gameState.resetGameState]);
 
   useEffect(() => {
-    if (gameState.isMatchComplete && match && gameState.hasGameStarted) {
-      console.log('Match complete, saving scores');
-      gameState.saveMatchScores(match.id, gameState.setScores.home, gameState.setScores.away);
-      setResultsDisplayStartTime(Date.now());
+    if (gameState.isMatchComplete && match && gameState.hasGameStarted && !hasTriedSavingScores.current) {
+      console.log('Match complete, attempting to save scores');
+      hasTriedSavingScores.current = true;
+
+      gameState.saveMatchScores(match.id, gameState.setScores.home, gameState.setScores.away)
+        .catch(error => {
+          console.error('Error saving match scores:', error);
+          toast({
+            title: "Connection Issues",
+            description: "Scores saved locally and will be uploaded when connection is restored.",
+            variant: "default",
+          });
+        })
+        .finally(() => {
+          // Always start the results display timer, regardless of save success
+          console.log('Starting results display timer');
+          setResultsDisplayStartTime(Date.now());
+        });
     }
   }, [gameState.isMatchComplete, match, gameState.setScores, gameState.saveMatchScores, gameState.hasGameStarted]);
 
