@@ -39,6 +39,7 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
       const formattedDate = format(matchDate, 'yyyyMMdd-HHmm');
       const matchCode = `${courtNumber}-${formattedDate}`;
 
+      // First ensure we have the match record
       const { data: matchData, error: matchError } = await supabase
         .from('matches_v2')
         .upsert({
@@ -75,43 +76,47 @@ export const useMatchRecording = (isTeamsSwitched: boolean) => {
         throw matchError;
       }
 
-      // First try to update existing record
-      const { data: updateData, error: updateError } = await supabase
+      // Now try to find any existing match data record
+      const { data: existingData } = await supabase
         .from('match_data_v2')
-        .update({
-          set1_home_score: finalHomeScore,
-          set1_away_score: finalAwayScore,
-          match_date: matchDate.toISOString(),
-          fixture_start_time: matchData.fixture_start_time,
-          has_final_score: false
-        })
+        .select()
         .eq('match_id', matchData.id)
-        .select();
+        .maybeSingle();
 
-      // If no rows were updated, insert a new record
-      if (!updateData || updateData.length === 0) {
+      const matchDataRecord = {
+        match_id: matchData.id,
+        court_number: courtNumber,
+        division: division,
+        home_team_name: homeTeamName,
+        away_team_name: awayTeamName,
+        set1_home_score: finalHomeScore,
+        set1_away_score: finalAwayScore,
+        match_date: matchDate.toISOString(),
+        fixture_start_time: matchData.fixture_start_time,
+        has_final_score: false
+      };
+
+      if (existingData) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('match_data_v2')
+          .update(matchDataRecord)
+          .eq('id', existingData.id);
+
+        if (updateError) {
+          console.error('Error updating match data:', updateError);
+          throw updateError;
+        }
+      } else {
+        // Insert new record
         const { error: insertError } = await supabase
           .from('match_data_v2')
-          .insert({
-            match_id: matchData.id,
-            court_number: courtNumber,
-            division: division,
-            home_team_name: homeTeamName,
-            away_team_name: awayTeamName,
-            set1_home_score: finalHomeScore,
-            set1_away_score: finalAwayScore,
-            match_date: matchDate.toISOString(),
-            fixture_start_time: matchData.fixture_start_time,
-            has_final_score: false
-          });
+          .insert(matchDataRecord);
 
         if (insertError) {
           console.error('Error inserting match data:', insertError);
           throw insertError;
         }
-      } else if (updateError) {
-        console.error('Error updating match data:', updateError);
-        throw updateError;
       }
 
       console.log('Successfully recorded first set progress');
