@@ -3,7 +3,6 @@ import { Fireworks } from "./Fireworks";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { format, differenceInSeconds } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -114,24 +113,21 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   };
 
   useEffect(() => {
-    const nextMatchTime = new Date(match.startTime);
-    nextMatchTime.setMinutes(nextMatchTime.getMinutes() + 50); // Assuming next match starts 50 minutes after current match start
+    const displayDuration = 50; // 50 seconds display time
+    let timeLeft = displayDuration;
 
     const interval = setInterval(() => {
-      const now = new Date();
-      const diff = differenceInSeconds(nextMatchTime, now);
+      timeLeft -= 1;
       
-      if (diff <= 0) {
-        setCountdown("Starting soon...");
+      if (timeLeft <= 0) {
+        setCountdown("Starting next match...");
       } else {
-        const minutes = Math.floor(diff / 60);
-        const seconds = diff % 60;
-        setCountdown(`Next match in ${minutes}:${seconds.toString().padStart(2, '0')}`);
+        setCountdown(`Auto-starting next match in ${timeLeft} seconds`);
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [match.startTime]);
+  }, []);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
