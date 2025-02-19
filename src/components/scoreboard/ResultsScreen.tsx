@@ -1,9 +1,9 @@
-
 import { Match, SetScores } from "@/types/volleyball";
 import { Fireworks } from "./Fireworks";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { format, differenceInSeconds } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,7 @@ interface ResultsScreenProps {
 export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch }: ResultsScreenProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
+  const [countdown, setCountdown] = useState<string>("");
   const timerRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 500;
 
@@ -112,6 +113,26 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
     }
   };
 
+  useEffect(() => {
+    const nextMatchTime = new Date(match.startTime);
+    nextMatchTime.setMinutes(nextMatchTime.getMinutes() + 50); // Assuming next match starts 50 minutes after current match start
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = differenceInSeconds(nextMatchTime, now);
+      
+      if (diff <= 0) {
+        setCountdown("Starting soon...");
+      } else {
+        const minutes = Math.floor(diff / 60);
+        const seconds = diff % 60;
+        setCountdown(`Next match in ${minutes}:${seconds.toString().padStart(2, '0')}`);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [match.startTime]);
+
   return (
     <div className="fixed inset-0 flex items-center justify-center">
       <div className="absolute inset-0">
@@ -145,7 +166,10 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
         </div>
 
         {onStartNextMatch && (
-          <div className="relative z-10 flex justify-center">
+          <div className="relative z-10 flex flex-col items-center justify-center space-y-4">
+            <p className="text-2xl font-score text-black mb-2 animate-pulse">
+              {countdown}
+            </p>
             <Button
               type="button"
               onClick={(e) => {
