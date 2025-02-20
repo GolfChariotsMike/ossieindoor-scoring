@@ -68,21 +68,19 @@ export const useGameState = () => {
       setIsMatchComplete(matchComplete);
       
       if (matchComplete && match) {
-        console.log('Match complete, saving final scores:', {
+        console.log('Match complete, saving final scores in background:', {
           matchId: match.id,
           newSetScores,
           timestamp: new Date().toISOString()
         });
-        try {
-          saveMatchScores(match.id, newSetScores.home, newSetScores.away);
-        } catch (error) {
-          console.error('Error while trying to save match scores:', error);
-          toast({
-            title: "Error Saving Scores",
-            description: "There was a problem saving the match scores. Please try again.",
-            variant: "destructive",
+        
+        // Save scores in the background without awaiting
+        Promise.resolve().then(() => {
+          saveMatchScores(match.id, newSetScores.home, newSetScores.away).catch(error => {
+            console.error('Background score saving error:', error);
+            // Even if saving fails, it's stored in IndexedDB and will be retried
           });
-        }
+        });
       }
       
       toast({
@@ -90,6 +88,11 @@ export const useGameState = () => {
         description: matchComplete ? "The match has ended" : "Starting next set",
       });
     } else {
+      // Only proceed if there are actual scores
+      if (currentScore.home === 0 && currentScore.away === 0) {
+        return;
+      }
+
       setIsBreak(true);
       toast({
         title: "Set Complete",

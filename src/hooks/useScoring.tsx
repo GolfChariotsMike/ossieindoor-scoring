@@ -13,7 +13,7 @@ export const useScoring = () => {
 
   const { recordFirstSetProgress } = useMatchRecording(isTeamsSwitched);
 
-  const handleScore = async (team: "home" | "away", increment: boolean, match?: Match | Fixture) => {
+  const handleScore = (team: "home" | "away", increment: boolean, match?: Match | Fixture) => {
     if (isMatchComplete) {
       console.log('Match is complete, ignoring score update');
       return;
@@ -32,14 +32,22 @@ export const useScoring = () => {
     });
     
     if (!wasGameStarted && increment && match) {
-      console.log('First point scored, recording initial match progress');
-      const success = await recordFirstSetProgress(match, 
-        team === 'home' ? 1 : 0, 
-        team === 'away' ? 1 : 0
-      );
-      if (success) {
-        setFirstSetRecorded(true);
-      }
+      console.log('First point scored, recording initial match progress in background');
+      // Record first set progress in the background without blocking
+      Promise.resolve().then(async () => {
+        try {
+          const success = await recordFirstSetProgress(match, 
+            team === 'home' ? 1 : 0, 
+            team === 'away' ? 1 : 0
+          );
+          if (success) {
+            setFirstSetRecorded(true);
+          }
+        } catch (error) {
+          console.error('Background first set recording error:', error);
+          // Error is handled within recordFirstSetProgress
+        }
+      });
     }
   };
 
