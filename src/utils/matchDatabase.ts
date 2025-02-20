@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
-import { initDB, savePendingScore, getPendingScores, removePendingScore } from "@/services/indexedDB";
+import { initDB, savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
 
 interface PendingScore {
   id: string;
@@ -10,15 +10,36 @@ interface PendingScore {
   awayScores: number[];
   timestamp: string;
   retryCount: number;
+  status: 'pending' | 'processing' | 'failed';
 }
 
+const MAX_RETRIES = 5;
+const RETRY_INTERVAL = 30000; // 30 seconds
+
+let isProcessing = false;
+
 const processPendingScores = async () => {
+  if (isProcessing) {
+    console.log('Already processing pending scores, skipping...');
+    return;
+  }
+
   try {
+    isProcessing = true;
     const pendingScores = await getPendingScores();
     console.log('Processing pending scores:', pendingScores.length);
 
     for (const score of pendingScores) {
       try {
+        await updatePendingScoreStatus(score.id, 'processing');
+        
+        // Check if we have network connectivity
+        if (!navigator.onLine) {
+          console.log('No network connection, will retry later');
+          await updatePendingScoreStatus(score.id, 'pending');
+          continue;
+        }
+
         // Check if a record already exists for this match
         const { data: existingData, error: checkError } = await supabase
           .from('match_data_v2')
@@ -28,10 +49,11 @@ const processPendingScores = async () => {
 
         if (checkError) {
           console.error('Error checking existing match data:', checkError);
+          score.retryCount += 1;
+          await updatePendingScoreStatus(score.id, score.retryCount >= MAX_RETRIES ? 'failed' : 'pending');
           continue;
         }
 
-        // If record exists, update it instead of creating new
         if (existingData) {
           console.log('Updating existing match data:', existingData.id);
           const { error: updateError } = await supabase
@@ -52,7 +74,6 @@ const processPendingScores = async () => {
             throw updateError;
           }
         } else {
-          // Only attempt to save if no record exists
           console.log('Saving new match data for match:', score.matchId);
           await saveMatchScores(score.matchId, score.homeScores, score.awayScores);
         }
@@ -62,21 +83,42 @@ const processPendingScores = async () => {
       } catch (error) {
         console.error('Failed to process pending score:', score.id, error);
         score.retryCount += 1;
-        if (score.retryCount > 5) {
+        await updatePendingScoreStatus(score.id, score.retryCount >= MAX_RETRIES ? 'failed' : 'pending');
+        
+        if (score.retryCount >= MAX_RETRIES) {
           console.error('Max retries reached for score:', score.id);
-          await removePendingScore(score.id);
-        } else {
-          await savePendingScore(score);
+          toast({
+            title: "Score Upload Failed",
+            description: "Please check your connection and try again later.",
+            variant: "destructive",
+          });
         }
       }
     }
   } catch (error) {
     console.error('Error processing pending scores:', error);
+  } finally {
+    isProcessing = false;
   }
 };
 
 // Set up periodic check for pending scores
-setInterval(processPendingScores, 30000); // Check every 30 seconds
+let processingInterval = setInterval(processPendingScores, RETRY_INTERVAL);
+
+// Add network status handlers
+window.addEventListener('online', () => {
+  console.log('Network connection restored, processing pending scores...');
+  processPendingScores();
+});
+
+window.addEventListener('offline', () => {
+  console.log('Network connection lost, scores will be saved locally');
+  toast({
+    title: "You're offline",
+    description: "Scores will be saved locally and uploaded when connection is restored.",
+    variant: "default",
+  });
+});
 
 export const saveMatchScores = async (
   matchId: string, 
@@ -102,7 +144,7 @@ export const saveMatchScores = async (
 
   try {
     // First, save to IndexedDB as backup
-    const pendingScore: PendingScore = {
+    const pendingScore: Omit<PendingScore, 'status'> = {
       id: `${matchId}-${Date.now()}`,
       matchId,
       homeScores,
@@ -111,6 +153,16 @@ export const saveMatchScores = async (
       retryCount: 0
     };
     await savePendingScore(pendingScore);
+
+    // If we're offline, don't try to save to Supabase yet
+    if (!navigator.onLine) {
+      toast({
+        title: "You're offline",
+        description: "Scores saved locally and will be uploaded when connection is restored.",
+        variant: "default",
+      });
+      return;
+    }
 
     console.log('Fetching match details for ID:', matchId);
     
