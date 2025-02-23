@@ -25,12 +25,22 @@ export const ScoreboardContainer = () => {
   const { courtId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Get fixture from both location.state and URL parameters
   const searchParams = new URLSearchParams(location.search);
   const fixtureParam = searchParams.get('fixture');
+  const stateFixture = location.state?.fixture;
   
+  // Use URL parameter fixture if available, otherwise use state fixture
   const fixture = fixtureParam 
     ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
-    : location.state?.fixture as Fixture | undefined;
+    : stateFixture as Fixture | undefined;
+
+  console.log('ScoreboardContainer - Initial fixture data:', { 
+    fromState: stateFixture,
+    fromParams: fixtureParam,
+    finalFixture: fixture 
+  });
 
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
@@ -42,6 +52,7 @@ export const ScoreboardContainer = () => {
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
 
+  // Query for next matches
   const { data: nextMatches = [] } = useQuery({
     queryKey: ["matches", fixture?.DateTime ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')],
     queryFn: async () => {
@@ -54,9 +65,7 @@ export const ScoreboardContainer = () => {
     },
   });
 
-  console.log('ScoreboardContainer - Match data:', match);
-  console.log('ScoreboardContainer - Fixture:', fixture);
-
+  // Reset game state when fixture changes
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
