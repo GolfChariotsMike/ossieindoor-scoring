@@ -34,6 +34,11 @@ const DEFAULT_COURTS = Array.from({ length: 8 }, (_, i) => ({
   last_error: null,
 }));
 
+const DEFAULT_TIMER_STATE = {
+  seconds_remaining: 14 * 60,
+  is_running: false,
+};
+
 export const CourtStatusSection = () => {
   const [courtStatuses, setCourtStatuses] = useState<CourtStatus[]>(DEFAULT_COURTS);
   const [timerStates, setTimerStates] = useState<TimerState[]>([]);
@@ -60,7 +65,28 @@ export const CourtStatusSection = () => {
         .order("court_number");
 
       if (error) throw error;
-      return data as TimerState[];
+
+      const allTimerStates = [...(data || [])];
+      const existingCourtNumbers = new Set(data?.map(t => t.court_number));
+
+      for (let i = 1; i <= 8; i++) {
+        if (!existingCourtNumbers.has(i)) {
+          const { data: newTimer, error: createError } = await supabase
+            .from("timer_state")
+            .insert({
+              court_number: i,
+              ...DEFAULT_TIMER_STATE
+            })
+            .select()
+            .single();
+
+          if (!createError && newTimer) {
+            allTimerStates.push(newTimer);
+          }
+        }
+      }
+
+      return allTimerStates.sort((a, b) => a.court_number - b.court_number) as TimerState[];
     },
   });
 
@@ -198,48 +224,6 @@ export const CourtStatusSection = () => {
   };
 
   useEffect(() => {
-    const courtChannel = supabase.channel("court-status-changes").on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'court_status',
-      },
-      (payload) => {
-        setCourtStatuses((current) => {
-          const updated = [...current];
-          const index = updated.findIndex(
-            (s) => s.court_number === (payload.new as CourtStatus).court_number
-          );
-          if (index >= 0) {
-            updated[index] = payload.new as CourtStatus;
-          } else {
-            updated.push(payload.new as CourtStatus);
-          }
-          return updated.sort((a, b) => a.court_number - b.court_number);
-        });
-      }
-    ).on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'court_status',
-      },
-      (payload) => {
-        setCourtStatuses((current) => {
-          const updated = [...current];
-          const index = updated.findIndex(
-            (s) => s.court_number === (payload.new as CourtStatus).court_number
-          );
-          if (index >= 0) {
-            updated[index] = payload.new as CourtStatus;
-          }
-          return updated.sort((a, b) => a.court_number - b.court_number);
-        });
-      }
-    );
-
     const timerChannel = supabase.channel("timer-state-changes").on(
       'postgres_changes',
       {
@@ -263,12 +247,33 @@ export const CourtStatusSection = () => {
       }
     );
 
-    courtChannel.subscribe();
+    const courtChannel = supabase.channel("court-status-changes").on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'court_status',
+      },
+      (payload) => {
+        setCourtStatuses((current) => {
+          const updated = [...current];
+          const index = updated.findIndex(
+            (s) => s.court_number === (payload.new as CourtStatus).court_number
+          );
+          if (index >= 0) {
+            updated[index] = payload.new as CourtStatus;
+          }
+          return updated.sort((a, b) => a.court_number - b.court_number);
+        });
+      }
+    );
+
     timerChannel.subscribe();
+    courtChannel.subscribe();
 
     return () => {
-      supabase.removeChannel(courtChannel);
       supabase.removeChannel(timerChannel);
+      supabase.removeChannel(courtChannel);
     };
   }, []);
 
