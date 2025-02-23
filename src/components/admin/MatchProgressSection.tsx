@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fetchMatchData } from "@/utils/matchDataFetcher";
 import {
   Table,
   TableBody,
@@ -27,17 +28,18 @@ export const MatchProgressSection = () => {
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const [editedScores, setEditedScores] = useState<MatchScore | null>(null);
 
-  const { data: matchProgress = [], isLoading } = useQuery({
+  // Fetch both recorded matches and scheduled fixtures
+  const { data: matchProgress = [], isLoading: isLoadingProgress } = useQuery({
     queryKey: ["match-progress", selectedDay],
     queryFn: async () => {
       console.log('MatchProgressSection: Fetching match progress data');
-      const { data, error } = await supabase
+      const { data: recordedMatches, error } = await supabase
         .from('match_progress_view')
         .select('*')
         .order('start_time', { ascending: false });
 
       if (error) {
-        console.error('MatchProgressSection: Error fetching match progress:', error);
+        console.error('Error fetching match progress:', error);
         toast({
           title: "Error",
           description: "Failed to fetch match progress",
@@ -46,7 +48,27 @@ export const MatchProgressSection = () => {
         throw error;
       }
 
-      return data || [];
+      return recordedMatches || [];
+    },
+  });
+
+  const { data: scheduledFixtures = [], isLoading: isLoadingFixtures } = useQuery({
+    queryKey: ["scheduled-fixtures", selectedDay],
+    queryFn: async () => {
+      try {
+        const date = new Date();
+        const fixtures = await fetchMatchData(undefined, date);
+        console.log('Fetched scheduled fixtures:', fixtures);
+        return Array.isArray(fixtures) ? fixtures : [];
+      } catch (error) {
+        console.error('Error fetching fixtures:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch scheduled fixtures",
+          variant: "destructive",
+        });
+        return [];
+      }
     },
   });
 
@@ -120,22 +142,43 @@ export const MatchProgressSection = () => {
     updateScoresMutation.mutate({ matchId, scores: editedScores });
   };
 
+  // Find matches that are scheduled but don't have scores
+  const missingScores = scheduledFixtures.filter(fixture => {
+    return !matchProgress.some(match => 
+      match.court_number === fixture.court &&
+      match.home_team_name === fixture.homeTeam?.name &&
+      match.away_team_name === fixture.awayTeam?.name &&
+      (match.set1_home_score !== null || match.set1_away_score !== null)
+    );
+  });
+
   const days = ["all", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
-  const filteredMatches = matchProgress
+  const filteredMatches = [...matchProgress, ...missingScores.map(fixture => ({
+    id: fixture.id || `fixture-${fixture.court}-${fixture.startTime}`,
+    court_number: fixture.court,
+    division: fixture.division || 'Unknown',
+    start_time: fixture.startTime,
+    home_team_name: fixture.homeTeam?.name || 'TBD',
+    away_team_name: fixture.awayTeam?.name || 'TBD',
+    set1_home_score: null,
+    set1_away_score: null,
+    set2_home_score: null,
+    set2_away_score: null,
+    set3_home_score: null,
+    set3_away_score: null,
+    has_final_score: false,
+    is_active: true,
+  }))]
     .filter(match => {
       if (selectedDay !== "all") {
-        if (!match.start_time) {
-          console.log('MatchProgressSection: Match missing start_time:', match);
-          return false;
-        }
-        
+        if (!match.start_time) return false;
         try {
           const matchDate = parseISO(match.start_time);
           const dayMatch = format(matchDate, 'EEEE') === selectedDay;
           if (!dayMatch) return false;
         } catch (error) {
-          console.error('MatchProgressSection: Error parsing date for match:', match, error);
+          console.error('Error parsing date:', error);
           return false;
         }
       }
@@ -149,9 +192,13 @@ export const MatchProgressSection = () => {
       }
       
       return true;
+    })
+    .sort((a, b) => {
+      if (!a.start_time || !b.start_time) return 0;
+      return new Date(b.start_time).getTime() - new Date(a.start_time).getTime();
     });
 
-  if (isLoading) {
+  if (isLoadingProgress || isLoadingFixtures) {
     return (
       <div className="text-volleyball-black text-2xl text-center animate-pulse">
         Loading matches...
@@ -205,12 +252,12 @@ export const MatchProgressSection = () => {
         </TableHeader>
         <TableBody>
           {filteredMatches.map((match) => (
-            <TableRow key={match.id}>
+            <TableRow key={match.id} className={!match.set1_home_score && !match.set1_away_score ? "bg-yellow-50" : ""}>
               <TableCell>
-                {format(parseISO(match.start_time), 'dd/MM/yyyy HH:mm')}
+                {match.start_time ? format(parseISO(match.start_time), 'dd/MM/yyyy HH:mm') : 'N/A'}
               </TableCell>
               <TableCell>
-                {format(parseISO(match.start_time), 'EEEE')}
+                {match.start_time ? format(parseISO(match.start_time), 'EEEE') : 'N/A'}
               </TableCell>
               <TableCell>Court {match.court_number}</TableCell>
               <TableCell>{match.division || 'N/A'}</TableCell>
@@ -259,9 +306,19 @@ export const MatchProgressSection = () => {
                   <TableCell>
                     <Badge
                       variant={match.has_final_score ? "default" : "secondary"}
-                      className={match.has_final_score ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}
+                      className={
+                        !match.set1_home_score && !match.set1_away_score
+                          ? "bg-yellow-100 text-yellow-800"
+                          : match.has_final_score
+                          ? "bg-green-100 text-green-800"
+                          : "bg-blue-100 text-blue-800"
+                      }
                     >
-                      {match.has_final_score ? "Final Score Saved" : "Match In Progress"}
+                      {!match.set1_home_score && !match.set1_away_score
+                        ? "Missing Scores"
+                        : match.has_final_score
+                        ? "Final Score Saved"
+                        : "Match In Progress"}
                     </Badge>
                   </TableCell>
                   <TableCell>
