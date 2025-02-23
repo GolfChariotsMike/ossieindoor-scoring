@@ -15,8 +15,16 @@ type CourtStatus = {
   last_error: string | null;
 };
 
+const DEFAULT_COURTS = Array.from({ length: 6 }, (_, i) => ({
+  court_number: i + 1,
+  is_connected: false,
+  last_heartbeat: null,
+  last_sync_time: null,
+  last_error: null,
+}));
+
 export const CourtStatusSection = () => {
-  const [courtStatuses, setCourtStatuses] = useState<CourtStatus[]>([]);
+  const [courtStatuses, setCourtStatuses] = useState<CourtStatus[]>(DEFAULT_COURTS);
 
   const { data: initialStatuses } = useQuery({
     queryKey: ["court-statuses"],
@@ -33,7 +41,15 @@ export const CourtStatusSection = () => {
 
   useEffect(() => {
     if (initialStatuses) {
-      setCourtStatuses(initialStatuses);
+      // Merge initial statuses with default courts
+      const updatedStatuses = [...DEFAULT_COURTS];
+      initialStatuses.forEach(status => {
+        const index = updatedStatuses.findIndex(s => s.court_number === status.court_number);
+        if (index >= 0) {
+          updatedStatuses[index] = status;
+        }
+      });
+      setCourtStatuses(updatedStatuses);
     }
   }, [initialStatuses]);
 
@@ -92,6 +108,10 @@ export const CourtStatusSection = () => {
   }, []);
 
   const getStatusBadge = (status: CourtStatus) => {
+    if (!status.last_heartbeat) {
+      return <Badge variant="secondary">No Activity</Badge>;
+    }
+
     const lastHeartbeat = new Date(status.last_heartbeat);
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     
