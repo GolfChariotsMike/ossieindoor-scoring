@@ -12,6 +12,8 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
     queryKey: ["match", courtId, fixture?.HomeTeam, fixture?.AwayTeam],
     queryFn: async () => {
       try {
+        console.log('useMatchData - Starting match data fetch:', { courtId, fixture });
+
         if (fixture) {
           const matchCode = generateMatchCode(courtId, fixture);
           console.log('Generated match code:', matchCode);
@@ -24,14 +26,15 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
 
           console.log('Creating new match with fixture:', fixture);
           const newMatch = await createNewMatch(courtId, fixture, matchCode);
+          console.log('Created new match with fixture:', newMatch);
           return transformToMatch(newMatch);
         }
 
         // Handle case without fixture
         const matchCode = generateMatchCode(courtId);
         console.log('Generated match code for no fixture:', matchCode);
-        const existingMatch = await findExistingMatch(matchCode);
         
+        const existingMatch = await findExistingMatch(matchCode);
         if (existingMatch) {
           console.log('Found existing match without fixture:', existingMatch);
           return transformToMatch(existingMatch);
@@ -58,11 +61,11 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           startTime: new Date().toISOString(),
           homeTeam: { id: "team-1", name: "Team A" },
           awayTeam: { id: "team-2", name: "Team B" },
-        };
+        } as Match;
       }
     },
-    retry: 2,             // Retry failed requests up to 2 times
-    staleTime: 30000,     // Consider data fresh for 30 seconds
-    gcTime: 60000,        // Keep unused data in garbage collection for 1 minute
+    retry: 2,
+    staleTime: 30000,
+    gcTime: 60000,
   });
 };
