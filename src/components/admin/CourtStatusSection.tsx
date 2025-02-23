@@ -85,8 +85,14 @@ export const CourtStatusSection = () => {
 
   const handleSkipPhase = async (courtNumber: number) => {
     try {
+      console.log('Starting skip phase for court:', courtNumber);
       const timerState = timerStates.find(t => t.court_number === courtNumber);
-      if (!timerState) return;
+      if (!timerState) {
+        console.log('No timer state found for court:', courtNumber);
+        return;
+      }
+
+      console.log('Current timer state:', timerState);
 
       const { error: timerError } = await supabase
         .from('timer_state')
@@ -97,6 +103,7 @@ export const CourtStatusSection = () => {
         .eq('court_number', courtNumber);
 
       if (timerError) throw timerError;
+      console.log('Timer state updated successfully');
 
       const { data: matchData, error: matchError } = await supabase
         .from('match_data_v2')
@@ -106,9 +113,15 @@ export const CourtStatusSection = () => {
         .limit(1)
         .single();
 
-      if (matchError) throw matchError;
+      if (matchError) {
+        console.error('Error fetching match data:', matchError);
+        throw matchError;
+      }
+
+      console.log('Found match data:', matchData);
 
       if (matchData) {
+        console.log('Updating match data for ID:', matchData.id);
         const { error: phaseError } = await supabase
           .from('match_data_v2')
           .update({
@@ -118,6 +131,7 @@ export const CourtStatusSection = () => {
           .eq('id', matchData.id);
 
         if (phaseError) throw phaseError;
+        console.log('Match data updated successfully');
       }
 
       toast({
@@ -258,6 +272,11 @@ export const CourtStatusSection = () => {
     };
   }, []);
 
+  useEffect(() => {
+    console.log('Current timer states:', timerStates);
+    console.log('Current court statuses:', courtStatuses);
+  }, [timerStates, courtStatuses]);
+
   const getStatusBadge = (status: CourtStatus) => {
     if (!status.last_heartbeat) {
       return <Badge variant="secondary">No Activity</Badge>;
@@ -289,6 +308,7 @@ export const CourtStatusSection = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {courtStatuses.map((status) => {
         const timerState = timerStates.find(t => t.court_number === status.court_number);
+        console.log(`Court ${status.court_number} timer state:`, timerState);
         
         return (
           <Card key={status.court_number}>
