@@ -159,8 +159,8 @@ export const MatchProgressSection = () => {
     court_number: fixture.court,
     division: fixture.division || 'Unknown',
     start_time: fixture.startTime,
-    home_team_name: fixture.homeTeam?.name || 'TBD',
-    away_team_name: fixture.awayTeam?.name || 'TBD',
+    home_team_name: fixture.homeTeam?.name || 'Unknown Team',
+    away_team_name: fixture.awayTeam?.name || 'Unknown Team',
     set1_home_score: null,
     set1_away_score: null,
     set2_home_score: null,
@@ -252,7 +252,10 @@ export const MatchProgressSection = () => {
         </TableHeader>
         <TableBody>
           {filteredMatches.map((match) => (
-            <TableRow key={match.id} className={!match.set1_home_score && !match.set1_away_score ? "bg-yellow-50" : ""}>
+            <TableRow 
+              key={match.id} 
+              className={!match.set1_home_score && !match.set1_away_score ? "bg-yellow-50" : ""}
+            >
               <TableCell>
                 {match.start_time ? format(parseISO(match.start_time), 'dd/MM/yyyy HH:mm') : 'N/A'}
               </TableCell>
@@ -260,7 +263,7 @@ export const MatchProgressSection = () => {
                 {match.start_time ? format(parseISO(match.start_time), 'EEEE') : 'N/A'}
               </TableCell>
               <TableCell>Court {match.court_number}</TableCell>
-              <TableCell>{match.division || 'N/A'}</TableCell>
+              <TableCell>{match.division}</TableCell>
               <TableCell>
                 <div>
                   <div className="font-semibold">{match.home_team_name}</div>
