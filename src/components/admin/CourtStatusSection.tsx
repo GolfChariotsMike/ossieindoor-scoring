@@ -39,32 +39,52 @@ export const CourtStatusSection = () => {
 
   useEffect(() => {
     // Subscribe to real-time updates
-    const channel: RealtimeChannel = supabase.channel("court-status-changes");
+    const channel = supabase.channel("court-status-changes").on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'court_status',
+      },
+      (payload) => {
+        setCourtStatuses((current) => {
+          const updated = [...current];
+          const index = updated.findIndex(
+            (s) => s.court_number === (payload.new as CourtStatus).court_number
+          );
+          if (index >= 0) {
+            updated[index] = payload.new as CourtStatus;
+          } else {
+            updated.push(payload.new as CourtStatus);
+          }
+          return updated.sort((a, b) => a.court_number - b.court_number);
+        });
+      }
+    );
 
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'court_status',
-        },
-        (payload: { new: CourtStatus }) => {
-          setCourtStatuses((current) => {
-            const updated = [...current];
-            const index = updated.findIndex(
-              (s) => s.court_number === payload.new.court_number
-            );
-            if (index >= 0) {
-              updated[index] = payload.new;
-            } else {
-              updated.push(payload.new);
-            }
-            return updated.sort((a, b) => a.court_number - b.court_number);
-          });
-        }
-      )
-      .subscribe();
+    // Subscribe to UPDATE events
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'court_status',
+      },
+      (payload) => {
+        setCourtStatuses((current) => {
+          const updated = [...current];
+          const index = updated.findIndex(
+            (s) => s.court_number === (payload.new as CourtStatus).court_number
+          );
+          if (index >= 0) {
+            updated[index] = payload.new as CourtStatus;
+          }
+          return updated.sort((a, b) => a.court_number - b.court_number);
+        });
+      }
+    );
+
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);
