@@ -1,3 +1,4 @@
+
 import { format, parseISO } from "date-fns";
 import { Search } from "lucide-react";
 import { useState } from "react";
@@ -18,6 +19,9 @@ import {
 } from "@/components/ui/table";
 import { MatchScore, MatchProgressItem } from "./types";
 import { MatchScoreEditor } from "./MatchScoreEditor";
+
+// Define the days array at the top level of the file
+const days = ["all", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
 export const MatchProgressSection = () => {
   const { toast } = useToast();
