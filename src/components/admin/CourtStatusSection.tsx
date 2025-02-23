@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +37,6 @@ export const CourtStatusSection = () => {
   const [courtStatuses, setCourtStatuses] = useState<CourtStatus[]>(DEFAULT_COURTS);
   const [timerStates, setTimerStates] = useState<TimerState[]>([]);
 
-  // Fetch court statuses
   const { data: initialStatuses } = useQuery({
     queryKey: ["court-statuses"],
     queryFn: async () => {
@@ -56,7 +54,6 @@ export const CourtStatusSection = () => {
     },
   });
 
-  // Fetch timer states
   const { data: initialTimerStates, isLoading: isLoadingTimers } = useQuery({
     queryKey: ["timer-states"],
     queryFn: async () => {
@@ -98,7 +95,6 @@ export const CourtStatusSection = () => {
     try {
       console.log(`Toggling timer for court ${courtNumber} from ${currentlyRunning} to ${!currentlyRunning}`);
       
-      // First try to find existing timer state
       const { data: existingTimer } = await supabase
         .from('timer_state')
         .select('*')
@@ -106,7 +102,6 @@ export const CourtStatusSection = () => {
         .single();
 
       if (existingTimer) {
-        // Update existing timer
         const { error } = await supabase
           .from('timer_state')
           .update({ is_running: !currentlyRunning })
@@ -114,12 +109,11 @@ export const CourtStatusSection = () => {
 
         if (error) throw error;
       } else {
-        // Create new timer state
         const { error } = await supabase
           .from('timer_state')
           .insert([{
             court_number: courtNumber,
-            seconds_remaining: 14 * 60, // 14 minutes
+            seconds_remaining: 14 * 60,
             is_running: true
           }]);
 
@@ -144,7 +138,6 @@ export const CourtStatusSection = () => {
     try {
       console.log(`Resetting timer for court ${courtNumber}`);
       
-      // First try to find existing timer state
       const { data: existingTimer } = await supabase
         .from('timer_state')
         .select('*')
@@ -152,7 +145,6 @@ export const CourtStatusSection = () => {
         .single();
 
       if (existingTimer) {
-        // Update existing timer
         const { error } = await supabase
           .from('timer_state')
           .update({ 
@@ -163,7 +155,6 @@ export const CourtStatusSection = () => {
 
         if (error) throw error;
       } else {
-        // Create new timer state
         const { error } = await supabase
           .from('timer_state')
           .insert([{
@@ -193,7 +184,6 @@ export const CourtStatusSection = () => {
     try {
       console.log('Starting skip phase for court:', courtNumber);
       
-      // First try to find existing timer state
       const { data: existingTimer } = await supabase
         .from('timer_state')
         .select('*')
@@ -201,7 +191,6 @@ export const CourtStatusSection = () => {
         .single();
 
       if (existingTimer) {
-        // Update existing timer
         const { error: timerError } = await supabase
           .from('timer_state')
           .update({ 
@@ -212,7 +201,6 @@ export const CourtStatusSection = () => {
 
         if (timerError) throw timerError;
       } else {
-        // Create new timer state
         const { error: timerError } = await supabase
           .from('timer_state')
           .insert([{
@@ -268,53 +256,54 @@ export const CourtStatusSection = () => {
   };
 
   useEffect(() => {
-    const timerChannel = supabase.channel("timer-state-changes").on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'timer_state',
-      },
-      (payload) => {
-        console.log('Timer state changed:', payload);
-        setTimerStates((current) => {
-          const newState = payload.new as TimerState;
-          const existingIndex = current.findIndex(t => t.court_number === newState.court_number);
-          
-          if (existingIndex >= 0) {
+    const timerChannel = supabase.channel("timer-state-changes")
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'timer_state',
+        },
+        (payload) => {
+          console.log('Timer state changed:', payload);
+          setTimerStates(current => {
+            const newState = payload.new as TimerState;
+            const existingIndex = current.findIndex(t => t.court_number === newState.court_number);
+            
+            if (existingIndex >= 0) {
+              const updated = [...current];
+              updated[existingIndex] = newState;
+              return updated;
+            } else {
+              return [...current, newState];
+            }
+          });
+        }
+      )
+      .subscribe();
+
+    const courtChannel = supabase.channel("court-status-changes")
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'court_status',
+        },
+        (payload) => {
+          setCourtStatuses(current => {
             const updated = [...current];
-            updated[existingIndex] = newState;
-            return updated;
-          } else {
-            return [...current, newState];
-          }
-        });
-      }
-    );
-
-    const courtChannel = supabase.channel("court-status-changes").on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'court_status',
-      },
-      (payload) => {
-        setCourtStatuses((current) => {
-          const updated = [...current];
-          const index = updated.findIndex(
-            (s) => s.court_number === (payload.new as CourtStatus).court_number
-          );
-          if (index >= 0) {
-            updated[index] = payload.new as CourtStatus;
-          }
-          return updated.sort((a, b) => a.court_number - b.court_number);
-        });
-      }
-    );
-
-    timerChannel.subscribe();
-    courtChannel.subscribe();
+            const index = updated.findIndex(
+              (s) => s.court_number === (payload.new as CourtStatus).court_number
+            );
+            if (index >= 0) {
+              updated[index] = payload.new as CourtStatus;
+            }
+            return updated.sort((a, b) => a.court_number - b.court_number);
+          });
+        }
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(timerChannel);
