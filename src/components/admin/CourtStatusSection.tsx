@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { Timer } from "lucide-react";
+import { Timer, SkipForward, Play, Pause, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
 
 type CourtStatus = {
   court_number: number;
@@ -71,7 +72,6 @@ export const CourtStatusSection = () => {
 
   useEffect(() => {
     if (initialStatuses) {
-      // Merge initial statuses with default courts
       const updatedStatuses = [...DEFAULT_COURTS];
       initialStatuses.forEach(status => {
         const index = updatedStatuses.findIndex(s => s.court_number === status.court_number);
@@ -83,8 +83,82 @@ export const CourtStatusSection = () => {
     }
   }, [initialStatuses]);
 
+  const handleSkipPhase = async (courtNumber: number) => {
+    try {
+      const timerState = timerStates.find(t => t.court_number === courtNumber);
+      if (!timerState) return;
+
+      const { error } = await supabase
+        .from('timer_state')
+        .update({ seconds_remaining: 0 })
+        .eq('court_number', courtNumber);
+
+      if (error) throw error;
+
+      toast({
+        title: "Phase Skipped",
+        description: `Timer phase skipped for Court ${courtNumber}`,
+      });
+    } catch (error) {
+      console.error('Error skipping phase:', error);
+      toast({
+        title: "Error",
+        description: "Failed to skip phase",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStartStop = async (courtNumber: number, currentlyRunning: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('timer_state')
+        .update({ is_running: !currentlyRunning })
+        .eq('court_number', courtNumber);
+
+      if (error) throw error;
+
+      toast({
+        title: currentlyRunning ? "Timer Paused" : "Timer Started",
+        description: `Court ${courtNumber} timer ${currentlyRunning ? 'paused' : 'started'}`,
+      });
+    } catch (error) {
+      console.error('Error toggling timer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update timer state",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReset = async (courtNumber: number) => {
+    try {
+      const { error } = await supabase
+        .from('timer_state')
+        .update({ 
+          seconds_remaining: 14 * 60, // Reset to 14 minutes
+          is_running: false 
+        })
+        .eq('court_number', courtNumber);
+
+      if (error) throw error;
+
+      toast({
+        title: "Timer Reset",
+        description: `Court ${courtNumber} timer has been reset`,
+      });
+    } catch (error) {
+      console.error('Error resetting timer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset timer",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
-    // Subscribe to real-time updates for court status
     const courtChannel = supabase.channel("court-status-changes").on(
       'postgres_changes',
       {
@@ -127,7 +201,6 @@ export const CourtStatusSection = () => {
       }
     );
 
-    // Subscribe to real-time updates for timer state
     const timerChannel = supabase.channel("timer-state-changes").on(
       'postgres_changes',
       {
@@ -200,11 +273,42 @@ export const CourtStatusSection = () => {
                 {getStatusBadge(status)}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {timerState && timerState.is_running && (
-                <div className="text-sm flex items-center gap-2 text-green-600 font-semibold">
-                  <Timer className="h-4 w-4" />
-                  <span>{formatTimer(timerState.seconds_remaining)}</span>
+            <CardContent className="space-y-4">
+              {timerState && (
+                <div className="space-y-2">
+                  <div className="text-sm flex items-center gap-2 font-semibold">
+                    <Timer className="h-4 w-4" />
+                    <span className={timerState.is_running ? "text-green-600" : "text-gray-600"}>
+                      {formatTimer(timerState.seconds_remaining)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStartStop(status.court_number, timerState.is_running)}
+                    >
+                      {timerState.is_running ? (
+                        <Pause className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleReset(status.court_number)}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSkipPhase(status.court_number)}
+                    >
+                      <SkipForward className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
               <div className="text-sm">
