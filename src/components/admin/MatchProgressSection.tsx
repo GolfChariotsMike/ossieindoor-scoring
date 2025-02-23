@@ -1,4 +1,3 @@
-
 import { format, parseISO } from "date-fns";
 import { Search } from "lucide-react";
 import { useState } from "react";
@@ -28,7 +27,6 @@ export const MatchProgressSection = () => {
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const [editedScores, setEditedScores] = useState<MatchScore | null>(null);
 
-  // Fetch both recorded matches and scheduled fixtures
   const { data: matchProgress = [], isLoading: isLoadingProgress } = useQuery({
     queryKey: ["match-progress", selectedDay],
     queryFn: async () => {
@@ -58,7 +56,7 @@ export const MatchProgressSection = () => {
       try {
         const date = new Date();
         const fixtures = await fetchMatchData(undefined, date);
-        console.log('Fetched scheduled fixtures:', fixtures);
+        console.log('Raw fixtures data:', fixtures);
         return Array.isArray(fixtures) ? fixtures : [];
       } catch (error) {
         console.error('Error fetching fixtures:', error);
@@ -142,8 +140,8 @@ export const MatchProgressSection = () => {
     updateScoresMutation.mutate({ matchId, scores: editedScores });
   };
 
-  // Find matches that are scheduled but don't have scores
   const missingScores = scheduledFixtures.filter(fixture => {
+    console.log('Checking fixture:', fixture);
     return !matchProgress.some(match => 
       match.court_number === fixture.court &&
       match.home_team_name === fixture.homeTeam?.name &&
@@ -152,24 +150,27 @@ export const MatchProgressSection = () => {
     );
   });
 
-  const days = ["all", "Monday", "Tuesday", "Wednesday", "Thursday"];
+  console.log('Missing scores:', missingScores);
 
-  const filteredMatches = [...matchProgress, ...missingScores.map(fixture => ({
-    id: fixture.id || `fixture-${fixture.court}-${fixture.startTime}`,
-    court_number: fixture.court,
-    division: fixture.division || 'Unknown',
-    start_time: fixture.startTime,
-    home_team_name: fixture.homeTeam?.name || 'Unknown Team',
-    away_team_name: fixture.awayTeam?.name || 'Unknown Team',
-    set1_home_score: null,
-    set1_away_score: null,
-    set2_home_score: null,
-    set2_away_score: null,
-    set3_home_score: null,
-    set3_away_score: null,
-    has_final_score: false,
-    is_active: true,
-  }))]
+  const filteredMatches = [...matchProgress, ...missingScores.map(fixture => {
+    console.log('Processing fixture:', fixture);
+    return {
+      id: fixture.id || `fixture-${fixture.court}-${fixture.startTime}`,
+      court_number: fixture.court,
+      division: fixture.division || 'Unknown',
+      start_time: fixture.startTime,
+      home_team_name: fixture.homeTeam?.name || fixture.HomeTeam || 'Unknown Team',
+      away_team_name: fixture.awayTeam?.name || fixture.AwayTeam || 'Unknown Team',
+      set1_home_score: null,
+      set1_away_score: null,
+      set2_home_score: null,
+      set2_away_score: null,
+      set3_home_score: null,
+      set3_away_score: null,
+      has_final_score: false,
+      is_active: true,
+    };
+  })]
     .filter(match => {
       if (selectedDay !== "all") {
         if (!match.start_time) return false;
