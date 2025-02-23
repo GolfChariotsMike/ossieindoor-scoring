@@ -17,9 +17,12 @@ type CourtStatus = {
 };
 
 type TimerState = {
+  id: string;
   court_number: number;
   seconds_remaining: number;
   is_running: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 const DEFAULT_COURTS = Array.from({ length: 8 }, (_, i) => ({
@@ -52,7 +55,8 @@ export const CourtStatusSection = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("timer_state")
-        .select("*");
+        .select("*")
+        .order("court_number");
 
       if (error) throw error;
       return data as TimerState[];

@@ -826,6 +826,7 @@ export type Database = {
       }
       timer_state: {
         Row: {
+          court_number: number
           created_at: string
           id: string
           is_running: boolean | null
@@ -833,6 +834,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          court_number: number
           created_at?: string
           id?: string
           is_running?: boolean | null
@@ -840,6 +842,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          court_number?: number
           created_at?: string
           id?: string
           is_running?: boolean | null
