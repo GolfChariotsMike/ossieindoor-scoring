@@ -60,39 +60,6 @@ export type Database = {
         }
         Relationships: []
       }
-      court_status: {
-        Row: {
-          court_number: number
-          created_at: string | null
-          id: string
-          is_connected: boolean | null
-          last_error: string | null
-          last_heartbeat: string | null
-          last_sync_time: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          court_number: number
-          created_at?: string | null
-          id?: string
-          is_connected?: boolean | null
-          last_error?: string | null
-          last_heartbeat?: string | null
-          last_sync_time?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          court_number?: number
-          created_at?: string | null
-          id?: string
-          is_connected?: boolean | null
-          last_error?: string | null
-          last_heartbeat?: string | null
-          last_sync_time?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       crash_logs: {
         Row: {
           browser_info: Json | null
@@ -826,7 +793,6 @@ export type Database = {
       }
       timer_state: {
         Row: {
-          court_number: number
           created_at: string
           id: string
           is_running: boolean | null
@@ -834,7 +800,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          court_number: number
           created_at?: string
           id?: string
           is_running?: boolean | null
@@ -842,7 +807,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          court_number?: number
           created_at?: string
           id?: string
           is_running?: boolean | null
