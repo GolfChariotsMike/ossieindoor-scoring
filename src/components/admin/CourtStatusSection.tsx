@@ -97,12 +97,34 @@ export const CourtStatusSection = () => {
   const handleStartStop = async (courtNumber: number, currentlyRunning: boolean) => {
     try {
       console.log(`Toggling timer for court ${courtNumber} from ${currentlyRunning} to ${!currentlyRunning}`);
-      const { error } = await supabase
+      
+      // First try to find existing timer state
+      const { data: existingTimer } = await supabase
         .from('timer_state')
-        .update({ is_running: !currentlyRunning })
-        .eq('court_number', courtNumber);
+        .select('*')
+        .eq('court_number', courtNumber)
+        .single();
 
-      if (error) throw error;
+      if (existingTimer) {
+        // Update existing timer
+        const { error } = await supabase
+          .from('timer_state')
+          .update({ is_running: !currentlyRunning })
+          .eq('court_number', courtNumber);
+
+        if (error) throw error;
+      } else {
+        // Create new timer state
+        const { error } = await supabase
+          .from('timer_state')
+          .insert([{
+            court_number: courtNumber,
+            seconds_remaining: 14 * 60, // 14 minutes
+            is_running: true
+          }]);
+
+        if (error) throw error;
+      }
 
       toast({
         title: currentlyRunning ? "Timer Paused" : "Timer Started",
@@ -121,15 +143,37 @@ export const CourtStatusSection = () => {
   const handleReset = async (courtNumber: number) => {
     try {
       console.log(`Resetting timer for court ${courtNumber}`);
-      const { error } = await supabase
+      
+      // First try to find existing timer state
+      const { data: existingTimer } = await supabase
         .from('timer_state')
-        .update({ 
-          seconds_remaining: 14 * 60,
-          is_running: false 
-        })
-        .eq('court_number', courtNumber);
+        .select('*')
+        .eq('court_number', courtNumber)
+        .single();
 
-      if (error) throw error;
+      if (existingTimer) {
+        // Update existing timer
+        const { error } = await supabase
+          .from('timer_state')
+          .update({ 
+            seconds_remaining: 14 * 60,
+            is_running: false 
+          })
+          .eq('court_number', courtNumber);
+
+        if (error) throw error;
+      } else {
+        // Create new timer state
+        const { error } = await supabase
+          .from('timer_state')
+          .insert([{
+            court_number: courtNumber,
+            seconds_remaining: 14 * 60,
+            is_running: false
+          }]);
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Timer Reset",
@@ -148,23 +192,38 @@ export const CourtStatusSection = () => {
   const handleSkipPhase = async (courtNumber: number) => {
     try {
       console.log('Starting skip phase for court:', courtNumber);
-      const timerState = timerStates.find(t => t.court_number === courtNumber);
-      if (!timerState) {
-        console.log('No timer state found for court:', courtNumber);
-        return;
+      
+      // First try to find existing timer state
+      const { data: existingTimer } = await supabase
+        .from('timer_state')
+        .select('*')
+        .eq('court_number', courtNumber)
+        .single();
+
+      if (existingTimer) {
+        // Update existing timer
+        const { error: timerError } = await supabase
+          .from('timer_state')
+          .update({ 
+            seconds_remaining: 0,
+            is_running: false 
+          })
+          .eq('court_number', courtNumber);
+
+        if (timerError) throw timerError;
+      } else {
+        // Create new timer state
+        const { error: timerError } = await supabase
+          .from('timer_state')
+          .insert([{
+            court_number: courtNumber,
+            seconds_remaining: 0,
+            is_running: false
+          }]);
+
+        if (timerError) throw timerError;
       }
 
-      console.log('Current timer state:', timerState);
-
-      const { error: timerError } = await supabase
-        .from('timer_state')
-        .update({ 
-          seconds_remaining: 0,
-          is_running: false 
-        })
-        .eq('court_number', courtNumber);
-
-      if (timerError) throw timerError;
       console.log('Timer state updated successfully');
 
       const { data: matchData, error: matchError } = await supabase
@@ -296,7 +355,6 @@ export const CourtStatusSection = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {courtStatuses.map((status) => {
         const timerState = timerStates.find(t => t.court_number === status.court_number);
-        console.log(`Rendering court ${status.court_number}, timer state:`, timerState);
         
         return (
           <Card key={status.court_number}>
@@ -307,47 +365,41 @@ export const CourtStatusSection = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isLoadingTimers ? (
-                <div className="text-sm text-muted-foreground">Loading timer state...</div>
-              ) : timerState ? (
-                <div className="space-y-2">
-                  <div className="text-sm flex items-center gap-2 font-semibold">
-                    <Timer className="h-4 w-4" />
-                    <span className={timerState.is_running ? "text-green-600" : "text-gray-600"}>
-                      {formatTimer(timerState.seconds_remaining)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStartStop(status.court_number, timerState.is_running)}
-                    >
-                      {timerState.is_running ? (
-                        <Pause className="h-4 w-4" />
-                      ) : (
-                        <Play className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleReset(status.court_number)}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSkipPhase(status.court_number)}
-                    >
-                      <SkipForward className="h-4 w-4" />
-                    </Button>
-                  </div>
+              <div className="space-y-2">
+                <div className="text-sm flex items-center gap-2 font-semibold">
+                  <Timer className="h-4 w-4" />
+                  <span className={timerState?.is_running ? "text-green-600" : "text-gray-600"}>
+                    {timerState ? formatTimer(timerState.seconds_remaining) : "14:00"}
+                  </span>
                 </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">No timer active for this court</div>
-              )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleStartStop(status.court_number, timerState?.is_running || false)}
+                  >
+                    {timerState?.is_running ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleReset(status.court_number)}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSkipPhase(status.court_number)}
+                  >
+                    <SkipForward className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               <div className="text-sm">
                 <span className="font-medium">Last Heartbeat: </span>
                 {formatTime(status.last_heartbeat)}
