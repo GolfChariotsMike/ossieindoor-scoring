@@ -1,5 +1,5 @@
 const DB_NAME = 'volleyball_scores';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 interface PendingScore {
   id: string;
@@ -48,20 +48,28 @@ export const initDB = async (): Promise<IDBDatabase> => {
         request.onupgradeneeded = (event) => {
           const db = (event.target as IDBOpenDBRequest).result;
           
+          // Create pendingScores store if it doesn't exist
           if (!db.objectStoreNames.contains('pendingScores')) {
             const store = db.createObjectStore('pendingScores', { keyPath: 'id' });
             store.createIndex('matchId', 'matchId', { unique: false });
             store.createIndex('timestamp', 'timestamp', { unique: false });
             store.createIndex('status', 'status', { unique: false });
+            console.log('Created pendingScores store');
           }
 
-          if (!db.objectStoreNames.contains('courtMatches')) {
-            const store = db.createObjectStore('courtMatches', { keyPath: 'id' });
-            store.createIndex('courtNumber', 'PlayingAreaName', { unique: false });
-            store.createIndex('matchDate', 'DateTime', { unique: false });
+          // Always try to create courtMatches store
+          try {
+            if (!db.objectStoreNames.contains('courtMatches')) {
+              const store = db.createObjectStore('courtMatches', { keyPath: 'id' });
+              store.createIndex('courtNumber', 'PlayingAreaName', { unique: false });
+              store.createIndex('matchDate', 'DateTime', { unique: false });
+              console.log('Created courtMatches store');
+            }
+          } catch (error) {
+            console.error('Error creating courtMatches store:', error);
           }
 
-          console.log('IndexedDB upgrade completed');
+          console.log('IndexedDB upgrade completed. Current stores:', Array.from(db.objectStoreNames));
         };
       });
 
