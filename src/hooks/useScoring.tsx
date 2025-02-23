@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
 import { useMatchRecording } from "./useMatchRecording";
+import { savePendingScore } from "@/services/indexedDB";
 
 export const useScoring = () => {
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
@@ -31,6 +32,7 @@ export const useScoring = () => {
       const wasGameStarted = hasGameStarted;
       setHasGameStarted(true);
       
+      // Update the score immediately in the UI
       setCurrentScore((prev) => {
         const newScore = {
           ...prev,
@@ -41,20 +43,37 @@ export const useScoring = () => {
       });
       
       if (!wasGameStarted && increment && match) {
-        console.log('First point scored, recording initial match progress in background');
-        // Record first set progress in the background without blocking
+        console.log('First point scored, saving to IndexedDB');
+        
+        // Save to IndexedDB without waiting
         Promise.resolve().then(async () => {
           try {
-            const success = await recordFirstSetProgress(match, 
-              team === 'home' ? 1 : 0, 
-              team === 'away' ? 1 : 0
-            );
-            if (success) {
-              setFirstSetRecorded(true);
-            }
+            await savePendingScore({
+              id: `${match.id}-${Date.now()}`,
+              matchId: match.id,
+              homeScores: [team === 'home' ? 1 : 0],
+              awayScores: [team === 'away' ? 1 : 0],
+              timestamp: new Date().toISOString(),
+              retryCount: 0
+            });
+            
+            // Try to record to server in background, but don't block UI
+            Promise.resolve().then(async () => {
+              try {
+                const success = await recordFirstSetProgress(match, 
+                  team === 'home' ? 1 : 0, 
+                  team === 'away' ? 1 : 0
+                );
+                if (success) {
+                  setFirstSetRecorded(true);
+                }
+              } catch (error) {
+                console.error('Background first set recording error:', error);
+                // Error is handled within recordFirstSetProgress and will be retried
+              }
+            });
           } catch (error) {
-            console.error('Background first set recording error:', error);
-            // Error is handled within recordFirstSetProgress
+            console.error('Error saving to IndexedDB:', error);
           }
         });
       }

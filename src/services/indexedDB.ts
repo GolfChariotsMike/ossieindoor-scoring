@@ -9,144 +9,243 @@ interface PendingScore {
   timestamp: string;
   retryCount: number;
   status: 'pending' | 'processing' | 'failed';
+  lastError?: string;
 }
 
-export const initDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+const MAX_RETRIES = 10;
+const RETRY_BACKOFF = [
+  1000,   // 1 second
+  5000,   // 5 seconds
+  15000,  // 15 seconds
+  30000,  // 30 seconds
+  60000,  // 1 minute
+  120000, // 2 minutes
+  300000, // 5 minutes
+  600000, // 10 minutes
+  1800000, // 30 minutes
+  3600000, // 1 hour
+];
 
-    request.onerror = () => {
-      console.error("Error opening IndexedDB:", request.error);
-      reject(request.error);
-    };
+export const initDB = async (): Promise<IDBDatabase> => {
+  let retries = 0;
+  const maxInitRetries = 3;
 
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
+  while (retries < maxInitRetries) {
+    try {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      
-      if (!db.objectStoreNames.contains('pendingScores')) {
-        const store = db.createObjectStore('pendingScores', { keyPath: 'id' });
-        store.createIndex('matchId', 'matchId', { unique: false });
-        store.createIndex('timestamp', 'timestamp', { unique: false });
-        store.createIndex('status', 'status', { unique: false });
-      }
+        request.onerror = () => {
+          console.error("Error opening IndexedDB:", request.error);
+          reject(request.error);
+        };
 
-      if (!db.objectStoreNames.contains('courtMatches')) {
-        const store = db.createObjectStore('courtMatches', { keyPath: 'id' });
-        store.createIndex('courtNumber', 'PlayingAreaName', { unique: false });
-        store.createIndex('matchDate', 'DateTime', { unique: false });
-      }
-    };
-  });
+        request.onsuccess = () => {
+          console.log('Successfully opened IndexedDB');
+          resolve(request.result);
+        };
+
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          
+          if (!db.objectStoreNames.contains('pendingScores')) {
+            const store = db.createObjectStore('pendingScores', { keyPath: 'id' });
+            store.createIndex('matchId', 'matchId', { unique: false });
+            store.createIndex('timestamp', 'timestamp', { unique: false });
+            store.createIndex('status', 'status', { unique: false });
+          }
+
+          if (!db.objectStoreNames.contains('courtMatches')) {
+            const store = db.createObjectStore('courtMatches', { keyPath: 'id' });
+            store.createIndex('courtNumber', 'PlayingAreaName', { unique: false });
+            store.createIndex('matchDate', 'DateTime', { unique: false });
+          }
+
+          console.log('IndexedDB upgrade completed');
+        };
+      });
+
+      return db;
+    } catch (error) {
+      console.error(`IndexedDB initialization attempt ${retries + 1} failed:`, error);
+      retries++;
+      if (retries === maxInitRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+    }
+  }
+
+  throw new Error('Failed to initialize IndexedDB after multiple attempts');
 };
 
 export const savePendingScore = async (score: Omit<PendingScore, 'status'>): Promise<void> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['pendingScores'], 'readwrite');
-    const store = transaction.objectStore('pendingScores');
+  let db: IDBDatabase | null = null;
+  try {
+    db = await initDB();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db!.transaction(['pendingScores'], 'readwrite');
+      const store = transaction.objectStore('pendingScores');
 
-    const scoreWithStatus: PendingScore = {
-      ...score,
-      status: 'pending'
-    };
+      const scoreWithStatus: PendingScore = {
+        ...score,
+        status: 'pending'
+      };
 
-    const request = store.put(scoreWithStatus);
+      const request = store.put(scoreWithStatus);
 
-    request.onsuccess = () => {
-      console.log('Saved pending score to IndexedDB:', scoreWithStatus);
-      resolve();
-    };
+      request.onsuccess = () => {
+        console.log('Successfully saved pending score to IndexedDB:', scoreWithStatus);
+        resolve();
+      };
 
-    request.onerror = () => {
-      console.error('Error saving to IndexedDB:', request.error);
-      reject(request.error);
-    };
-  });
+      request.onerror = () => {
+        console.error('Error saving to IndexedDB:', request.error);
+        reject(request.error);
+      };
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
+    });
+  } catch (error) {
+    console.error('Failed to save pending score:', error);
+    throw error;
+  } finally {
+    if (db) db.close();
+  }
 };
 
-export const updatePendingScoreStatus = async (scoreId: string, status: PendingScore['status']): Promise<void> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['pendingScores'], 'readwrite');
-    const store = transaction.objectStore('pendingScores');
-    
-    const getRequest = store.get(scoreId);
-    
-    getRequest.onsuccess = () => {
-      const score = getRequest.result;
-      if (score) {
-        score.status = status;
-        const updateRequest = store.put(score);
-        updateRequest.onsuccess = () => resolve();
-        updateRequest.onerror = () => reject(updateRequest.error);
-      } else {
-        reject(new Error('Score not found'));
-      }
-    };
-    
-    getRequest.onerror = () => reject(getRequest.error);
-  });
+export const updatePendingScoreStatus = async (
+  scoreId: string,
+  status: PendingScore['status'],
+  error?: string
+): Promise<void> => {
+  let db: IDBDatabase | null = null;
+  try {
+    db = await initDB();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db!.transaction(['pendingScores'], 'readwrite');
+      const store = transaction.objectStore('pendingScores');
+      
+      const getRequest = store.get(scoreId);
+      
+      getRequest.onsuccess = () => {
+        const score = getRequest.result;
+        if (score) {
+          score.status = status;
+          if (error) score.lastError = error;
+          const updateRequest = store.put(score);
+          updateRequest.onsuccess = () => resolve();
+          updateRequest.onerror = () => reject(updateRequest.error);
+        } else {
+          reject(new Error('Score not found'));
+        }
+      };
+      
+      getRequest.onerror = () => reject(getRequest.error);
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
+    });
+  } catch (error) {
+    console.error('Failed to update pending score status:', error);
+    throw error;
+  } finally {
+    if (db) db.close();
+  }
 };
 
 export const getPendingScores = async (): Promise<PendingScore[]> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['pendingScores'], 'readonly');
-    const store = transaction.objectStore('pendingScores');
-    const statusIndex = store.index('status');
-    const request = statusIndex.getAll('pending');
+  let db: IDBDatabase | null = null;
+  try {
+    db = await initDB();
+    return await new Promise((resolve, reject) => {
+      const transaction = db!.transaction(['pendingScores'], 'readonly');
+      const store = transaction.objectStore('pendingScores');
+      const statusIndex = store.index('status');
+      const request = statusIndex.getAll('pending');
 
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
 
-    request.onerror = () => {
-      console.error('Error reading from IndexedDB:', request.error);
-      reject(request.error);
-    };
-  });
+      request.onerror = () => {
+        console.error('Error reading from IndexedDB:', request.error);
+        reject(request.error);
+      };
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
+    });
+  } catch (error) {
+    console.error('Failed to get pending scores:', error);
+    return [];
+  } finally {
+    if (db) db.close();
+  }
 };
 
 export const getFailedScores = async (): Promise<PendingScore[]> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['pendingScores'], 'readonly');
-    const store = transaction.objectStore('pendingScores');
-    const statusIndex = store.index('status');
-    const request = statusIndex.getAll('failed');
+  let db: IDBDatabase | null = null;
+  try {
+    db = await initDB();
+    return await new Promise((resolve, reject) => {
+      const transaction = db!.transaction(['pendingScores'], 'readonly');
+      const store = transaction.objectStore('pendingScores');
+      const statusIndex = store.index('status');
+      const request = statusIndex.getAll('failed');
 
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
 
-    request.onerror = () => {
-      console.error('Error reading failed scores from IndexedDB:', request.error);
-      reject(request.error);
-    };
-  });
+      request.onerror = () => {
+        console.error('Error reading failed scores from IndexedDB:', request.error);
+        reject(request.error);
+      };
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
+    });
+  } catch (error) {
+    console.error('Failed to get failed scores:', error);
+    return [];
+  } finally {
+    if (db) db.close();
+  }
 };
 
 export const removePendingScore = async (scoreId: string): Promise<void> => {
-  const db = await initDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['pendingScores'], 'readwrite');
-    const store = transaction.objectStore('pendingScores');
-    const request = store.delete(scoreId);
+  let db: IDBDatabase | null = null;
+  try {
+    db = await initDB();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db!.transaction(['pendingScores'], 'readwrite');
+      const store = transaction.objectStore('pendingScores');
+      const request = store.delete(scoreId);
 
-    request.onsuccess = () => {
-      console.log('Removed pending score:', scoreId);
-      resolve();
-    };
+      request.onsuccess = () => {
+        console.log('Successfully removed pending score:', scoreId);
+        resolve();
+      };
 
-    request.onerror = () => {
-      console.error('Error removing from IndexedDB:', request.error);
-      reject(request.error);
-    };
-  });
+      request.onerror = () => {
+        console.error('Error removing from IndexedDB:', request.error);
+        reject(request.error);
+      };
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
+    });
+  } catch (error) {
+    console.error('Failed to remove pending score:', error);
+    throw error;
+  } finally {
+    if (db) db.close();
+  }
 };
 
 export const saveCourtMatches = async (matches: any[]): Promise<void> => {
@@ -252,4 +351,8 @@ export const cleanOldMatches = async (): Promise<void> => {
       reject(request.error);
     };
   });
+};
+
+export const getRetryDelay = (retryCount: number): number => {
+  return RETRY_BACKOFF[Math.min(retryCount, RETRY_BACKOFF.length - 1)];
 };
