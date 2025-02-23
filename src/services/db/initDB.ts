@@ -44,7 +44,9 @@ export const initDB = async (): Promise<IDBDatabase> => {
               console.log(`Created ${store.name} store with indexes`);
             }
           });
-        });
+
+          console.log('IndexedDB upgrade completed. Current stores:', Array.from(db.objectStoreNames));
+        };
       });
 
       return db;
