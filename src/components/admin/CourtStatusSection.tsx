@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 type CourtStatus = {
   court_number: number;
@@ -38,14 +39,15 @@ export const CourtStatusSection = () => {
 
   useEffect(() => {
     // Subscribe to real-time updates
-    const channel = supabase
-      .channel("court-status-changes")
+    const channel: RealtimeChannel = supabase.channel("court-status-changes");
+
+    channel
       .on(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "*",
-          schema: "public",
-          table: "court_status",
+          event: '*',
+          schema: 'public',
+          table: 'court_status',
         },
         (payload: { new: CourtStatus }) => {
           setCourtStatuses((current) => {
