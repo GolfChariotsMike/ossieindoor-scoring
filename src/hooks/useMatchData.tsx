@@ -61,8 +61,8 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         };
       }
     },
-    retry: 2, // Retry failed requests up to 2 times
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    cacheTime: 60000, // Keep unused data in cache for 1 minute
+    retry: 2,             // Retry failed requests up to 2 times
+    staleTime: 30000,     // Consider data fresh for 30 seconds
+    gcTime: 60000,        // Keep unused data in garbage collection for 1 minute
   });
 };
