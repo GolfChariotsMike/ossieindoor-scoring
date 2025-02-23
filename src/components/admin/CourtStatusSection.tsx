@@ -15,7 +15,7 @@ type CourtStatus = {
   last_error: string | null;
 };
 
-const DEFAULT_COURTS = Array.from({ length: 6 }, (_, i) => ({
+const DEFAULT_COURTS = Array.from({ length: 8 }, (_, i) => ({
   court_number: i + 1,
   is_connected: false,
   last_heartbeat: null,
