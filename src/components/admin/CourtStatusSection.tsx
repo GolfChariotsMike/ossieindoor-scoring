@@ -1,10 +1,10 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { RealtimeChannel } from "@supabase/supabase-js";
 import { Timer, SkipForward, Play, Pause, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -34,11 +34,6 @@ const DEFAULT_COURTS = Array.from({ length: 8 }, (_, i) => ({
   last_error: null,
 }));
 
-const DEFAULT_TIMER_STATE = {
-  seconds_remaining: 14 * 60,
-  is_running: false,
-};
-
 export const CourtStatusSection = () => {
   const [courtStatuses, setCourtStatuses] = useState<CourtStatus[]>(DEFAULT_COURTS);
   const [timerStates, setTimerStates] = useState<TimerState[]>([]);
@@ -65,28 +60,7 @@ export const CourtStatusSection = () => {
         .order("court_number");
 
       if (error) throw error;
-
-      const allTimerStates = [...(data || [])];
-      const existingCourtNumbers = new Set(data?.map(t => t.court_number));
-
-      for (let i = 1; i <= 8; i++) {
-        if (!existingCourtNumbers.has(i)) {
-          const { data: newTimer, error: createError } = await supabase
-            .from("timer_state")
-            .insert({
-              court_number: i,
-              ...DEFAULT_TIMER_STATE
-            })
-            .select()
-            .single();
-
-          if (!createError && newTimer) {
-            allTimerStates.push(newTimer);
-          }
-        }
-      }
-
-      return allTimerStates.sort((a, b) => a.court_number - b.court_number) as TimerState[];
+      return data as TimerState[];
     },
   });
 
@@ -232,6 +206,7 @@ export const CourtStatusSection = () => {
         table: 'timer_state',
       },
       (payload) => {
+        console.log('Timer state changed:', payload);
         setTimerStates((current) => {
           const newState = payload.new as TimerState;
           const existingIndex = current.findIndex(t => t.court_number === newState.court_number);
@@ -277,11 +252,6 @@ export const CourtStatusSection = () => {
     };
   }, []);
 
-  useEffect(() => {
-    console.log('Current timer states:', timerStates);
-    console.log('Current court statuses:', courtStatuses);
-  }, [timerStates, courtStatuses]);
-
   const getStatusBadge = (status: CourtStatus) => {
     if (!status.last_heartbeat) {
       return <Badge variant="secondary">No Activity</Badge>;
@@ -313,7 +283,6 @@ export const CourtStatusSection = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {courtStatuses.map((status) => {
         const timerState = timerStates.find(t => t.court_number === status.court_number);
-        console.log(`Court ${status.court_number} timer state:`, timerState);
         
         return (
           <Card key={status.court_number}>
@@ -324,7 +293,7 @@ export const CourtStatusSection = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {timerState && (
+              {timerState ? (
                 <div className="space-y-2">
                   <div className="text-sm flex items-center gap-2 font-semibold">
                     <Timer className="h-4 w-4" />
@@ -360,6 +329,8 @@ export const CourtStatusSection = () => {
                     </Button>
                   </div>
                 </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No timer active for this court</div>
               )}
               <div className="text-sm">
                 <span className="font-medium">Last Heartbeat: </span>
