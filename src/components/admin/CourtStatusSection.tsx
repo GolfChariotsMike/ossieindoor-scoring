@@ -47,16 +47,16 @@ export const CourtStatusSection = () => {
           schema: "public",
           table: "court_status",
         },
-        (payload) => {
+        (payload: { new: CourtStatus }) => {
           setCourtStatuses((current) => {
             const updated = [...current];
             const index = updated.findIndex(
               (s) => s.court_number === payload.new.court_number
             );
             if (index >= 0) {
-              updated[index] = payload.new as CourtStatus;
+              updated[index] = payload.new;
             } else {
-              updated.push(payload.new as CourtStatus);
+              updated.push(payload.new);
             }
             return updated.sort((a, b) => a.court_number - b.court_number);
           });
