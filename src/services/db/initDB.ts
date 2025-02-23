@@ -2,7 +2,13 @@
 import { DB_NAME, DB_VERSION } from './dbConfig';
 import { dbSchema } from './schema';
 
+let dbInstance: IDBDatabase | null = null;
+
 export const initDB = async (): Promise<IDBDatabase> => {
+  if (dbInstance) {
+    return dbInstance;
+  }
+
   let retries = 0;
   const maxInitRetries = 3;
 
@@ -18,6 +24,7 @@ export const initDB = async (): Promise<IDBDatabase> => {
 
         request.onsuccess = () => {
           console.log('Successfully opened IndexedDB');
+          dbInstance = request.result;
           resolve(request.result);
         };
 
@@ -37,9 +44,7 @@ export const initDB = async (): Promise<IDBDatabase> => {
               console.log(`Created ${store.name} store with indexes`);
             }
           });
-
-          console.log('IndexedDB upgrade completed. Current stores:', Array.from(db.objectStoreNames));
-        };
+        });
       });
 
       return db;
@@ -52,4 +57,22 @@ export const initDB = async (): Promise<IDBDatabase> => {
   }
 
   throw new Error('Failed to initialize IndexedDB after multiple attempts');
+};
+
+// Cleanup function to close database connection
+export const closeDB = () => {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+  }
+};
+
+// Function to check if stores exist
+export const checkStores = async (): Promise<boolean> => {
+  const db = await initDB();
+  const storeNames = Array.from(db.objectStoreNames);
+  console.log('Available stores:', storeNames);
+  return Object.values(dbSchema).every(store => 
+    storeNames.includes(store.name)
+  );
 };

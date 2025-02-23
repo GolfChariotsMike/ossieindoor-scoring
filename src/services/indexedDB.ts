@@ -1,7 +1,8 @@
-
 import { PendingScore } from './db/types';
-import { initDB } from './db/initDB';
+import { initDB, closeDB } from './db/initDB';
 import { STORES, RETRY_BACKOFF } from './db/dbConfig';
+
+export { initDB, closeDB } from './db/initDB';
 
 export const savePendingScore = async (score: Omit<PendingScore, 'status'>): Promise<void> => {
   let db: IDBDatabase | null = null;
