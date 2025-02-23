@@ -88,16 +88,41 @@ export const CourtStatusSection = () => {
       const timerState = timerStates.find(t => t.court_number === courtNumber);
       if (!timerState) return;
 
-      const { error } = await supabase
+      const { error: timerError } = await supabase
         .from('timer_state')
-        .update({ seconds_remaining: 0 })
+        .update({ 
+          seconds_remaining: 0,
+          is_running: false 
+        })
         .eq('court_number', courtNumber);
 
-      if (error) throw error;
+      if (timerError) throw timerError;
+
+      const { data: matchData, error: matchError } = await supabase
+        .from('match_data_v2')
+        .select('*')
+        .eq('court_number', courtNumber)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (matchError) throw matchError;
+
+      if (matchData) {
+        const { error: phaseError } = await supabase
+          .from('match_data_v2')
+          .update({
+            match_date: new Date().toISOString(),
+            has_final_score: false,
+          })
+          .eq('id', matchData.id);
+
+        if (phaseError) throw phaseError;
+      }
 
       toast({
         title: "Phase Skipped",
-        description: `Timer phase skipped for Court ${courtNumber}`,
+        description: `Match phase completed for Court ${courtNumber}`,
       });
     } catch (error) {
       console.error('Error skipping phase:', error);
@@ -137,7 +162,7 @@ export const CourtStatusSection = () => {
       const { error } = await supabase
         .from('timer_state')
         .update({ 
-          seconds_remaining: 14 * 60, // Reset to 14 minutes
+          seconds_remaining: 14 * 60,
           is_running: false 
         })
         .eq('court_number', courtNumber);
