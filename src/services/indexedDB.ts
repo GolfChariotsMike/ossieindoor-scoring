@@ -1,97 +1,15 @@
-const DB_NAME = 'volleyball_scores';
-const DB_VERSION = 2;
 
-interface PendingScore {
-  id: string;
-  matchId: string;
-  homeScores: number[];
-  awayScores: number[];
-  timestamp: string;
-  retryCount: number;
-  status: 'pending' | 'processing' | 'failed';
-  lastError?: string;
-}
-
-const MAX_RETRIES = 10;
-const RETRY_BACKOFF = [
-  1000,   // 1 second
-  5000,   // 5 seconds
-  15000,  // 15 seconds
-  30000,  // 30 seconds
-  60000,  // 1 minute
-  120000, // 2 minutes
-  300000, // 5 minutes
-  600000, // 10 minutes
-  1800000, // 30 minutes
-  3600000, // 1 hour
-];
-
-export const initDB = async (): Promise<IDBDatabase> => {
-  let retries = 0;
-  const maxInitRetries = 3;
-
-  while (retries < maxInitRetries) {
-    try {
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-        request.onerror = () => {
-          console.error("Error opening IndexedDB:", request.error);
-          reject(request.error);
-        };
-
-        request.onsuccess = () => {
-          console.log('Successfully opened IndexedDB');
-          resolve(request.result);
-        };
-
-        request.onupgradeneeded = (event) => {
-          const db = (event.target as IDBOpenDBRequest).result;
-          
-          // Create pendingScores store if it doesn't exist
-          if (!db.objectStoreNames.contains('pendingScores')) {
-            const store = db.createObjectStore('pendingScores', { keyPath: 'id' });
-            store.createIndex('matchId', 'matchId', { unique: false });
-            store.createIndex('timestamp', 'timestamp', { unique: false });
-            store.createIndex('status', 'status', { unique: false });
-            console.log('Created pendingScores store');
-          }
-
-          // Always try to create courtMatches store
-          try {
-            if (!db.objectStoreNames.contains('courtMatches')) {
-              const store = db.createObjectStore('courtMatches', { keyPath: 'id' });
-              store.createIndex('courtNumber', 'PlayingAreaName', { unique: false });
-              store.createIndex('matchDate', 'DateTime', { unique: false });
-              console.log('Created courtMatches store');
-            }
-          } catch (error) {
-            console.error('Error creating courtMatches store:', error);
-          }
-
-          console.log('IndexedDB upgrade completed. Current stores:', Array.from(db.objectStoreNames));
-        };
-      });
-
-      return db;
-    } catch (error) {
-      console.error(`IndexedDB initialization attempt ${retries + 1} failed:`, error);
-      retries++;
-      if (retries === maxInitRetries) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000 * retries));
-    }
-  }
-
-  throw new Error('Failed to initialize IndexedDB after multiple attempts');
-};
+import { PendingScore } from './db/types';
+import { initDB } from './db/initDB';
+import { STORES, RETRY_BACKOFF } from './db/dbConfig';
 
 export const savePendingScore = async (score: Omit<PendingScore, 'status'>): Promise<void> => {
   let db: IDBDatabase | null = null;
   try {
     db = await initDB();
     await new Promise<void>((resolve, reject) => {
-      const transaction = db!.transaction(['pendingScores'], 'readwrite');
-      const store = transaction.objectStore('pendingScores');
+      const transaction = db!.transaction([STORES.PENDING_SCORES], 'readwrite');
+      const store = transaction.objectStore(STORES.PENDING_SCORES);
 
       const scoreWithStatus: PendingScore = {
         ...score,
@@ -131,8 +49,8 @@ export const updatePendingScoreStatus = async (
   try {
     db = await initDB();
     await new Promise<void>((resolve, reject) => {
-      const transaction = db!.transaction(['pendingScores'], 'readwrite');
-      const store = transaction.objectStore('pendingScores');
+      const transaction = db!.transaction([STORES.PENDING_SCORES], 'readwrite');
+      const store = transaction.objectStore(STORES.PENDING_SCORES);
       
       const getRequest = store.get(scoreId);
       
@@ -168,8 +86,8 @@ export const getPendingScores = async (): Promise<PendingScore[]> => {
   try {
     db = await initDB();
     return await new Promise((resolve, reject) => {
-      const transaction = db!.transaction(['pendingScores'], 'readonly');
-      const store = transaction.objectStore('pendingScores');
+      const transaction = db!.transaction([STORES.PENDING_SCORES], 'readonly');
+      const store = transaction.objectStore(STORES.PENDING_SCORES);
       const statusIndex = store.index('status');
       const request = statusIndex.getAll('pending');
 
@@ -199,8 +117,8 @@ export const getFailedScores = async (): Promise<PendingScore[]> => {
   try {
     db = await initDB();
     return await new Promise((resolve, reject) => {
-      const transaction = db!.transaction(['pendingScores'], 'readonly');
-      const store = transaction.objectStore('pendingScores');
+      const transaction = db!.transaction([STORES.PENDING_SCORES], 'readonly');
+      const store = transaction.objectStore(STORES.PENDING_SCORES);
       const statusIndex = store.index('status');
       const request = statusIndex.getAll('failed');
 
@@ -230,8 +148,8 @@ export const removePendingScore = async (scoreId: string): Promise<void> => {
   try {
     db = await initDB();
     await new Promise<void>((resolve, reject) => {
-      const transaction = db!.transaction(['pendingScores'], 'readwrite');
-      const store = transaction.objectStore('pendingScores');
+      const transaction = db!.transaction([STORES.PENDING_SCORES], 'readwrite');
+      const store = transaction.objectStore(STORES.PENDING_SCORES);
       const request = store.delete(scoreId);
 
       request.onsuccess = () => {
@@ -259,8 +177,8 @@ export const removePendingScore = async (scoreId: string): Promise<void> => {
 export const saveCourtMatches = async (matches: any[]): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['courtMatches'], 'readwrite');
-    const store = transaction.objectStore('courtMatches');
+    const transaction = db.transaction([STORES.COURT_MATCHES], 'readwrite');
+    const store = transaction.objectStore(STORES.COURT_MATCHES);
 
     let completed = 0;
     let errors = 0;
@@ -299,8 +217,8 @@ export const saveCourtMatches = async (matches: any[]): Promise<void> => {
 export const getCourtMatches = async (courtNumber: string, date: string): Promise<any[]> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['courtMatches'], 'readonly');
-    const store = transaction.objectStore('courtMatches');
+    const transaction = db.transaction([STORES.COURT_MATCHES], 'readonly');
+    const store = transaction.objectStore(STORES.COURT_MATCHES);
     const request = store.getAll();
 
     request.onsuccess = () => {
@@ -322,8 +240,8 @@ export const getCourtMatches = async (courtNumber: string, date: string): Promis
 export const cleanOldMatches = async (): Promise<void> => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['courtMatches'], 'readwrite');
-    const store = transaction.objectStore('courtMatches');
+    const transaction = db.transaction([STORES.COURT_MATCHES], 'readwrite');
+    const store = transaction.objectStore(STORES.COURT_MATCHES);
     const request = store.getAll();
 
     request.onsuccess = () => {
