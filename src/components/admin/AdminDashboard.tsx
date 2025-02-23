@@ -2,6 +2,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MatchProgressSection } from "./MatchProgressSection";
 import { MatchResultsTable } from "./MatchResultsTable";
+import { CourtStatusSection } from "./CourtStatusSection";
 
 export const AdminDashboard = () => {
   return (
@@ -10,6 +11,7 @@ export const AdminDashboard = () => {
         <TabsList>
           <TabsTrigger value="progress">Match Progress</TabsTrigger>
           <TabsTrigger value="results">Match Results</TabsTrigger>
+          <TabsTrigger value="status">Court Status</TabsTrigger>
         </TabsList>
         
         <TabsContent value="progress">
@@ -18,6 +20,10 @@ export const AdminDashboard = () => {
         
         <TabsContent value="results">
           <MatchResultsTable />
+        </TabsContent>
+
+        <TabsContent value="status">
+          <CourtStatusSection />
         </TabsContent>
       </Tabs>
     </div>
