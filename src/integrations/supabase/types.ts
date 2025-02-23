@@ -33,6 +33,33 @@ export type Database = {
         }
         Relationships: []
       }
+      court_scores: {
+        Row: {
+          court_number: number
+          created_at: string
+          id: string
+          team1_score: number
+          team2_score: number
+          updated_at: string
+        }
+        Insert: {
+          court_number: number
+          created_at?: string
+          id?: string
+          team1_score?: number
+          team2_score?: number
+          updated_at?: string
+        }
+        Update: {
+          court_number?: number
+          created_at?: string
+          id?: string
+          team1_score?: number
+          team2_score?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crash_logs: {
         Row: {
           browser_info: Json | null
@@ -763,6 +790,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      timer_state: {
+        Row: {
+          created_at: string
+          id: string
+          is_running: boolean | null
+          seconds_remaining: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_running?: boolean | null
+          seconds_remaining?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_running?: boolean | null
+          seconds_remaining?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
