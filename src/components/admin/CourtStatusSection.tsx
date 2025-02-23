@@ -38,6 +38,7 @@ export const CourtStatusSection = () => {
   const [courtStatuses, setCourtStatuses] = useState<CourtStatus[]>(DEFAULT_COURTS);
   const [timerStates, setTimerStates] = useState<TimerState[]>([]);
 
+  // Fetch court statuses
   const { data: initialStatuses } = useQuery({
     queryKey: ["court-statuses"],
     queryFn: async () => {
@@ -46,26 +47,36 @@ export const CourtStatusSection = () => {
         .select("*")
         .order("court_number");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching court statuses:", error);
+        throw error;
+      }
+      console.log("Fetched court statuses:", data);
       return data as CourtStatus[];
     },
   });
 
-  const { data: initialTimerStates } = useQuery({
+  // Fetch timer states
+  const { data: initialTimerStates, isLoading: isLoadingTimers } = useQuery({
     queryKey: ["timer-states"],
     queryFn: async () => {
+      console.log("Fetching timer states...");
       const { data, error } = await supabase
         .from("timer_state")
-        .select("*")
-        .order("court_number");
+        .select("*");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching timer states:", error);
+        throw error;
+      }
+      console.log("Fetched timer states:", data);
       return data as TimerState[];
     },
   });
 
   useEffect(() => {
     if (initialTimerStates) {
+      console.log("Setting initial timer states:", initialTimerStates);
       setTimerStates(initialTimerStates);
     }
   }, [initialTimerStates]);
@@ -82,6 +93,57 @@ export const CourtStatusSection = () => {
       setCourtStatuses(updatedStatuses);
     }
   }, [initialStatuses]);
+
+  const handleStartStop = async (courtNumber: number, currentlyRunning: boolean) => {
+    try {
+      console.log(`Toggling timer for court ${courtNumber} from ${currentlyRunning} to ${!currentlyRunning}`);
+      const { error } = await supabase
+        .from('timer_state')
+        .update({ is_running: !currentlyRunning })
+        .eq('court_number', courtNumber);
+
+      if (error) throw error;
+
+      toast({
+        title: currentlyRunning ? "Timer Paused" : "Timer Started",
+        description: `Court ${courtNumber} timer ${currentlyRunning ? 'paused' : 'started'}`,
+      });
+    } catch (error) {
+      console.error('Error toggling timer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update timer state",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReset = async (courtNumber: number) => {
+    try {
+      console.log(`Resetting timer for court ${courtNumber}`);
+      const { error } = await supabase
+        .from('timer_state')
+        .update({ 
+          seconds_remaining: 14 * 60,
+          is_running: false 
+        })
+        .eq('court_number', courtNumber);
+
+      if (error) throw error;
+
+      toast({
+        title: "Timer Reset",
+        description: `Court ${courtNumber} timer has been reset`,
+      });
+    } catch (error) {
+      console.error('Error resetting timer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset timer",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSkipPhase = async (courtNumber: number) => {
     try {
@@ -118,8 +180,6 @@ export const CourtStatusSection = () => {
         throw matchError;
       }
 
-      console.log('Found match data:', matchData);
-
       if (matchData) {
         console.log('Updating match data for ID:', matchData.id);
         const { error: phaseError } = await supabase
@@ -143,55 +203,6 @@ export const CourtStatusSection = () => {
       toast({
         title: "Error",
         description: "Failed to skip phase",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStartStop = async (courtNumber: number, currentlyRunning: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('timer_state')
-        .update({ is_running: !currentlyRunning })
-        .eq('court_number', courtNumber);
-
-      if (error) throw error;
-
-      toast({
-        title: currentlyRunning ? "Timer Paused" : "Timer Started",
-        description: `Court ${courtNumber} timer ${currentlyRunning ? 'paused' : 'started'}`,
-      });
-    } catch (error) {
-      console.error('Error toggling timer:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update timer state",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleReset = async (courtNumber: number) => {
-    try {
-      const { error } = await supabase
-        .from('timer_state')
-        .update({ 
-          seconds_remaining: 14 * 60,
-          is_running: false 
-        })
-        .eq('court_number', courtNumber);
-
-      if (error) throw error;
-
-      toast({
-        title: "Timer Reset",
-        description: `Court ${courtNumber} timer has been reset`,
-      });
-    } catch (error) {
-      console.error('Error resetting timer:', error);
-      toast({
-        title: "Error",
-        description: "Failed to reset timer",
         variant: "destructive",
       });
     }
@@ -279,10 +290,13 @@ export const CourtStatusSection = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  console.log('Current timer states:', timerStates);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {courtStatuses.map((status) => {
         const timerState = timerStates.find(t => t.court_number === status.court_number);
+        console.log(`Rendering court ${status.court_number}, timer state:`, timerState);
         
         return (
           <Card key={status.court_number}>
@@ -293,7 +307,9 @@ export const CourtStatusSection = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {timerState ? (
+              {isLoadingTimers ? (
+                <div className="text-sm text-muted-foreground">Loading timer state...</div>
+              ) : timerState ? (
                 <div className="space-y-2">
                   <div className="text-sm flex items-center gap-2 font-semibold">
                     <Timer className="h-4 w-4" />
