@@ -90,9 +90,13 @@ const CourtFixtures = () => {
                 variant="outline"
                 className="w-full text-left justify-between p-6 bg-volleyball-black/80 hover:bg-volleyball-black/90 text-volleyball-cream text-xl"
                 onClick={() => {
-                  const encodedFixture = encodeURIComponent(JSON.stringify(fixture));
-                  navigate(`/scoreboard/${courtId}?fixture=${encodedFixture}`, {
-                    state: { fixture }, // Keep state for immediate access
+                  console.log('Starting navigation with fixture:', fixture);
+                  const safeFixture = {
+                    ...fixture,
+                    Id: fixture.Id || `${fixture.DateTime}-${fixture.PlayingAreaName}`,
+                  };
+                  navigate(`/scoreboard/${courtId}`, {
+                    state: { fixture: safeFixture }
                   });
                 }}
               >

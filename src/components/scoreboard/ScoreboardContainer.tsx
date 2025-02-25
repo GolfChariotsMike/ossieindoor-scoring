@@ -1,3 +1,4 @@
+
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -20,45 +21,18 @@ const parseFixtureDate = (dateStr: string) => {
   }
 };
 
-const parseFixtureFromParams = (fixtureParam: string | null): Fixture | null => {
-  if (!fixtureParam) return null;
-  try {
-    return JSON.parse(decodeURIComponent(fixtureParam)) as Fixture;
-  } catch (error) {
-    console.error('Error parsing fixture from params:', error);
-    return null;
-  }
-};
-
 export const ScoreboardContainer = () => {
   const { courtId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   
-  const searchParams = new URLSearchParams(location.search);
-  const fixtureParam = searchParams.get('fixture');
-  const stateFixture = location.state?.fixture as Fixture | undefined;
-  
-  const fixture = parseFixtureFromParams(fixtureParam) || stateFixture;
+  // Get fixture from navigation state
+  const fixture = location.state?.fixture as Fixture | undefined;
 
   console.log('ScoreboardContainer - Initial fixture data:', { 
-    fromState: stateFixture,
-    fromParams: fixtureParam,
-    finalFixture: fixture,
-    searchParams: Object.fromEntries(searchParams)
+    fromState: fixture,
+    locationState: location.state
   });
-
-  useEffect(() => {
-    if (!fixture && !isLoading) {
-      console.log('No fixture found, redirecting to court selection');
-      toast({
-        title: "No fixture found",
-        description: "Returning to court selection.",
-        variant: "destructive",
-      });
-      navigate('/');
-    }
-  }, [fixture, navigate]);
 
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
@@ -69,6 +43,20 @@ export const ScoreboardContainer = () => {
 
   const gameState = useGameState();
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
+
+  // Redirect if no fixture is found
+  useEffect(() => {
+    if (!fixture && !isLoading) {
+      console.log('No fixture found, redirecting to court selection');
+      toast({
+        title: "No fixture found",
+        description: "Returning to court selection.",
+        variant: "destructive",
+      });
+      navigate('/');
+    }
+  }, [fixture, navigate, isLoading]);
+
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
 
   const { data: nextMatches = [] } = useQuery({
@@ -83,6 +71,7 @@ export const ScoreboardContainer = () => {
     },
   });
 
+  // Reset game state when fixture changes
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
@@ -93,6 +82,7 @@ export const ScoreboardContainer = () => {
     }
   }, [fixture?.Id, gameState.resetGameState]);
 
+  // Handle match completion
   useEffect(() => {
     if (gameState.isMatchComplete && match && gameState.hasGameStarted && !hasTriedSavingScores.current && !isTransitioningToResults.current) {
       console.log('Match complete, attempting to save scores');
@@ -117,6 +107,7 @@ export const ScoreboardContainer = () => {
     }
   }, [gameState.isMatchComplete, match, gameState.setScores, gameState.saveMatchScores, gameState.hasGameStarted]);
 
+  // Handle transition to next match
   useEffect(() => {
     if (resultsDisplayStartTime) {
       if (transitionTimeoutRef.current) {
