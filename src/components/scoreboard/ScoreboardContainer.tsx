@@ -20,6 +20,16 @@ const parseFixtureDate = (dateStr: string) => {
   }
 };
 
+const parseFixtureFromParams = (fixtureParam: string | null): Fixture | null => {
+  if (!fixtureParam) return null;
+  try {
+    return JSON.parse(decodeURIComponent(fixtureParam)) as Fixture;
+  } catch (error) {
+    console.error('Error parsing fixture from params:', error);
+    return null;
+  }
+};
+
 export const ScoreboardContainer = () => {
   const { courtId } = useParams();
   const location = useLocation();
@@ -27,17 +37,28 @@ export const ScoreboardContainer = () => {
   
   const searchParams = new URLSearchParams(location.search);
   const fixtureParam = searchParams.get('fixture');
-  const stateFixture = location.state?.fixture;
+  const stateFixture = location.state?.fixture as Fixture | undefined;
   
-  const fixture = fixtureParam 
-    ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
-    : stateFixture as Fixture | undefined;
+  const fixture = parseFixtureFromParams(fixtureParam) || stateFixture;
 
   console.log('ScoreboardContainer - Initial fixture data:', { 
     fromState: stateFixture,
     fromParams: fixtureParam,
-    finalFixture: fixture 
+    finalFixture: fixture,
+    searchParams: Object.fromEntries(searchParams)
   });
+
+  useEffect(() => {
+    if (!fixture && !isLoading) {
+      console.log('No fixture found, redirecting to court selection');
+      toast({
+        title: "No fixture found",
+        description: "Returning to court selection.",
+        variant: "destructive",
+      });
+      navigate('/');
+    }
+  }, [fixture, navigate]);
 
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
