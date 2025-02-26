@@ -5,7 +5,7 @@ import { dbSchema } from './schema';
 let dbInstance: IDBDatabase | null = null;
 
 export const initDB = async (): Promise<IDBDatabase> => {
-  if (dbInstance) {
+  if (dbInstance && dbInstance.transaction) {
     return dbInstance;
   }
 
@@ -25,6 +25,20 @@ export const initDB = async (): Promise<IDBDatabase> => {
         request.onsuccess = () => {
           console.log('Successfully opened IndexedDB');
           dbInstance = request.result;
+
+          // Handle connection closing
+          dbInstance.onclose = () => {
+            console.log('IndexedDB connection closed');
+            dbInstance = null;
+          };
+
+          // Handle version change
+          dbInstance.onversionchange = () => {
+            dbInstance?.close();
+            dbInstance = null;
+            console.log('IndexedDB version changed, connection closed');
+          };
+
           resolve(request.result);
         };
 
@@ -66,6 +80,7 @@ export const closeDB = () => {
   if (dbInstance) {
     dbInstance.close();
     dbInstance = null;
+    console.log('IndexedDB connection manually closed');
   }
 };
 
