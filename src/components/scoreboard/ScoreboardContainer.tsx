@@ -37,6 +37,7 @@ export const ScoreboardContainer = () => {
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousFixtureIdRef = useRef<string | null>(null);
   const hasTriedSavingScores = useRef<boolean>(false);
+  const isTransitioningToResults = useRef<boolean>(false);
 
   const gameState = useGameState();
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
@@ -63,28 +64,32 @@ export const ScoreboardContainer = () => {
       gameState.resetGameState();
       previousFixtureIdRef.current = fixture.Id;
       hasTriedSavingScores.current = false;
+      isTransitioningToResults.current = false;
     }
   }, [fixture?.Id, gameState.resetGameState]);
 
   useEffect(() => {
-    if (gameState.isMatchComplete && match && gameState.hasGameStarted && !hasTriedSavingScores.current) {
+    if (gameState.isMatchComplete && match && gameState.hasGameStarted && !hasTriedSavingScores.current && !isTransitioningToResults.current) {
       console.log('Match complete, attempting to save scores');
+      isTransitioningToResults.current = true;
       hasTriedSavingScores.current = true;
 
-      gameState.saveMatchScores(match.id, gameState.setScores.home, gameState.setScores.away)
-        .catch(error => {
-          console.error('Error saving match scores:', error);
-          toast({
-            title: "Connection Issues",
-            description: "Scores saved locally and will be uploaded when connection is restored.",
-            variant: "default",
+      // Small delay to ensure UI updates are complete
+      setTimeout(() => {
+        gameState.saveMatchScores(match.id, gameState.setScores.home, gameState.setScores.away)
+          .catch(error => {
+            console.error('Error saving match scores:', error);
+            toast({
+              title: "Connection Issues",
+              description: "Scores saved locally and will be uploaded when connection is restored.",
+              variant: "default",
+            });
+          })
+          .finally(() => {
+            console.log('Starting results display timer');
+            setResultsDisplayStartTime(Date.now());
           });
-        })
-        .finally(() => {
-          // Always start the results display timer, regardless of save success
-          console.log('Starting results display timer');
-          setResultsDisplayStartTime(Date.now());
-        });
+      }, 100);
     }
   }, [gameState.isMatchComplete, match, gameState.setScores, gameState.saveMatchScores, gameState.hasGameStarted]);
 
