@@ -1,11 +1,8 @@
-
 import { PendingScore } from './db/types';
-import { initDB as _initDB, closeDB as _closeDB } from './db/initDB';
+import { initDB, closeDB } from './db/initDB';
 import { STORES, RETRY_BACKOFF } from './db/dbConfig';
 
-// Re-export the database functions with proper naming
-export const initDB = _initDB;
-export const closeDB = _closeDB;
+export { initDB, closeDB } from './db/initDB';
 
 export const savePendingScore = async (score: Omit<PendingScore, 'status'>): Promise<void> => {
   let db: IDBDatabase | null = null;
@@ -31,12 +28,16 @@ export const savePendingScore = async (score: Omit<PendingScore, 'status'>): Pro
         console.error('Error saving to IndexedDB:', request.error);
         reject(request.error);
       };
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
     });
   } catch (error) {
     console.error('Failed to save pending score:', error);
     throw error;
   } finally {
-    if (db) closeDB();
+    if (db) db.close();
   }
 };
 
@@ -68,12 +69,16 @@ export const updatePendingScoreStatus = async (
       };
       
       getRequest.onerror = () => reject(getRequest.error);
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
     });
   } catch (error) {
     console.error('Failed to update pending score status:', error);
     throw error;
   } finally {
-    if (db) closeDB();
+    if (db) db.close();
   }
 };
 
@@ -95,12 +100,16 @@ export const getPendingScores = async (): Promise<PendingScore[]> => {
         console.error('Error reading from IndexedDB:', request.error);
         reject(request.error);
       };
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
     });
   } catch (error) {
     console.error('Failed to get pending scores:', error);
     return [];
   } finally {
-    if (db) closeDB();
+    if (db) db.close();
   }
 };
 
@@ -122,12 +131,16 @@ export const getFailedScores = async (): Promise<PendingScore[]> => {
         console.error('Error reading failed scores from IndexedDB:', request.error);
         reject(request.error);
       };
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
     });
   } catch (error) {
     console.error('Failed to get failed scores:', error);
     return [];
   } finally {
-    if (db) closeDB();
+    if (db) db.close();
   }
 };
 
@@ -149,139 +162,122 @@ export const removePendingScore = async (scoreId: string): Promise<void> => {
         console.error('Error removing from IndexedDB:', request.error);
         reject(request.error);
       };
+
+      transaction.oncomplete = () => {
+        if (db) db.close();
+      };
     });
   } catch (error) {
     console.error('Failed to remove pending score:', error);
     throw error;
   } finally {
-    if (db) closeDB();
+    if (db) db.close();
   }
 };
 
 export const saveCourtMatches = async (matches: any[]): Promise<void> => {
-  let db = await initDB();
-  try {
-    await new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORES.COURT_MATCHES], 'readwrite');
-      const store = transaction.objectStore(STORES.COURT_MATCHES);
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORES.COURT_MATCHES], 'readwrite');
+    const store = transaction.objectStore(STORES.COURT_MATCHES);
 
-      let completed = 0;
-      let errors = 0;
+    let completed = 0;
+    let errors = 0;
 
-      matches.forEach(match => {
-        const request = store.put(match);
+    matches.forEach(match => {
+      const request = store.put(match);
 
-        request.onsuccess = () => {
-          completed++;
-          if (completed + errors === matches.length) {
-            console.log('Saved court matches to IndexedDB:', completed);
-            resolve(undefined);
+      request.onsuccess = () => {
+        completed++;
+        if (completed + errors === matches.length) {
+          console.log('Saved court matches to IndexedDB:', completed);
+          resolve();
+        }
+      };
+
+      request.onerror = () => {
+        console.error('Error saving match to IndexedDB:', request.error);
+        errors++;
+        if (completed + errors === matches.length) {
+          if (completed > 0) {
+            resolve(); // Some matches were saved
+          } else {
+            reject(request.error); // No matches were saved
           }
-        };
-
-        request.onerror = () => {
-          console.error('Error saving match to IndexedDB:', request.error);
-          errors++;
-          if (completed + errors === matches.length) {
-            if (completed > 0) {
-              resolve(undefined); // Some matches were saved
-            } else {
-              reject(request.error); // No matches were saved
-            }
-          }
-        };
-      });
-
-      // Handle empty array case
-      if (matches.length === 0) {
-        resolve(undefined);
-      }
+        }
+      };
     });
-  } catch (error) {
-    console.error('Failed to save court matches:', error);
-    throw error;
-  } finally {
-    closeDB();
-  }
+
+    // Handle empty array case
+    if (matches.length === 0) {
+      resolve();
+    }
+  });
 };
 
 export const getCourtMatches = async (courtNumber: string, date: string): Promise<any[]> => {
-  let db = await initDB();
-  try {
-    return await new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORES.COURT_MATCHES], 'readonly');
-      const store = transaction.objectStore(STORES.COURT_MATCHES);
-      const request = store.getAll();
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORES.COURT_MATCHES], 'readonly');
+    const store = transaction.objectStore(STORES.COURT_MATCHES);
+    const request = store.getAll();
 
-      request.onsuccess = () => {
-        const matches = request.result.filter(match => {
-          const matchCourt = match.PlayingAreaName === `Court ${courtNumber}`;
-          const matchDate = match.DateTime.split(' ')[0] === date;
-          return matchCourt && matchDate;
-        });
-        resolve(matches);
-      };
+    request.onsuccess = () => {
+      const matches = request.result.filter(match => {
+        const matchCourt = match.PlayingAreaName === `Court ${courtNumber}`;
+        const matchDate = match.DateTime.split(' ')[0] === date;
+        return matchCourt && matchDate;
+      });
+      resolve(matches);
+    };
 
-      request.onerror = () => {
-        console.error('Error reading court matches from IndexedDB:', request.error);
-        reject(request.error);
-      };
-    });
-  } catch (error) {
-    console.error('Failed to get court matches:', error);
-    return [];
-  } finally {
-    closeDB();
-  }
+    request.onerror = () => {
+      console.error('Error reading court matches from IndexedDB:', request.error);
+      reject(request.error);
+    };
+  });
 };
 
 export const cleanOldMatches = async (): Promise<void> => {
-  let db = await initDB();
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([STORES.COURT_MATCHES], 'readwrite');
-      const store = transaction.objectStore(STORES.COURT_MATCHES);
-      const request = store.getAll();
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORES.COURT_MATCHES], 'readwrite');
+    const store = transaction.objectStore(STORES.COURT_MATCHES);
+    const request = store.getAll();
 
-      request.onsuccess = () => {
-        const now = new Date();
-        const matches = request.result;
-        const deletePromises = matches
-          .filter(match => {
-            const matchDate = new Date(match.DateTime.split(' ')[0]);
-            const daysDiff = (now.getTime() - matchDate.getTime()) / (1000 * 3600 * 24);
-            return daysDiff > 7; // Delete matches older than 7 days
+    request.onsuccess = () => {
+      const now = new Date();
+      const matches = request.result;
+      const deletePromises = matches
+        .filter(match => {
+          const matchDate = new Date(match.DateTime.split(' ')[0]);
+          const daysDiff = (now.getTime() - matchDate.getTime()) / (1000 * 3600 * 24);
+          return daysDiff > 7; // Delete matches older than 7 days
+        })
+        .map(match => 
+          new Promise<void>((res, rej) => {
+            const deleteRequest = store.delete(match.id);
+            deleteRequest.onsuccess = () => res();
+            deleteRequest.onerror = () => rej(deleteRequest.error);
           })
-          .map(match => 
-            new Promise<void>((res, rej) => {
-              const deleteRequest = store.delete(match.id);
-              deleteRequest.onsuccess = () => res();
-              deleteRequest.onerror = () => rej(deleteRequest.error);
-            })
-          );
+        );
 
-        Promise.all(deletePromises)
-          .then(() => {
-            console.log('Cleaned old matches from IndexedDB');
-            resolve();
-          })
-          .catch(error => {
-            console.error('Error cleaning old matches:', error);
-            reject(error);
-          });
-      };
+      Promise.all(deletePromises)
+        .then(() => {
+          console.log('Cleaned old matches from IndexedDB');
+          resolve();
+        })
+        .catch(error => {
+          console.error('Error cleaning old matches:', error);
+          reject(error);
+        });
+    };
 
-      request.onerror = () => {
-        console.error('Error reading matches for cleaning:', request.error);
-        reject(request.error);
-      };
-    });
-  } catch (error) {
-    console.error('Failed to clean old matches:', error);
-    throw error;
-  } finally {
-    closeDB();
-  }
+    request.onerror = () => {
+      console.error('Error reading matches for cleaning:', request.error);
+      reject(request.error);
+    };
+  });
 };
 
 export const getRetryDelay = (retryCount: number): number => {

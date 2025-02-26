@@ -25,38 +25,21 @@ export const ScoreboardContainer = () => {
   const { courtId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
+  const fixtureParam = searchParams.get('fixture');
   
-  // Get fixture from navigation state
-  const fixture = location.state?.fixture as Fixture | undefined;
-
-  console.log('ScoreboardContainer - Initial fixture data:', { 
-    fromState: fixture,
-    locationState: location.state
-  });
+  const fixture = fixtureParam 
+    ? JSON.parse(decodeURIComponent(fixtureParam)) as Fixture 
+    : location.state?.fixture as Fixture | undefined;
 
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousFixtureIdRef = useRef<string | null>(null);
   const hasTriedSavingScores = useRef<boolean>(false);
-  const isTransitioningToResults = useRef<boolean>(false);
 
   const gameState = useGameState();
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
-
-  // Redirect if no fixture is found
-  useEffect(() => {
-    if (!fixture && !isLoading) {
-      console.log('No fixture found, redirecting to court selection');
-      toast({
-        title: "No fixture found",
-        description: "Returning to court selection.",
-        variant: "destructive",
-      });
-      navigate('/');
-    }
-  }, [fixture, navigate, isLoading]);
-
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
 
   const { data: nextMatches = [] } = useQuery({
@@ -71,43 +54,40 @@ export const ScoreboardContainer = () => {
     },
   });
 
-  // Reset game state when fixture changes
+  console.log('ScoreboardContainer - Match data:', match);
+  console.log('ScoreboardContainer - Fixture:', fixture);
+
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
       gameState.resetGameState();
       previousFixtureIdRef.current = fixture.Id;
       hasTriedSavingScores.current = false;
-      isTransitioningToResults.current = false;
     }
   }, [fixture?.Id, gameState.resetGameState]);
 
-  // Handle match completion
   useEffect(() => {
-    if (gameState.isMatchComplete && match && gameState.hasGameStarted && !hasTriedSavingScores.current && !isTransitioningToResults.current) {
+    if (gameState.isMatchComplete && match && gameState.hasGameStarted && !hasTriedSavingScores.current) {
       console.log('Match complete, attempting to save scores');
-      isTransitioningToResults.current = true;
       hasTriedSavingScores.current = true;
 
-      setTimeout(() => {
-        gameState.saveMatchScores(match.id, gameState.setScores.home, gameState.setScores.away)
-          .catch(error => {
-            console.error('Error saving match scores:', error);
-            toast({
-              title: "Connection Issues",
-              description: "Scores saved locally and will be uploaded when connection is restored.",
-              variant: "default",
-            });
-          })
-          .finally(() => {
-            console.log('Starting results display timer');
-            setResultsDisplayStartTime(Date.now());
+      gameState.saveMatchScores(match.id, gameState.setScores.home, gameState.setScores.away)
+        .catch(error => {
+          console.error('Error saving match scores:', error);
+          toast({
+            title: "Connection Issues",
+            description: "Scores saved locally and will be uploaded when connection is restored.",
+            variant: "default",
           });
-      }, 100);
+        })
+        .finally(() => {
+          // Always start the results display timer, regardless of save success
+          console.log('Starting results display timer');
+          setResultsDisplayStartTime(Date.now());
+        });
     }
   }, [gameState.isMatchComplete, match, gameState.setScores, gameState.saveMatchScores, gameState.hasGameStarted]);
 
-  // Handle transition to next match
   useEffect(() => {
     if (resultsDisplayStartTime) {
       if (transitionTimeoutRef.current) {
@@ -116,23 +96,65 @@ export const ScoreboardContainer = () => {
 
       transitionTimeoutRef.current = setTimeout(() => {
         try {
-          console.log('Results display time complete, checking for next match');
+          console.log('Results display time complete, checking for next match', {
+            currentFixture: fixture?.Id,
+            currentTime: new Date().toISOString(),
+            availableMatches: nextMatches.length
+          });
+
           const nextMatch = findNextMatch(nextMatches);
           
           if (nextMatch) {
-            console.log('Found next match, transitioning:', nextMatch.Id);
-            handleStartNextMatch(nextMatch);
+            console.log('Found next match:', {
+              nextMatchId: nextMatch.Id,
+              nextMatchTime: nextMatch.DateTime,
+              nextMatchTeams: `${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`
+            });
+            
+            try {
+              handleStartNextMatch(nextMatch);
+            } catch (error) {
+              console.error('Error transitioning to next match:', {
+                error,
+                nextMatchDetails: nextMatch,
+                currentFixture: fixture
+              });
+              
+              toast({
+                title: "Error transitioning to next match",
+                description: "There was an error loading the next match. Returning to court selection.",
+                variant: "destructive",
+              });
+              
+              setTimeout(() => {
+                navigate('/');
+              }, 3000);
+            }
           } else {
-            console.log('No next match found, returning to court selection');
+            console.log('No next match found', {
+              currentTime: new Date().toISOString(),
+              availableMatches: nextMatches.map(m => ({
+                id: m.Id,
+                datetime: m.DateTime,
+                court: m.PlayingAreaName
+              }))
+            });
             navigate('/');
           }
         } catch (error) {
-          console.error('Error in match transition:', error);
+          console.error('Critical error in match transition logic:', {
+            error,
+            currentFixture: fixture,
+            nextMatchesCount: nextMatches.length,
+            resultsDisplayStartTime
+          });
+          
           toast({
             title: "Error",
             description: "Something went wrong. Returning to court selection.",
             variant: "destructive",
           });
+          
           navigate('/');
         }
       }, 50000);
@@ -143,7 +165,7 @@ export const ScoreboardContainer = () => {
         }
       };
     }
-  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, navigate]);
+  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, navigate, fixture]);
 
   const handleBack = () => {
     if (gameState.hasGameStarted) {

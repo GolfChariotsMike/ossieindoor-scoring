@@ -9,31 +9,34 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
   const { toast } = useToast();
 
   return useQuery({
-    queryKey: ["match", courtId, fixture?.Id], // Changed to use fixture.Id instead of team names
+    queryKey: ["match", courtId, fixture?.HomeTeam, fixture?.AwayTeam],
     queryFn: async () => {
       try {
-        console.log('useMatchData - Starting match data fetch:', { courtId, fixture });
-
-        // Generate match code based on whether we have a fixture
-        const matchCode = generateMatchCode(courtId, fixture);
-        console.log('Generated match code:', matchCode);
-        
-        // Try to find existing match first
-        const existingMatch = await findExistingMatch(matchCode);
-        if (existingMatch) {
-          console.log('Found existing match:', existingMatch);
-          return transformToMatch(existingMatch);
-        }
-
-        // If we have a fixture, create match with fixture data
         if (fixture) {
+          const matchCode = generateMatchCode(courtId, fixture);
+          console.log('Generated match code:', matchCode);
+          
+          const existingMatch = await findExistingMatch(matchCode);
+          if (existingMatch) {
+            console.log('Found existing match:', existingMatch);
+            return transformToMatch(existingMatch);
+          }
+
           console.log('Creating new match with fixture:', fixture);
           const newMatch = await createNewMatch(courtId, fixture, matchCode);
-          console.log('Created new match with fixture:', newMatch);
           return transformToMatch(newMatch);
         }
 
         // Handle case without fixture
+        const matchCode = generateMatchCode(courtId);
+        console.log('Generated match code for no fixture:', matchCode);
+        const existingMatch = await findExistingMatch(matchCode);
+        
+        if (existingMatch) {
+          console.log('Found existing match without fixture:', existingMatch);
+          return transformToMatch(existingMatch);
+        }
+
         console.log('Creating new match without fixture for court:', courtId);
         const newMatch = await createNewMatch(courtId);
         const transformedMatch = transformToMatch(newMatch);
@@ -49,20 +52,17 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         });
 
         // Return a default match as fallback
-        const fallbackMatch = {
+        return {
           id: `fallback-${courtId}-${Date.now()}`,
           court: parseInt(courtId),
           startTime: new Date().toISOString(),
           homeTeam: { id: "team-1", name: "Team A" },
           awayTeam: { id: "team-2", name: "Team B" },
-        } as Match;
-
-        console.log('Returning fallback match:', fallbackMatch);
-        return fallbackMatch;
+        };
       }
     },
-    retry: false, // Disable retries to prevent multiple attempts with invalid data
-    staleTime: 30000, // Cache for 30 seconds
-    gcTime: 60000, // Keep unused data for 1 minute
+    retry: 2,             // Retry failed requests up to 2 times
+    staleTime: 30000,     // Consider data fresh for 30 seconds
+    gcTime: 60000,        // Keep unused data in garbage collection for 1 minute
   });
 };

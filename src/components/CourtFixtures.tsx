@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -89,16 +88,11 @@ const CourtFixtures = () => {
                 key={index}
                 variant="outline"
                 className="w-full text-left justify-between p-6 bg-volleyball-black/80 hover:bg-volleyball-black/90 text-volleyball-cream text-xl"
-                onClick={() => {
-                  console.log('Starting navigation with fixture:', fixture);
-                  const safeFixture = {
-                    ...fixture,
-                    Id: fixture.Id || `${fixture.DateTime}-${fixture.PlayingAreaName}`,
-                  };
+                onClick={() =>
                   navigate(`/scoreboard/${courtId}`, {
-                    state: { fixture: safeFixture }
-                  });
-                }}
+                    state: { fixture },
+                  })
+                }
               >
                 <div className="flex flex-col w-full">
                   <div className="flex justify-between items-center w-full">
