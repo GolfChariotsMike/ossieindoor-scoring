@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -11,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { format, parse } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
+import { EndOfNightSummary } from "./EndOfNightSummary";
 
 const parseFixtureDate = (dateStr: string) => {
   try {
@@ -38,6 +38,7 @@ export const ScoreboardContainer = () => {
   const previousFixtureIdRef = useRef<string | null>(null);
   const hasTriedSavingScores = useRef<boolean>(false);
   const isTransitioningToResults = useRef<boolean>(false);
+  const [showEndOfNightSummary, setShowEndOfNightSummary] = useState(false);
 
   const gameState = useGameState();
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
@@ -127,24 +128,15 @@ export const ScoreboardContainer = () => {
               
               toast({
                 title: "Error transitioning to next match",
-                description: "There was an error loading the next match. Returning to court selection.",
+                description: "There was an error loading the next match. Showing end of night summary.",
                 variant: "destructive",
               });
               
-              setTimeout(() => {
-                navigate('/');
-              }, 3000);
+              setShowEndOfNightSummary(true);
             }
           } else {
-            console.log('No next match found', {
-              currentTime: new Date().toISOString(),
-              availableMatches: nextMatches.map(m => ({
-                id: m.Id,
-                datetime: m.DateTime,
-                court: m.PlayingAreaName
-              }))
-            });
-            navigate('/');
+            console.log('No next match found, showing end of night summary');
+            setShowEndOfNightSummary(true);
           }
         } catch (error) {
           console.error('Critical error in match transition logic:', {
@@ -156,11 +148,11 @@ export const ScoreboardContainer = () => {
           
           toast({
             title: "Error",
-            description: "Something went wrong. Returning to court selection.",
+            description: "Something went wrong. Showing end of night summary.",
             variant: "destructive",
           });
           
-          navigate('/');
+          setShowEndOfNightSummary(true);
         }
       }, 50000);
 
@@ -195,6 +187,10 @@ export const ScoreboardContainer = () => {
       navigate('/');
     }
   };
+
+  if (showEndOfNightSummary) {
+    return <EndOfNightSummary courtNumber={parseInt(courtId!)} />;
+  }
 
   return (
     <ScoreboardContent
