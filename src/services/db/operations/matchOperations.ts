@@ -2,44 +2,68 @@
 import { STORES } from '../dbConfig';
 import { getConnection } from '../connection';
 
-export const saveCourtMatches = async (matches: any[]): Promise<void> => {
+interface CourtMatch {
+  id: string;
+  PlayingAreaName: string;
+  DateTime: string;
+  [key: string]: any;
+}
+
+export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => {
   try {
     const db = await getConnection();
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction([STORES.COURT_MATCHES], 'readwrite');
       const store = transaction.objectStore(STORES.COURT_MATCHES);
 
-      let completed = 0;
-      let errors = 0;
+      // Clear existing matches first
+      const clearRequest = store.clear();
+      clearRequest.onerror = () => {
+        console.error('Error clearing court matches:', clearRequest.error);
+        reject(clearRequest.error);
+      };
 
-      matches.forEach(match => {
-        const request = store.put(match);
+      clearRequest.onsuccess = () => {
+        let completed = 0;
+        let errors = 0;
 
-        request.onsuccess = () => {
-          completed++;
-          if (completed + errors === matches.length) {
-            console.log('Saved court matches to IndexedDB:', completed);
-            resolve();
-          }
-        };
+        // Ensure each match has required fields
+        const processedMatches = matches.map(match => ({
+          ...match,
+          id: match.id || `${match.DateTime}-${match.PlayingAreaName}`,
+          PlayingAreaName: match.PlayingAreaName || '',
+          DateTime: match.DateTime || new Date().toISOString()
+        }));
 
-        request.onerror = () => {
-          console.error('Error saving match to IndexedDB:', request.error);
-          errors++;
-          if (completed + errors === matches.length) {
-            if (completed > 0) {
-              resolve(); // Some matches were saved
-            } else {
-              reject(request.error); // No matches were saved
+        processedMatches.forEach(match => {
+          const request = store.add(match);
+
+          request.onsuccess = () => {
+            completed++;
+            if (completed + errors === processedMatches.length) {
+              console.log('Saved court matches to IndexedDB:', completed);
+              resolve();
             }
-          }
-        };
-      });
+          };
 
-      // Handle empty array case
-      if (matches.length === 0) {
-        resolve();
-      }
+          request.onerror = () => {
+            console.error('Error saving match to IndexedDB:', request.error);
+            errors++;
+            if (completed + errors === processedMatches.length) {
+              if (completed > 0) {
+                resolve(); // Some matches were saved
+              } else {
+                reject(request.error); // No matches were saved
+              }
+            }
+          };
+        });
+
+        // Handle empty array case
+        if (processedMatches.length === 0) {
+          resolve();
+        }
+      };
     });
   } catch (error) {
     console.error('Failed to save court matches:', error);
@@ -47,7 +71,7 @@ export const saveCourtMatches = async (matches: any[]): Promise<void> => {
   }
 };
 
-export const getCourtMatches = async (courtNumber: string, date: string): Promise<any[]> => {
+export const getCourtMatches = async (courtNumber: string, date: string): Promise<CourtMatch[]> => {
   try {
     const db = await getConnection();
     return await new Promise((resolve, reject) => {
