@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MatchPhase } from "./types";
 
@@ -22,6 +23,7 @@ export const useTimer = ({
   const [isRunning, setIsRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
 
+  // Simplified phase progression
   const progressToNextPhase = () => {
     const phases: MatchPhase[] = [
       "not_started", 
@@ -38,59 +40,47 @@ export const useTimer = ({
     const currentIndex = phases.indexOf(matchPhase);
     const nextPhase = phases[currentIndex + 1];
     
-    console.log('Current phase:', matchPhase, 'Next phase:', nextPhase);
-    
     if (nextPhase) {
-      if (nextPhase.startsWith('set')) {
-        console.log('Starting set:', nextPhase);
-        if (nextPhase !== 'set1') {
-          onComplete(); // Notify parent break is over
-        }
-        setTimeLeft(initialMinutes * 60);
-        setIsRunning(true);
-        setMatchPhase(nextPhase);
-      } else if (nextPhase.startsWith('break')) {
-        console.log('Starting break:', nextPhase);
-        onComplete(); // Notify parent set is over
-        setTimeLeft(90); // 1.5 minutes break (90 seconds)
-        setIsRunning(true);
-        setMatchPhase(nextPhase);
-      } else if (nextPhase === 'final_break') {
-        console.log('Starting final break');
-        onComplete(); // Notify parent set is over
-        setTimeLeft(60); // 60 seconds final break
-        setIsRunning(true);
-        setMatchPhase(nextPhase);
-      } else if (nextPhase === 'results_display') {
-        console.log('Starting results display');
-        onComplete(); // Notify parent final break is over
-        setTimeLeft(60); // 60 seconds results display
-        setIsRunning(true);
-        setMatchPhase(nextPhase);
-      } else if (nextPhase === 'complete') {
-        console.log('Match complete');
-        onComplete(); // Notify parent match is complete
+      console.log(`Moving from ${matchPhase} to ${nextPhase}`);
+      
+      if (nextPhase === 'complete') {
         setIsRunning(false);
-        setMatchPhase(nextPhase);
+        onComplete();
+      } else {
+        // Set appropriate time for different phases
+        const phaseTime = nextPhase.includes('break') ? 90 : // 1.5 minutes for breaks
+                         nextPhase === 'final_break' ? 60 : // 1 minute final break
+                         nextPhase === 'results_display' ? 60 : // 1 minute results
+                         initialMinutes * 60; // Regular set time
+        
+        setTimeLeft(phaseTime);
+        setIsRunning(true);
+        
+        if (nextPhase.startsWith('set') && currentIndex > 0) {
+          onComplete(); // Only notify parent when transitioning to a new set (not first set)
+        }
       }
+      
+      setMatchPhase(nextPhase);
     }
   };
 
+  // Simplified fixture handling
   useEffect(() => {
     if (fixture?.Id) {
-      console.log('New fixture detected, initializing phase to set1');
       setMatchPhase("set1");
       setTimeLeft(initialMinutes * 60);
       setIsRunning(true);
     }
   }, [fixture?.Id, initialMinutes]);
 
+  // Timer logic
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
-    if (isRunning && timeLeft > 0 && matchPhase !== 'complete') {
+    if (isRunning && timeLeft > 0 && !isMatchComplete) {
       interval = setInterval(() => {
-        setTimeLeft((prev) => {
+        setTimeLeft(prev => {
           if (prev <= 1) {
             if (interval) clearInterval(interval);
             progressToNextPhase();
@@ -106,34 +96,23 @@ export const useTimer = ({
         clearInterval(interval);
       }
     };
-  }, [isRunning, timeLeft, matchPhase]);
+  }, [isRunning, timeLeft, isMatchComplete]);
 
+  // Simplified break handling
   useEffect(() => {
-    if (isBreak && matchPhase.includes('set')) {
+    if (isBreak && matchPhase.includes('set') && timeLeft === 0) {
       const currentSetNumber = parseInt(matchPhase.charAt(3));
-      console.log('Current set number:', currentSetNumber);
-      
-      if (currentSetNumber >= 1 && currentSetNumber <= 3 && timeLeft === 0) {
-        if (currentSetNumber === 3) {
-          console.log('Moving to final break from set 3');
-          setMatchPhase('final_break');
-          setTimeLeft(60); // 60 seconds final break
-        } else {
-          console.log('Moving to break', currentSetNumber);
-          const breakPhase = `break${currentSetNumber}` as MatchPhase;
-          setMatchPhase(breakPhase);
-          setTimeLeft(90); // 1.5 minutes regular break (90 seconds)
-        }
+      if (currentSetNumber >= 1 && currentSetNumber <= 3) {
+        const nextPhase = currentSetNumber === 3 ? 'final_break' : `break${currentSetNumber}`;
+        setMatchPhase(nextPhase as MatchPhase);
+        setTimeLeft(currentSetNumber === 3 ? 60 : 90);
         setIsRunning(true);
       }
     }
   }, [isBreak, matchPhase, timeLeft]);
 
   const handleStartStop = () => {
-    console.log('Start/Stop clicked, current phase:', matchPhase);
-    
     if (matchPhase === "not_started") {
-      console.log('Starting first set');
       setMatchPhase("set1");
       setIsRunning(true);
     } else if (!isMatchComplete) {
@@ -149,7 +128,6 @@ export const useTimer = ({
   };
 
   const handleSkipPhase = () => {
-    console.log('Skipping current phase:', matchPhase);
     setTimeLeft(0);
     progressToNextPhase();
   };

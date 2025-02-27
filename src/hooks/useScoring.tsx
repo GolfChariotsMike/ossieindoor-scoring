@@ -16,13 +16,7 @@ export const useScoring = () => {
   const { recordFirstSetProgress } = useMatchRecording(isTeamsSwitched);
 
   const handleScore = useCallback((team: "home" | "away", increment: boolean, match?: Match | Fixture) => {
-    if (isMatchComplete) {
-      console.log('Match is complete, ignoring score update');
-      return;
-    }
-
-    if (isProcessingScore) {
-      console.log('Already processing score update, ignoring...');
+    if (isMatchComplete || isProcessingScore) {
       return;
     }
 
@@ -32,20 +26,12 @@ export const useScoring = () => {
       const wasGameStarted = hasGameStarted;
       setHasGameStarted(true);
       
-      // Update the score immediately in the UI
-      setCurrentScore((prev) => {
-        const newScore = {
-          ...prev,
-          [team]: increment ? prev[team] + 1 : Math.max(0, prev[team] - 1),
-        };
-        console.log('Updated score:', newScore);
-        return newScore;
-      });
+      setCurrentScore((prev) => ({
+        ...prev,
+        [team]: increment ? prev[team] + 1 : Math.max(0, prev[team] - 1),
+      }));
       
       if (!wasGameStarted && increment && match) {
-        console.log('First point scored, saving to IndexedDB');
-        
-        // Save to IndexedDB without waiting
         Promise.resolve().then(async () => {
           try {
             await savePendingScore({
@@ -57,42 +43,31 @@ export const useScoring = () => {
               retryCount: 0
             });
             
-            // Try to record to server in background, but don't block UI
-            Promise.resolve().then(async () => {
-              try {
-                const success = await recordFirstSetProgress(match, 
-                  team === 'home' ? 1 : 0, 
-                  team === 'away' ? 1 : 0
-                );
-                if (success) {
-                  setFirstSetRecorded(true);
-                }
-              } catch (error) {
-                console.error('Background first set recording error:', error);
-                // Error is handled within recordFirstSetProgress and will be retried
-              }
-            });
+            const success = await recordFirstSetProgress(match, 
+              team === 'home' ? 1 : 0, 
+              team === 'away' ? 1 : 0
+            );
+            if (success) {
+              setFirstSetRecorded(true);
+            }
           } catch (error) {
-            console.error('Error saving to IndexedDB:', error);
+            console.error('Error in score handling:', error);
           }
         });
       }
     } finally {
       setIsProcessingScore(false);
     }
-  }, [isMatchComplete, isProcessingScore, hasGameStarted, setHasGameStarted, recordFirstSetProgress]);
+  }, [isMatchComplete, isProcessingScore, hasGameStarted, recordFirstSetProgress]);
 
   const handleSwitchTeams = useCallback(() => {
-    if (isMatchComplete) {
-      console.log('Match is complete, ignoring team switch');
-      return;
+    if (!isMatchComplete) {
+      setIsTeamsSwitched(!isTeamsSwitched);
+      setCurrentScore((prev) => ({
+        home: prev.away,
+        away: prev.home
+      }));
     }
-    console.log('Switching teams');
-    setIsTeamsSwitched(!isTeamsSwitched);
-    setCurrentScore((prev) => ({
-      home: prev.away,
-      away: prev.home
-    }));
   }, [isMatchComplete, isTeamsSwitched]);
 
   return {
