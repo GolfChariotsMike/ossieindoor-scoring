@@ -1,6 +1,6 @@
 
 import { toast } from "@/components/ui/use-toast";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { Match, Fixture } from "@/types/volleyball";
 import { LEAGUE_URLS } from "@/config/leagueConfig";
 import { parseXMLResponse } from "@/utils/xmlParser";
@@ -77,18 +77,22 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       if (!fixture?.DateTime) return false;
       
       try {
-        const fixtureDatePart = fixture.DateTime.split(' ')[0];
-        const targetDateStr = format(date, 'dd/MM/yyyy');
+        // Parse the fixture date in the format "dd/MM/yyyy HH:mm"
+        const fixtureDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+        const targetDate = parse(formattedDate, 'dd/MM/yyyy', new Date());
+        
+        // Compare only the date parts (ignore time)
+        const isSameDate = format(fixtureDate, 'yyyy-MM-dd') === format(targetDate, 'yyyy-MM-dd');
         
         console.log('Date comparison for fixture:', {
-          fullDateTime: fixture.DateTime,
-          fixtureDatePart,
-          targetDate: targetDateStr,
-          isMatch: fixtureDatePart === targetDateStr,
+          fixtureDateTime: fixture.DateTime,
+          parsedFixtureDate: format(fixtureDate, 'yyyy-MM-dd'),
+          targetDate: format(targetDate, 'yyyy-MM-dd'),
+          isSameDate,
           court: fixture.PlayingAreaName
         });
         
-        return fixtureDatePart === targetDateStr;
+        return isSameDate;
       } catch (error) {
         console.error('Error comparing fixture date:', fixture.DateTime, error);
         return false;
