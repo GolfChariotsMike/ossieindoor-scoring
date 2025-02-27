@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { 
   Table,
   TableBody,
@@ -27,15 +27,29 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
   const { data: matches, isLoading } = useQuery({
     queryKey: ["matches-summary", courtId],
     queryFn: async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const searchParams = new URLSearchParams(window.location.search);
+      const dateParam = searchParams.get('date');
       
+      // Use the date from URL or default to today
+      const targetDate = dateParam ? new Date(dateParam) : new Date();
+      const dayStart = startOfDay(targetDate);
+      const dayEnd = endOfDay(targetDate);
+      
+      console.log('Fetching matches for:', {
+        courtId,
+        dateParam,
+        targetDate,
+        dayStart: dayStart.toISOString(),
+        dayEnd: dayEnd.toISOString()
+      });
+
       const { data, error } = await supabase
         .from('match_data_v2')
         .select('*')
-        .eq('court_number', parseInt(courtId))  // Convert string to number
+        .eq('court_number', parseInt(courtId))
         .eq('is_active', true)
-        .gte('match_date', today.toISOString())
+        .gte('match_date', dayStart.toISOString())
+        .lte('match_date', dayEnd.toISOString())
         .order('match_date', { ascending: true });
 
       if (error) {
@@ -43,6 +57,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         throw error;
       }
 
+      console.log('Found matches:', data?.length || 0);
       return data || [];
     },
   });
@@ -52,7 +67,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
       if (!matches || matches.length === 0) {
         toast({
           title: "No matches to save",
-          description: "There are no matches recorded for today.",
+          description: "There are no matches recorded for this date.",
           variant: "default",
         });
         return;
