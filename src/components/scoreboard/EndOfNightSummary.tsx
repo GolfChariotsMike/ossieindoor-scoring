@@ -33,7 +33,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
       const { data, error } = await supabase
         .from('match_data_v2')
         .select('*')
-        .eq('court_number', courtId)
+        .eq('court_number', parseInt(courtId))  // Convert string to number
         .eq('is_active', true)
         .gte('match_date', today.toISOString())
         .order('match_date', { ascending: true });
