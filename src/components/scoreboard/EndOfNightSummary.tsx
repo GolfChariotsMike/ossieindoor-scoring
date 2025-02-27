@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Save, ArrowLeft } from "lucide-react";
+import { getPendingScores } from "@/services/indexedDB";
 
 interface EndOfNightSummaryProps {
   courtId: string;
@@ -43,7 +44,11 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         dayEnd: dayEnd.toISOString()
       });
 
-      const { data, error } = await supabase
+      // First get any pending scores from IndexedDB
+      const pendingScores = await getPendingScores();
+      console.log('Found pending scores:', pendingScores.length);
+
+      const { data: existingMatches, error } = await supabase
         .from('match_data_v2')
         .select('*')
         .eq('court_number', parseInt(courtId))
@@ -57,8 +62,42 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         throw error;
       }
 
-      console.log('Found matches:', data?.length || 0);
-      return data || [];
+      // Combine existing matches with pending scores
+      const combinedMatches = existingMatches || [];
+      
+      // Only add pending scores that don't already exist in the database
+      for (const pendingScore of pendingScores) {
+        const matchExists = combinedMatches.some(
+          m => m.match_id === pendingScore.matchId
+        );
+        
+        if (!matchExists) {
+          combinedMatches.push({
+            id: pendingScore.id,
+            match_id: pendingScore.matchId,
+            match_date: pendingScore.timestamp,
+            court_number: parseInt(courtId),
+            set1_home_score: pendingScore.homeScores[0] || 0,
+            set1_away_score: pendingScore.awayScores[0] || 0,
+            set2_home_score: pendingScore.homeScores[1] || 0,
+            set2_away_score: pendingScore.awayScores[1] || 0,
+            set3_home_score: pendingScore.homeScores[2] || 0,
+            set3_away_score: pendingScore.awayScores[2] || 0,
+            is_active: true,
+            has_final_score: false,
+            // These will be calculated on the server when saved
+            home_total_points: 0,
+            away_total_points: 0,
+            home_bonus_points: 0,
+            away_bonus_points: 0,
+            home_total_match_points: 0,
+            away_total_match_points: 0
+          });
+        }
+      }
+
+      console.log('Total matches to display:', combinedMatches.length);
+      return combinedMatches;
     },
   });
 
@@ -73,13 +112,41 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         return;
       }
 
-      const { error } = await supabase
+      // Get pending scores that need to be saved
+      const pendingScores = await getPendingScores();
+      
+      if (pendingScores.length > 0) {
+        const { error: pendingError } = await supabase
+          .from('match_data_v2')
+          .upsert(
+            pendingScores.map(score => ({
+              match_id: score.matchId,
+              match_date: score.timestamp,
+              court_number: parseInt(courtId),
+              set1_home_score: score.homeScores[0] || 0,
+              set1_away_score: score.awayScores[0] || 0,
+              set2_home_score: score.homeScores[1] || 0,
+              set2_away_score: score.awayScores[1] || 0,
+              set3_home_score: score.homeScores[2] || 0,
+              set3_away_score: score.awayScores[2] || 0,
+              is_active: true,
+              has_final_score: true
+            }))
+          );
+
+        if (pendingError) {
+          throw pendingError;
+        }
+      }
+
+      // Mark all matches as having final scores
+      const { error: updateError } = await supabase
         .from('match_data_v2')
         .update({ has_final_score: true })
         .in('id', matches.map(m => m.id));
 
-      if (error) {
-        throw error;
+      if (updateError) {
+        throw updateError;
       }
 
       toast({
