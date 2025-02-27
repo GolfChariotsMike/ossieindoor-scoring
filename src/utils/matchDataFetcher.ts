@@ -95,10 +95,18 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       }
     });
 
+    // Map XMLFixtures to CourtMatch format before saving
+    const courtMatches = fixtures.map(fixture => ({
+      id: fixture.Id || `${fixture.DateTime}-${fixture.PlayingAreaName}`,
+      PlayingAreaName: fixture.PlayingAreaName,
+      DateTime: fixture.DateTime,
+      ...fixture
+    }));
+
     // Save all fixtures to IndexedDB for offline access
     try {
-      await saveCourtMatches(fixtures);
-      console.log('Saved fixtures to IndexedDB:', fixtures.length);
+      await saveCourtMatches(courtMatches);
+      console.log('Saved fixtures to IndexedDB:', courtMatches.length);
     } catch (error) {
       console.error('Error caching fixtures:', error);
     }
