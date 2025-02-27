@@ -10,7 +10,8 @@ import { useNextMatch } from "./NextMatchLogic";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { format, parse } from "date-fns";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
+import { EndOfNightSummary } from "./EndOfNightSummary";
 
 const parseFixtureDate = (dateStr: string) => {
   try {
@@ -34,6 +35,7 @@ export const ScoreboardContainer = () => {
 
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
+  const [showEndOfNightSummary, setShowEndOfNightSummary] = useState(false);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousFixtureIdRef = useRef<string | null>(null);
   const hasTriedSavingScores = useRef<boolean>(false);
@@ -55,9 +57,6 @@ export const ScoreboardContainer = () => {
     },
   });
 
-  console.log('ScoreboardContainer - Match data:', match);
-  console.log('ScoreboardContainer - Fixture:', fixture);
-
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
@@ -65,6 +64,7 @@ export const ScoreboardContainer = () => {
       previousFixtureIdRef.current = fixture.Id;
       hasTriedSavingScores.current = false;
       isTransitioningToResults.current = false;
+      setShowEndOfNightSummary(false);
     }
   }, [fixture?.Id, gameState.resetGameState]);
 
@@ -74,7 +74,6 @@ export const ScoreboardContainer = () => {
       isTransitioningToResults.current = true;
       hasTriedSavingScores.current = true;
 
-      // Small delay to ensure UI updates are complete
       setTimeout(() => {
         gameState.saveMatchScores(match.id, gameState.setScores.home, gameState.setScores.away)
           .catch(error => {
@@ -101,68 +100,20 @@ export const ScoreboardContainer = () => {
 
       transitionTimeoutRef.current = setTimeout(() => {
         try {
-          console.log('Results display time complete, checking for next match', {
-            currentFixture: fixture?.Id,
-            currentTime: new Date().toISOString(),
-            availableMatches: nextMatches.length
-          });
-
           const nextMatch = findNextMatch(nextMatches);
           
           if (nextMatch) {
-            console.log('Found next match:', {
-              nextMatchId: nextMatch.Id,
-              nextMatchTime: nextMatch.DateTime,
-              nextMatchTeams: `${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`
-            });
-            
-            try {
-              handleStartNextMatch(nextMatch);
-            } catch (error) {
-              console.error('Error transitioning to next match:', {
-                error,
-                nextMatchDetails: nextMatch,
-                currentFixture: fixture
-              });
-              
-              toast({
-                title: "Error transitioning to next match",
-                description: "There was an error loading the next match. Returning to court selection.",
-                variant: "destructive",
-              });
-              
-              setTimeout(() => {
-                navigate('/');
-              }, 3000);
-            }
+            console.log('Found next match, transitioning...');
+            handleStartNextMatch(nextMatch);
           } else {
-            console.log('No next match found', {
-              currentTime: new Date().toISOString(),
-              availableMatches: nextMatches.map(m => ({
-                id: m.Id,
-                datetime: m.DateTime,
-                court: m.PlayingAreaName
-              }))
-            });
-            navigate('/');
+            console.log('No next match found, showing end of night summary');
+            setShowEndOfNightSummary(true);
           }
         } catch (error) {
-          console.error('Critical error in match transition logic:', {
-            error,
-            currentFixture: fixture,
-            nextMatchesCount: nextMatches.length,
-            resultsDisplayStartTime
-          });
-          
-          toast({
-            title: "Error",
-            description: "Something went wrong. Returning to court selection.",
-            variant: "destructive",
-          });
-          
-          navigate('/');
+          console.error('Error in match transition:', error);
+          setShowEndOfNightSummary(true);
         }
-      }, 50000);
+      }, 5000);
 
       return () => {
         if (transitionTimeoutRef.current) {
@@ -170,7 +121,7 @@ export const ScoreboardContainer = () => {
         }
       };
     }
-  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, navigate, fixture]);
+  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch]);
 
   const handleBack = () => {
     if (gameState.hasGameStarted) {
@@ -185,16 +136,22 @@ export const ScoreboardContainer = () => {
   };
 
   const handleManualNextMatch = () => {
-    console.log('Manual next match transition triggered');
     const nextMatch = findNextMatch(nextMatches);
     if (nextMatch) {
-      console.log('Manually transitioning to next match:', nextMatch.Id);
       handleStartNextMatch(nextMatch);
     } else {
-      console.log('No next match found, returning to court selection');
-      navigate('/');
+      setShowEndOfNightSummary(true);
     }
   };
+
+  if (showEndOfNightSummary) {
+    return (
+      <EndOfNightSummary 
+        courtId={courtId!}
+        onBack={() => setShowEndOfNightSummary(false)}
+      />
+    );
+  }
 
   return (
     <ScoreboardContent
