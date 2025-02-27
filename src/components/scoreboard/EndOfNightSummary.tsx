@@ -48,6 +48,18 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
       const pendingScores = await getPendingScores();
       console.log('Found pending scores:', pendingScores.length);
 
+      // Get match details for pending scores
+      const pendingMatchDetails = await Promise.all(
+        pendingScores.map(async (score) => {
+          const { data: matchData } = await supabase
+            .from('matches_v2')
+            .select('*')
+            .eq('id', score.matchId)
+            .single();
+          return matchData;
+        })
+      );
+
       const { data: existingMatches, error } = await supabase
         .from('match_data_v2')
         .select('*')
@@ -66,17 +78,22 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
       const combinedMatches = existingMatches || [];
       
       // Only add pending scores that don't already exist in the database
-      for (const pendingScore of pendingScores) {
+      pendingScores.forEach((pendingScore, index) => {
         const matchExists = combinedMatches.some(
           m => m.match_id === pendingScore.matchId
         );
         
-        if (!matchExists) {
+        const matchDetails = pendingMatchDetails[index];
+        
+        if (!matchExists && matchDetails) {
           combinedMatches.push({
             id: pendingScore.id,
             match_id: pendingScore.matchId,
             match_date: pendingScore.timestamp,
             court_number: parseInt(courtId),
+            division: matchDetails.division || '',
+            home_team_name: matchDetails.home_team_name,
+            away_team_name: matchDetails.away_team_name,
             set1_home_score: pendingScore.homeScores[0] || 0,
             set1_away_score: pendingScore.awayScores[0] || 0,
             set2_home_score: pendingScore.homeScores[1] || 0,
@@ -85,16 +102,21 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
             set3_away_score: pendingScore.awayScores[2] || 0,
             is_active: true,
             has_final_score: false,
-            // These will be calculated on the server when saved
-            home_total_points: 0,
-            away_total_points: 0,
+            home_total_points: pendingScore.homeScores.reduce((a, b) => a + b, 0),
+            away_total_points: pendingScore.awayScores.reduce((a, b) => a + b, 0),
             home_bonus_points: 0,
             away_bonus_points: 0,
             home_total_match_points: 0,
-            away_total_match_points: 0
+            away_total_match_points: 0,
+            points_percentage: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            home_result: '',
+            away_result: '',
+            fixture_start_time: matchDetails.fixture_start_time
           });
         }
-      }
+      });
 
       console.log('Total matches to display:', combinedMatches.length);
       return combinedMatches;
@@ -116,22 +138,52 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
       const pendingScores = await getPendingScores();
       
       if (pendingScores.length > 0) {
+        // Get match details for pending scores
+        const pendingMatchDetails = await Promise.all(
+          pendingScores.map(async (score) => {
+            const { data: matchData } = await supabase
+              .from('matches_v2')
+              .select('*')
+              .eq('id', score.matchId)
+              .single();
+            return matchData;
+          })
+        );
+
         const { error: pendingError } = await supabase
           .from('match_data_v2')
           .upsert(
-            pendingScores.map(score => ({
-              match_id: score.matchId,
-              match_date: score.timestamp,
-              court_number: parseInt(courtId),
-              set1_home_score: score.homeScores[0] || 0,
-              set1_away_score: score.awayScores[0] || 0,
-              set2_home_score: score.homeScores[1] || 0,
-              set2_away_score: score.awayScores[1] || 0,
-              set3_home_score: score.homeScores[2] || 0,
-              set3_away_score: score.awayScores[2] || 0,
-              is_active: true,
-              has_final_score: true
-            }))
+            pendingScores.map((score, index) => {
+              const matchDetails = pendingMatchDetails[index];
+              return {
+                match_id: score.matchId,
+                match_date: score.timestamp,
+                court_number: parseInt(courtId),
+                division: matchDetails?.division || '',
+                home_team_name: matchDetails?.home_team_name || '',
+                away_team_name: matchDetails?.away_team_name || '',
+                set1_home_score: score.homeScores[0] || 0,
+                set1_away_score: score.awayScores[0] || 0,
+                set2_home_score: score.homeScores[1] || 0,
+                set2_away_score: score.awayScores[1] || 0,
+                set3_home_score: score.homeScores[2] || 0,
+                set3_away_score: score.awayScores[2] || 0,
+                is_active: true,
+                has_final_score: true,
+                home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
+                away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                home_result: '',
+                away_result: '',
+                points_percentage: 0,
+                home_bonus_points: 0,
+                away_bonus_points: 0,
+                home_total_match_points: 0,
+                away_total_match_points: 0,
+                fixture_start_time: matchDetails?.fixture_start_time
+              };
+            })
           );
 
         if (pendingError) {
