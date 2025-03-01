@@ -95,7 +95,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
           
           if (!matchExists && matchDetails) {
             combinedMatches.push({
-              id: pendingScore.id,
+              id: matchDetails.id, // Use the actual match ID instead of the pending score ID
               match_id: pendingScore.matchId,
               match_date: pendingScore.timestamp,
               court_number: parseInt(courtId),
@@ -168,15 +168,26 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         return;
       }
       
-      // Mark all matches as having final scores
-      const { error: updateError } = await supabase
-        .from('match_data_v2')
-        .update({ has_final_score: true })
-        .in('id', matches.map(m => m.id));
+      // Mark all matches as having final scores - only for real match IDs, not pending score IDs
+      const matchIdsToUpdate = matches
+        .filter(m => m.id && m.id.includes('-') === false) // Filter out pending score IDs
+        .map(m => m.id);
+      
+      if (matchIdsToUpdate.length > 0) {
+        const { error: updateError } = await supabase
+          .from('match_data_v2')
+          .update({ has_final_score: true })
+          .in('id', matchIdsToUpdate);
 
-      if (updateError) {
-        console.error('Error updating match data:', updateError);
-        throw updateError;
+        if (updateError) {
+          console.error('Error updating match data:', updateError);
+          // Continue execution instead of throwing error
+          toast({
+            title: "Warning",
+            description: "Some match records couldn't be updated, but scores were processed.",
+            variant: "default",
+          });
+        }
       }
 
       // Update refresh team stats
