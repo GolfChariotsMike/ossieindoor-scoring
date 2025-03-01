@@ -38,7 +38,6 @@ export const useGameState = () => {
   // Handle timer complete
   const handleTimerComplete = useCallback(() => {
     if (isBreak) {
-      // Coming out of a break
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 });
       handleSwitchTeams(); // Switch teams on each new set
@@ -62,7 +61,7 @@ export const useGameState = () => {
       
       if (newSetScores.home.length >= 3) {
         setIsMatchComplete(true);
-        console.log('Match complete, all sets finished, now entering break3');
+        console.log('Match complete, all sets finished');
       } else {
         console.log('Set complete, starting break');
       }

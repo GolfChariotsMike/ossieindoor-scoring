@@ -1,4 +1,3 @@
-
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 import { Button } from "@/components/ui/button";
@@ -37,19 +36,18 @@ export const Timer = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
-  const longPressDelay = 5000; // 5 seconds
+  const longPressDelay = 5000; // Changed from 10000 to 5000 (5 seconds)
 
   const {
     timeLeft,
     handleStartStop,
     handleReset,
     handleSkipPhase,
-    progressToNextPhase,
-    matchPhase
+    progressToNextPhase
   } = useTimer({
     initialMinutes,
     onComplete: () => {
-      console.log('Timer complete or skipped with fixture:', fixture, 'matchPhase:', matchPhase);
+      console.log('Timer complete or skipped with fixture:', fixture);
       onComplete();
     },
     onSwitchTeams,

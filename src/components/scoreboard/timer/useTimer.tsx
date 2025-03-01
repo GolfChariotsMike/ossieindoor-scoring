@@ -32,7 +32,7 @@ export const useTimer = ({
       "set2", 
       "break2", 
       "set3",
-      "break3",
+      "final_break",
       "results_display",
       "complete"
     ];
@@ -48,16 +48,16 @@ export const useTimer = ({
         onComplete();
       } else {
         // Set appropriate time for different phases
-        const phaseTime = nextPhase === 'break1' || nextPhase === 'break2' || nextPhase === 'break3' ? 60 : // 60 seconds for all breaks
-                         nextPhase === 'results_display' ? 60 : // 60 seconds results
+        const phaseTime = nextPhase.includes('break') ? 90 : // 1.5 minutes for breaks
+                         nextPhase === 'final_break' ? 60 : // 1 minute final break
+                         nextPhase === 'results_display' ? 60 : // 1 minute results
                          initialMinutes * 60; // Regular set time
         
         setTimeLeft(phaseTime);
         setIsRunning(true);
         
-        // For phase transitions that require parent notification
-        if (nextPhase === 'results_display') {
-          onComplete();
+        if (nextPhase.startsWith('set') && currentIndex > 0) {
+          onComplete(); // Only notify parent when transitioning to a new set (not first set)
         }
       }
       
@@ -98,38 +98,18 @@ export const useTimer = ({
     };
   }, [isRunning, timeLeft, isMatchComplete]);
 
-  // Handle breaks and phase transitions
+  // Handle breaks
   useEffect(() => {
-    // When a set timer ends, ensure we properly transition to break phases
-    if (timeLeft === 0) {
-      if (matchPhase === 'set1') {
-        // After set 1 ends, transition to break1
-        setMatchPhase('break1');
-        setTimeLeft(60); // 60 seconds break
+    if (isBreak && matchPhase.includes('set') && timeLeft === 0) {
+      const currentSetNumber = parseInt(matchPhase.charAt(3));
+      if (currentSetNumber >= 1 && currentSetNumber <= 3) {
+        const nextPhase = currentSetNumber === 3 ? 'final_break' : `break${currentSetNumber}`;
+        setMatchPhase(nextPhase as MatchPhase);
+        setTimeLeft(currentSetNumber === 3 ? 60 : 90);
         setIsRunning(true);
-      } else if (matchPhase === 'set2') {
-        // After set 2 ends, transition to break2
-        setMatchPhase('break2');
-        setTimeLeft(60); // 60 seconds break
-        setIsRunning(true);
-      } else if (matchPhase === 'set3') {
-        // After set 3 ends, transition to break3
-        setMatchPhase('break3');
-        setTimeLeft(60); // 60 seconds break3
-        setIsRunning(true);
-      } else if (matchPhase === 'break3') {
-        // After break3, go to results display
-        setMatchPhase('results_display');
-        setTimeLeft(60); // 60 seconds results display
-        setIsRunning(true);
-        onComplete(); // Notify parent component that we're moving to results
-      } else if (matchPhase === 'results_display') {
-        // After results display time is up
-        setMatchPhase('complete');
-        setIsRunning(false);
       }
     }
-  }, [timeLeft, matchPhase, onComplete]);
+  }, [isBreak, matchPhase, timeLeft]);
 
   const handleStartStop = () => {
     if (matchPhase === "not_started") {

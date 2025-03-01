@@ -1,4 +1,3 @@
-
 export type MatchPhase = 
   | "not_started"
   | "set1"
@@ -6,6 +5,6 @@ export type MatchPhase =
   | "set2"
   | "break2"
   | "set3"
-  | "break3"
+  | "final_break"
   | "results_display"
   | "complete";

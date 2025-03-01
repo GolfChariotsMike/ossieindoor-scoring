@@ -36,7 +36,6 @@ export const ScoreboardContainer = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const [showEndOfNightSummary, setShowEndOfNightSummary] = useState(false);
-  const [showResultsScreen, setShowResultsScreen] = useState(false);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousFixtureIdRef = useRef<string | null>(null);
   const isTransitioningToResults = useRef<boolean>(false);
@@ -63,29 +62,17 @@ export const ScoreboardContainer = () => {
       gameState.resetGameState();
       previousFixtureIdRef.current = fixture.Id;
       isTransitioningToResults.current = false;
-      setShowResultsScreen(false);
       setShowEndOfNightSummary(false);
     }
-  }, [fixture?.Id, gameState]);
+  }, [fixture?.Id, gameState.resetGameState]);
 
-  // Handle match completion and prepare for results display
   useEffect(() => {
     if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
-      console.log('Match complete, preparing for break3 before results screen');
+      console.log('Match complete, preparing for results screen');
       isTransitioningToResults.current = true;
-    }
-  }, [gameState.isMatchComplete, match, gameState.hasGameStarted]);
 
-  // This function is called when the timer completed or a phase is skipped
-  const handleTimerComplete = () => {
-    console.log('Timer complete called with matchPhase from ScoreboardContainer');
-    
-    if (gameState.isMatchComplete && gameState.isBreak && !showResultsScreen) {
-      console.log('Break3 completed, showing results screen now');
-      setShowResultsScreen(true);
-      
-      // Save scores locally
-      if (match) {
+      // Only save scores locally now, not to Supabase
+      setTimeout(() => {
         gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away)
           .catch(error => {
             console.error('Error saving match scores locally:', error);
@@ -99,24 +86,18 @@ export const ScoreboardContainer = () => {
             console.log('Starting results display timer');
             setResultsDisplayStartTime(Date.now());
           });
-      }
-    } else {
-      // Normal timer completion for non-final phases
-      gameState.handleTimerComplete();
+      }, 100);
     }
-  };
+  }, [gameState.isMatchComplete, match, gameState.setScores, gameState.hasGameStarted]);
 
-  // Handle the results display transition to next match
   useEffect(() => {
-    if (resultsDisplayStartTime && showResultsScreen) {
+    if (resultsDisplayStartTime) {
       if (transitionTimeoutRef.current) {
         clearTimeout(transitionTimeoutRef.current);
       }
 
-      // Set a 60-second timeout (60000ms) for displaying results
       transitionTimeoutRef.current = setTimeout(() => {
         try {
-          console.log('Results display timeout completed (60 seconds)');
           const nextMatch = findNextMatch(nextMatches);
           
           if (nextMatch) {
@@ -130,7 +111,7 @@ export const ScoreboardContainer = () => {
           console.error('Error in match transition:', error);
           setShowEndOfNightSummary(true);
         }
-      }, 60000); // 60 seconds = 60000ms
+      }, 5000);
 
       return () => {
         if (transitionTimeoutRef.current) {
@@ -138,7 +119,7 @@ export const ScoreboardContainer = () => {
         }
       };
     }
-  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, showResultsScreen]);
+  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch]);
 
   const handleBack = () => {
     if (gameState.hasGameStarted) {
@@ -181,8 +162,6 @@ export const ScoreboardContainer = () => {
       onExitConfirmationChange={setShowExitConfirmation}
       onConfirmExit={confirmExit}
       fixture={fixture}
-      onTimerComplete={handleTimerComplete}
-      showResultsScreen={showResultsScreen}
     />
   );
 };
