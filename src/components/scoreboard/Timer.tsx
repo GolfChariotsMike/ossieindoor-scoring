@@ -36,7 +36,7 @@ export const Timer = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
-  const longPressDelay = 10000; // Increased to 10 seconds
+  const longPressDelay = 5000; // Changed from 10000 to 5000 (5 seconds)
 
   const {
     timeLeft,
