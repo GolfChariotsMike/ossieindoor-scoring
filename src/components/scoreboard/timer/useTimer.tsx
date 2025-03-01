@@ -23,7 +23,7 @@ export const useTimer = ({
   const [isRunning, setIsRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
 
-  // Simplified phase progression
+  // Phase progression
   const progressToNextPhase = () => {
     const phases: MatchPhase[] = [
       "not_started", 
@@ -65,7 +65,7 @@ export const useTimer = ({
     }
   };
 
-  // Simplified fixture handling
+  // Handle fixture
   useEffect(() => {
     if (fixture?.Id) {
       setMatchPhase("set1");
@@ -98,7 +98,7 @@ export const useTimer = ({
     };
   }, [isRunning, timeLeft, isMatchComplete]);
 
-  // Simplified break handling
+  // Handle breaks
   useEffect(() => {
     if (isBreak && matchPhase.includes('set') && timeLeft === 0) {
       const currentSetNumber = parseInt(matchPhase.charAt(3));

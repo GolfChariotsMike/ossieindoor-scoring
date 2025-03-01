@@ -1,7 +1,6 @@
 
 import { useState, useCallback } from "react";
 import { Score, SetScores, Match, Fixture } from "@/types/volleyball";
-import { useMatchRecording } from "./useMatchRecording";
 import { savePendingScore } from "@/services/indexedDB";
 
 export const useScoring = () => {
@@ -12,8 +11,6 @@ export const useScoring = () => {
   const [firstSetRecorded, setFirstSetRecorded] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [isProcessingScore, setIsProcessingScore] = useState(false);
-
-  const { recordFirstSetProgress } = useMatchRecording(isTeamsSwitched);
 
   const handleScore = useCallback((team: "home" | "away", increment: boolean, match?: Match | Fixture) => {
     if (isMatchComplete || isProcessingScore) {
