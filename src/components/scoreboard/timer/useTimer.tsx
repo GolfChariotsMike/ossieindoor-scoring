@@ -55,8 +55,9 @@ export const useTimer = ({
         setTimeLeft(phaseTime);
         setIsRunning(true);
         
-        if (nextPhase.startsWith('set') && currentIndex > 0) {
-          onComplete(); // Only notify parent when transitioning to a new set (not first set)
+        // Only call onComplete when transitioning to a new set or results display (not first set)
+        if ((nextPhase.startsWith('set') && currentIndex > 0) || nextPhase === 'results_display') {
+          onComplete(); 
         }
       }
       
@@ -97,18 +98,33 @@ export const useTimer = ({
     };
   }, [isRunning, timeLeft, isMatchComplete]);
 
-  // Handle breaks
+  // Handle breaks and phase transitions
   useEffect(() => {
-    if (isBreak && matchPhase.includes('set') && timeLeft === 0) {
-      const currentSetNumber = parseInt(matchPhase.charAt(3));
-      if (currentSetNumber >= 1 && currentSetNumber <= 3) {
-        const nextPhase = currentSetNumber === 3 ? 'final_break' : `break${currentSetNumber}`;
-        setMatchPhase(nextPhase as MatchPhase);
-        setTimeLeft(60); // 60 seconds for all breaks (including final break)
+    // When a set timer ends, ensure we properly transition to break phases
+    if (timeLeft === 0) {
+      if (matchPhase === 'set1') {
+        // After set 1 ends, transition to break1
+        setMatchPhase('break1');
+        setTimeLeft(60); // 60 seconds break
+        setIsRunning(true);
+      } else if (matchPhase === 'set2') {
+        // After set 2 ends, transition to break2
+        setMatchPhase('break2');
+        setTimeLeft(60); // 60 seconds break
+        setIsRunning(true);
+      } else if (matchPhase === 'set3') {
+        // After set 3 ends, transition to final_break
+        setMatchPhase('final_break');
+        setTimeLeft(60); // 60 seconds final break
+        setIsRunning(true);
+      } else if (matchPhase === 'final_break') {
+        // After final break, go to results display
+        setMatchPhase('results_display');
+        setTimeLeft(60); // 60 seconds results display
         setIsRunning(true);
       }
     }
-  }, [isBreak, matchPhase, timeLeft]);
+  }, [timeLeft, matchPhase]);
 
   const handleStartStop = () => {
     if (matchPhase === "not_started") {
