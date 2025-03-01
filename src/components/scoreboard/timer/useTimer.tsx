@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MatchPhase } from "./types";
 
@@ -48,8 +47,7 @@ export const useTimer = ({
         onComplete();
       } else {
         // Set appropriate time for different phases
-        const phaseTime = nextPhase === 'break1' || nextPhase === 'break2' ? 60 : // 60 seconds for set breaks
-                         nextPhase === 'final_break' ? 30 : // 30 seconds final break
+        const phaseTime = nextPhase === 'break1' || nextPhase === 'break2' || nextPhase === 'final_break' ? 60 : // 60 seconds for all breaks
                          nextPhase === 'results_display' ? 60 : // 60 seconds results
                          initialMinutes * 60; // Regular set time
         
@@ -105,7 +103,7 @@ export const useTimer = ({
       if (currentSetNumber >= 1 && currentSetNumber <= 3) {
         const nextPhase = currentSetNumber === 3 ? 'final_break' : `break${currentSetNumber}`;
         setMatchPhase(nextPhase as MatchPhase);
-        setTimeLeft(currentSetNumber === 3 ? 30 : 60); // 30 seconds for final break, 60 seconds for regular breaks
+        setTimeLeft(60); // 60 seconds for all breaks (including final break)
         setIsRunning(true);
       }
     }
