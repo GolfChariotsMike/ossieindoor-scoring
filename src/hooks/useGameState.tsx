@@ -21,7 +21,7 @@ export const useGameState = () => {
     setIsMatchComplete,
     handleScore: _handleScore,
     handleSwitchTeams,
-    setScores: _setSetScores,
+    setSetScores,
     setScores
   } = useScoring();
 
@@ -55,7 +55,7 @@ export const useGameState = () => {
         away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
       };
       
-      _setSetScores(newSetScores);
+      setSetScores(newSetScores);
       setIsBreak(true);
       
       if (newSetScores.home.length >= 3) {
@@ -73,7 +73,7 @@ export const useGameState = () => {
     currentScore, 
     setCurrentScore, 
     setScores, 
-    _setSetScores,
+    setSetScores,
     isTeamsSwitched, 
     handleSwitchTeams
   ]);
@@ -104,14 +104,14 @@ export const useGameState = () => {
   // Reset game state for new match
   const resetGameState = useCallback(() => {
     setCurrentScore({ home: 0, away: 0 });
-    _setSetScores({ home: [], away: [] });
+    setSetScores({ home: [], away: [] });
     setIsTeamsSwitched(false);
     setHasGameStarted(false);
     setFirstSetRecorded(false);
     setIsMatchComplete(false);
     setIsBreak(false);
     setHasInitializedPhases(false);
-  }, [setCurrentScore, _setSetScores, setIsTeamsSwitched, setHasGameStarted, setFirstSetRecorded, setIsMatchComplete]);
+  }, [setCurrentScore, setSetScores, setIsTeamsSwitched, setHasGameStarted, setFirstSetRecorded, setIsMatchComplete]);
 
   return {
     currentScore,
