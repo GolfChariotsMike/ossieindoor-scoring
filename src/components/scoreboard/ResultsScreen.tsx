@@ -117,7 +117,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   };
 
   useEffect(() => {
-    const displayDuration = 50; // 50 seconds display time
+    const displayDuration = 60; // 60 seconds display time (matching the timer)
     let timeLeft = displayDuration;
 
     const interval = setInterval(() => {
@@ -125,6 +125,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
       
       if (timeLeft <= 0) {
         setCountdown("Starting next match...");
+        clearInterval(interval);
       } else {
         setCountdown(`Auto-starting next match in ${timeLeft} seconds`);
       }

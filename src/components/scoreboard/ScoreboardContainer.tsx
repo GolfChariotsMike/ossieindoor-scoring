@@ -96,8 +96,10 @@ export const ScoreboardContainer = () => {
         clearTimeout(transitionTimeoutRef.current);
       }
 
+      // Set a 60-second timeout (60000ms) for displaying results
       transitionTimeoutRef.current = setTimeout(() => {
         try {
+          console.log('Results display timeout completed (60 seconds)');
           const nextMatch = findNextMatch(nextMatches);
           
           if (nextMatch) {
@@ -111,7 +113,7 @@ export const ScoreboardContainer = () => {
           console.error('Error in match transition:', error);
           setShowEndOfNightSummary(true);
         }
-      }, 5000);
+      }, 60000); // 60 seconds = 60000ms
 
       return () => {
         if (transitionTimeoutRef.current) {
