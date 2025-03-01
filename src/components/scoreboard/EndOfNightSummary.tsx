@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfDay, endOfDay } from "date-fns";
@@ -16,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Save, ArrowLeft } from "lucide-react";
 import { getPendingScores } from "@/services/indexedDB";
+import { processPendingScores } from "@/utils/matchDatabase";
 
 interface EndOfNightSummaryProps {
   courtId: string;
@@ -24,8 +25,9 @@ interface EndOfNightSummaryProps {
 
 export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
-  const { data: matches, isLoading } = useQuery({
+  const { data: matches, isLoading, refetch } = useQuery({
     queryKey: ["matches-summary", courtId],
     queryFn: async () => {
       const searchParams = new URLSearchParams(window.location.search);
@@ -55,7 +57,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
             .from('matches_v2')
             .select('*')
             .eq('id', score.matchId)
-            .single();
+            .maybeSingle();
           return matchData;
         })
       );
@@ -134,63 +136,14 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         return;
       }
 
-      // Get pending scores that need to be saved
-      const pendingScores = await getPendingScores();
+      toast({
+        title: "Submitting scores",
+        description: "Processing all match scores...",
+      });
+
+      // Process all pending scores with force flag
+      const processedCount = await processPendingScores(true);
       
-      if (pendingScores.length > 0) {
-        // Get match details for pending scores
-        const pendingMatchDetails = await Promise.all(
-          pendingScores.map(async (score) => {
-            const { data: matchData } = await supabase
-              .from('matches_v2')
-              .select('*')
-              .eq('id', score.matchId)
-              .single();
-            return matchData;
-          })
-        );
-
-        const { error: pendingError } = await supabase
-          .from('match_data_v2')
-          .upsert(
-            pendingScores.map((score, index) => {
-              const matchDetails = pendingMatchDetails[index];
-              return {
-                match_id: score.matchId,
-                match_date: score.timestamp,
-                court_number: parseInt(courtId),
-                division: matchDetails?.division || '',
-                home_team_name: matchDetails?.home_team_name || '',
-                away_team_name: matchDetails?.away_team_name || '',
-                set1_home_score: score.homeScores[0] || 0,
-                set1_away_score: score.awayScores[0] || 0,
-                set2_home_score: score.homeScores[1] || 0,
-                set2_away_score: score.awayScores[1] || 0,
-                set3_home_score: score.homeScores[2] || 0,
-                set3_away_score: score.awayScores[2] || 0,
-                is_active: true,
-                has_final_score: true,
-                home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
-                away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                home_result: '',
-                away_result: '',
-                points_percentage: 0,
-                home_bonus_points: 0,
-                away_bonus_points: 0,
-                home_total_match_points: 0,
-                away_total_match_points: 0,
-                fixture_start_time: matchDetails?.fixture_start_time
-              };
-            })
-          );
-
-        if (pendingError) {
-          throw pendingError;
-        }
-      }
-
       // Mark all matches as having final scores
       const { error: updateError } = await supabase
         .from('match_data_v2')
@@ -201,12 +154,30 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         throw updateError;
       }
 
+      // Update refresh team stats
+      const { error: statsError } = await supabase.rpc('refresh_team_statistics_safe');
+      if (statsError) {
+        console.error('Stats calculation error:', statsError);
+        toast({
+          title: "Warning",
+          description: "Match scores saved but team statistics update failed. This will be fixed automatically later.",
+          variant: "destructive",
+        });
+      }
+
       toast({
         title: "Success",
-        description: "All match scores have been verified and saved.",
+        description: `All match scores (${processedCount || matches.length}) have been verified and saved.`,
       });
 
-      navigate('/');
+      // Refresh the data
+      await refetch();
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
+
+      // Navigate back home after a short delay to show the success message
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
     } catch (error) {
       console.error('Error saving scores:', error);
       toast({
@@ -241,7 +212,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
             className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90"
           >
             <Save className="w-4 h-4 mr-2" />
-            Verify & Save All Scores
+            Submit & Save All Scores
           </Button>
         </div>
 
@@ -282,7 +253,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {match.has_final_score ? 'Verified' : 'Pending'}
+                        {match.has_final_score ? 'Submitted' : 'Pending'}
                       </span>
                     </TableCell>
                   </TableRow>
@@ -295,6 +266,12 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
             No matches recorded today.
           </div>
         )}
+
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+          <h3 className="font-bold mb-2">Important Information</h3>
+          <p>All scores will be submitted to the central database when you click "Submit & Save All Scores". Please review the scores carefully before submitting.</p>
+          <p className="mt-2">Once submitted, these scores will be used for official league standings.</p>
+        </div>
       </div>
     </div>
   );

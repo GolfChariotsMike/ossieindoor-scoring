@@ -1,7 +1,8 @@
+
 import { Match, SetScores } from "@/types/volleyball";
 import { Fireworks } from "./Fireworks";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import {
   AlertDialog,
@@ -25,8 +26,9 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
   const [countdown, setCountdown] = useState<string>("");
+  const [scoresSaved, setScoresSaved] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
-  const longPressDelay = 10000; // Increased to 10 seconds
+  const longPressDelay = 5000; // 5 seconds
 
   const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
     let setPoints = 0;
@@ -107,6 +109,8 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
 
   const handleStartNext = () => {
     if (onStartNextMatch) {
+      // Mark that scores are saved for this match
+      setScoresSaved(true);
       onStartNextMatch();
       setDialogOpen(false);
     }
@@ -163,6 +167,12 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
 
         {onStartNextMatch && (
           <div className="relative z-10 flex flex-col items-center justify-center space-y-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <p className="text-2xl font-score text-black animate-pulse">
+                {scoresSaved ? "Scores saved locally" : "Scores saved locally. Submit all scores at the end of the night."}
+              </p>
+              {scoresSaved && <CheckCircle className="text-green-600 w-6 h-6" />}
+            </div>
             <p className="text-2xl font-score text-black mb-2 animate-pulse">
               {countdown}
             </p>
@@ -191,7 +201,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
                   <AlertDialogTitle>Are you sure you want to start the next match?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action should only be used if you are ready to proceed to the next match. 
-                    Make sure all scores and results have been recorded correctly before proceeding.
+                    All scores will be saved locally and can be uploaded at the end of the night.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

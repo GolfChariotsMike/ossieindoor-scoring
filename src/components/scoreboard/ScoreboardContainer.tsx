@@ -38,7 +38,6 @@ export const ScoreboardContainer = () => {
   const [showEndOfNightSummary, setShowEndOfNightSummary] = useState(false);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousFixtureIdRef = useRef<string | null>(null);
-  const hasTriedSavingScores = useRef<boolean>(false);
   const isTransitioningToResults = useRef<boolean>(false);
 
   const gameState = useGameState();
@@ -62,26 +61,25 @@ export const ScoreboardContainer = () => {
       console.log('New fixture detected, resetting game state:', fixture.Id);
       gameState.resetGameState();
       previousFixtureIdRef.current = fixture.Id;
-      hasTriedSavingScores.current = false;
       isTransitioningToResults.current = false;
       setShowEndOfNightSummary(false);
     }
   }, [fixture?.Id, gameState.resetGameState]);
 
   useEffect(() => {
-    if (gameState.isMatchComplete && match && gameState.hasGameStarted && !hasTriedSavingScores.current && !isTransitioningToResults.current) {
-      console.log('Match complete, attempting to save scores');
+    if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
+      console.log('Match complete, preparing for results screen');
       isTransitioningToResults.current = true;
-      hasTriedSavingScores.current = true;
 
+      // Only save scores locally now, not to Supabase
       setTimeout(() => {
-        gameState.saveMatchScores(match.id, gameState.setScores.home, gameState.setScores.away)
+        gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away)
           .catch(error => {
-            console.error('Error saving match scores:', error);
+            console.error('Error saving match scores locally:', error);
             toast({
-              title: "Connection Issues",
-              description: "Scores saved locally and will be uploaded when connection is restored.",
-              variant: "default",
+              title: "Local Storage Error",
+              description: "Failed to save scores locally. Please take a screenshot of the scores.",
+              variant: "destructive",
             });
           })
           .finally(() => {
@@ -90,7 +88,7 @@ export const ScoreboardContainer = () => {
           });
       }, 100);
     }
-  }, [gameState.isMatchComplete, match, gameState.setScores, gameState.saveMatchScores, gameState.hasGameStarted]);
+  }, [gameState.isMatchComplete, match, gameState.setScores, gameState.hasGameStarted]);
 
   useEffect(() => {
     if (resultsDisplayStartTime) {

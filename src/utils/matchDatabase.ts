@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
@@ -19,8 +18,8 @@ const RETRY_INTERVAL = 30000; // 30 seconds
 
 let isProcessing = false;
 
-const processPendingScores = async () => {
-  if (isProcessing) {
+const processPendingScores = async (forceProcess = false) => {
+  if (isProcessing && !forceProcess) {
     console.log('Already processing pending scores, skipping...');
     return;
   }
@@ -76,7 +75,7 @@ const processPendingScores = async () => {
           }
         } else {
           console.log('Saving new match data for match:', score.matchId);
-          await saveMatchScores(score.matchId, score.homeScores, score.awayScores);
+          await saveMatchScores(score.matchId, score.homeScores, score.awayScores, true);
         }
 
         await removePendingScore(score.id);
@@ -88,35 +87,28 @@ const processPendingScores = async () => {
         
         if (score.retryCount >= MAX_RETRIES) {
           console.error('Max retries reached for score:', score.id);
-          toast({
-            title: "Score Upload Failed",
-            description: "Please check your connection and try again later.",
-            variant: "destructive",
-          });
         }
       }
     }
+    
+    return pendingScores.length; // Return the number of processed scores
   } catch (error) {
     console.error('Error processing pending scores:', error);
+    throw error;
   } finally {
     isProcessing = false;
   }
 };
 
-// Set up periodic check for pending scores
-let processingInterval = setInterval(processPendingScores, RETRY_INTERVAL);
-
-// Add network status handlers
 window.addEventListener('online', () => {
-  console.log('Network connection restored, processing pending scores...');
-  processPendingScores();
+  console.log('Network connection restored');
 });
 
 window.addEventListener('offline', () => {
   console.log('Network connection lost, scores will be saved locally');
   toast({
     title: "You're offline",
-    description: "Scores will be saved locally and uploaded when connection is restored.",
+    description: "Scores will be saved locally and can be uploaded at the end of the night.",
     variant: "default",
   });
 });
@@ -124,13 +116,15 @@ window.addEventListener('offline', () => {
 export const saveMatchScores = async (
   matchId: string, 
   homeScores: number[], 
-  awayScores: number[]
+  awayScores: number[],
+  submitToSupabase = false
 ) => {
   console.log('Starting saveMatchScores with:', {
     matchId,
     homeScores,
     awayScores,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    submitToSupabase
   });
 
   if (!matchId || !homeScores.length || !awayScores.length) {
@@ -144,7 +138,7 @@ export const saveMatchScores = async (
   }
 
   try {
-    // First, save to IndexedDB as backup
+    // Always save to IndexedDB as backup
     const pendingScore: Omit<PendingScore, 'status'> = {
       id: `${matchId}-${Date.now()}`,
       matchId,
@@ -155,7 +149,13 @@ export const saveMatchScores = async (
     };
     await savePendingScore(pendingScore);
 
-    // If we're offline, don't try to save to Supabase yet
+    // If not submitting to Supabase, just return after saving locally
+    if (!submitToSupabase) {
+      console.log('Scores saved locally only - will be uploaded at end of night');
+      return;
+    }
+
+    // This part only runs if submitToSupabase is true
     if (!navigator.onLine) {
       toast({
         title: "You're offline",
@@ -283,12 +283,6 @@ export const saveMatchScores = async (
             url: window.location.href
           }
         });
-        
-        toast({
-          title: "Warning",
-          description: "Match scores saved but team statistics update failed. This will be automatically retried.",
-          variant: "destructive",
-        });
       } else {
         console.log('Team statistics successfully updated');
         // Remove from pending scores if everything was successful
@@ -344,3 +338,5 @@ export const saveMatchScores = async (
     });
   }
 };
+
+export { processPendingScores };

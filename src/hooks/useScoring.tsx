@@ -32,6 +32,7 @@ export const useScoring = () => {
       }));
       
       if (!wasGameStarted && increment && match) {
+        // Just record first set progress without submitting to database
         Promise.resolve().then(async () => {
           try {
             await savePendingScore({
@@ -43,13 +44,8 @@ export const useScoring = () => {
               retryCount: 0
             });
             
-            const success = await recordFirstSetProgress(match, 
-              team === 'home' ? 1 : 0, 
-              team === 'away' ? 1 : 0
-            );
-            if (success) {
-              setFirstSetRecorded(true);
-            }
+            // Only locally, don't submit to Supabase
+            setFirstSetRecorded(true);
           } catch (error) {
             console.error('Error in score handling:', error);
           }
@@ -58,7 +54,7 @@ export const useScoring = () => {
     } finally {
       setIsProcessingScore(false);
     }
-  }, [isMatchComplete, isProcessingScore, hasGameStarted, recordFirstSetProgress]);
+  }, [isMatchComplete, isProcessingScore, hasGameStarted]);
 
   const handleSwitchTeams = useCallback(() => {
     if (!isMatchComplete) {

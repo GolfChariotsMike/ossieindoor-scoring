@@ -1,119 +1,131 @@
 
-import { useState, useCallback } from "react";
-import { Match, Fixture } from "@/types/volleyball";
-import { isMatchCompleted } from "@/utils/scoringLogic";
-import { saveMatchScores } from "@/utils/matchDatabase";
-import { toast } from "@/hooks/use-toast";
-import { useScoring } from "./useScoring";
+import { useState, useCallback } from 'react';
+import { Score, SetScores, Match } from '@/types/volleyball';
+import { useScoring } from './useScoring';
+import { saveMatchScores } from '@/utils/matchDatabase';
 
 export const useGameState = () => {
   const [isBreak, setIsBreak] = useState(false);
-
-  const {
-    currentScore,
+  const [hasInitializedPhases, setHasInitializedPhases] = useState(false);
+  
+  const { 
+    currentScore, 
     setCurrentScore,
-    setScores,
     isTeamsSwitched,
     setIsTeamsSwitched,
     hasGameStarted,
     setHasGameStarted,
+    firstSetRecorded,
     setFirstSetRecorded,
     isMatchComplete,
     setIsMatchComplete,
-    handleScore,
+    handleScore: _handleScore,
     handleSwitchTeams,
-    setSetScores
+    setScores: _setSetScores,
+    setScores
   } = useScoring();
 
-  const resetGameState = useCallback(() => {
-    setCurrentScore({ home: 0, away: 0 });
-    setSetScores({ home: [], away: [] });
-    setIsBreak(false);
-    setIsTeamsSwitched(false);
-    setIsMatchComplete(false);
-    setHasGameStarted(false);
-    setFirstSetRecorded(false);
-  }, [setCurrentScore, setSetScores, setIsTeamsSwitched, setIsMatchComplete, setHasGameStarted, setFirstSetRecorded]);
-
-  const handleTimerComplete = useCallback((match?: Match | Fixture) => {
-    if (!hasGameStarted || isMatchComplete) {
-      return;
+  // Handle score with match data
+  const handleScore = useCallback((team: "home" | "away", increment: boolean, match?: Match) => {
+    if (!hasInitializedPhases) {
+      setHasInitializedPhases(true);
     }
+    
+    _handleScore(team, increment, match);
+  }, [_handleScore, hasInitializedPhases]);
 
+  // Handle timer complete
+  const handleTimerComplete = useCallback(() => {
     if (isBreak) {
-      // End of break
+      setIsBreak(false);
+      setCurrentScore({ home: 0, away: 0 });
+      handleSwitchTeams(); // Switch teams on each new set
+      
+      if (!isMatchComplete) {
+        console.log('Break over, new set starting');
+      }
+    } else {
+      // Only proceed if there are actual scores
+      if (currentScore.home === 0 && currentScore.away === 0) {
+        return;
+      }
+
       const newSetScores = {
         home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
         away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
       };
       
-      setSetScores(newSetScores);
-      setIsBreak(false);
-      setCurrentScore({ home: 0, away: 0 });
-      
-      if (isMatchCompleted(newSetScores)) {
-        setIsMatchComplete(true);
-        
-        if (match) {
-          saveMatchScores(match.id, newSetScores.home, newSetScores.away)
-            .catch(error => {
-              console.error('Background score saving error:', error);
-              toast({
-                title: "Connection Issues",
-                description: "Scores saved locally and will be uploaded when connection is restored.",
-                variant: "default",
-              });
-            });
-        }
-        
-        toast({
-          title: "Match Complete",
-          description: "The match has ended",
-        });
-      } else {
-        handleSwitchTeams();
-        toast({
-          title: "Break Time Over",
-          description: "Starting next set",
-        });
-      }
-    } else {
-      // End of set
-      if (currentScore.home === 0 && currentScore.away === 0) {
-        return;
-      }
-
+      _setSetScores(newSetScores);
       setIsBreak(true);
-      toast({
-        title: "Set Complete",
-        description: "Starting break",
-      });
+      
+      if (newSetScores.home.length >= 3) {
+        setIsMatchComplete(true);
+        console.log('Match complete, all sets finished');
+      } else {
+        console.log('Set complete, starting break');
+      }
     }
   }, [
-    hasGameStarted,
-    isMatchComplete,
-    isBreak,
-    currentScore,
-    setScores,
-    isTeamsSwitched,
-    setSetScores,
-    setIsBreak,
-    setCurrentScore,
-    setIsMatchComplete,
+    isBreak, 
+    setIsBreak, 
+    isMatchComplete, 
+    setIsMatchComplete, 
+    currentScore, 
+    setCurrentScore, 
+    setScores, 
+    _setSetScores,
+    isTeamsSwitched, 
     handleSwitchTeams
   ]);
+
+  // Save match scores to Supabase
+  const saveMatchScoresToDatabase = useCallback(async (matchId: string, homeScores: number[], awayScores: number[]) => {
+    // Pass false for submitToSupabase parameter - we'll only submit at the end of the night
+    return saveMatchScores(matchId, homeScores, awayScores, false);
+  }, []);
+
+  // Save scores locally without submitting to Supabase
+  const saveScoresLocally = useCallback(async (matchId: string, homeScores: number[], awayScores: number[]) => {
+    console.log('Saving scores locally only:', {
+      matchId,
+      homeScores, 
+      awayScores,
+      isTeamsSwitched
+    });
+
+    // Adjust scores based on whether teams are switched
+    const finalHomeScores = isTeamsSwitched ? awayScores : homeScores;
+    const finalAwayScores = isTeamsSwitched ? homeScores : awayScores;
+    
+    // Save to IndexedDB but don't submit to Supabase yet
+    return saveMatchScores(matchId, finalHomeScores, finalAwayScores, false);
+  }, [isTeamsSwitched]);
+
+  // Reset game state for new match
+  const resetGameState = useCallback(() => {
+    setCurrentScore({ home: 0, away: 0 });
+    _setSetScores({ home: [], away: [] });
+    setIsTeamsSwitched(false);
+    setHasGameStarted(false);
+    setFirstSetRecorded(false);
+    setIsMatchComplete(false);
+    setIsBreak(false);
+    setHasInitializedPhases(false);
+  }, [setCurrentScore, _setSetScores, setIsTeamsSwitched, setHasGameStarted, setFirstSetRecorded, setIsMatchComplete]);
 
   return {
     currentScore,
     setScores,
-    isBreak,
     isTeamsSwitched,
-    isMatchComplete,
     hasGameStarted,
+    firstSetRecorded,
+    isMatchComplete,
+    isBreak,
     handleScore,
     handleTimerComplete,
     handleSwitchTeams,
-    saveMatchScores,
-    resetGameState,
+    saveMatchScores: saveMatchScoresToDatabase,
+    saveScoresLocally,
+    resetGameState
   };
 };
