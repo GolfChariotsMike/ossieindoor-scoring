@@ -80,28 +80,25 @@ export const ScoreboardContainer = () => {
   const handleTimerComplete = () => {
     console.log('Timer complete called with matchPhase from ScoreboardContainer');
     
-    // We want to show the results screen only after the final break is complete
-    if (gameState.isMatchComplete) {
-      if (!showResultsScreen) {
-        console.log('Final break completed, showing results screen now');
-        setShowResultsScreen(true);
-        
-        // Save scores locally
-        if (match) {
-          gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away)
-            .catch(error => {
-              console.error('Error saving match scores locally:', error);
-              toast({
-                title: "Local Storage Error",
-                description: "Failed to save scores locally. Please take a screenshot of the scores.",
-                variant: "destructive",
-              });
-            })
-            .finally(() => {
-              console.log('Starting results display timer');
-              setResultsDisplayStartTime(Date.now());
+    if (gameState.isMatchComplete && !showResultsScreen) {
+      console.log('Final break completed, showing results screen now');
+      setShowResultsScreen(true);
+      
+      // Save scores locally
+      if (match) {
+        gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away)
+          .catch(error => {
+            console.error('Error saving match scores locally:', error);
+            toast({
+              title: "Local Storage Error",
+              description: "Failed to save scores locally. Please take a screenshot of the scores.",
+              variant: "destructive",
             });
-        }
+          })
+          .finally(() => {
+            console.log('Starting results display timer');
+            setResultsDisplayStartTime(Date.now());
+          });
       }
     } else {
       // Normal timer completion for non-final phases

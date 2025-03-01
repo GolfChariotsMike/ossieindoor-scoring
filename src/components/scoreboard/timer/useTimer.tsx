@@ -55,11 +55,9 @@ export const useTimer = ({
         setTimeLeft(phaseTime);
         setIsRunning(true);
         
-        // Only call onComplete for specific phase transitions
-        // For final_break -> results_display, we'll handle that separately
-        if ((nextPhase.startsWith('set') && currentIndex > 0) || 
-            (nextPhase === 'results_display' && matchPhase === 'final_break')) {
-          onComplete(); 
+        // For phase transitions that require parent notification
+        if (nextPhase === 'results_display') {
+          onComplete();
         }
       }
       
@@ -125,6 +123,10 @@ export const useTimer = ({
         setTimeLeft(60); // 60 seconds results display
         setIsRunning(true);
         onComplete(); // Notify parent component that we're moving to results
+      } else if (matchPhase === 'results_display') {
+        // After results display time is up
+        setMatchPhase('complete');
+        setIsRunning(false);
       }
     }
   }, [timeLeft, matchPhase, onComplete]);

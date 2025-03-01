@@ -61,9 +61,6 @@ export const Timer = ({
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
-  // Determine if we're in the final break phase
-  const isFinalBreak = matchPhase === 'final_break';
-
   const handleSkip = () => {
     handleSkipPhase();
     // Ensure the complete callback is triggered when skipping
@@ -141,15 +138,9 @@ export const Timer = ({
       <TimerDisplay 
         minutes={minutes}
         seconds={seconds}
-        isBreak={isBreak || isFinalBreak} // Also use break style for final break
+        isBreak={isBreak}
         isMatchComplete={isMatchComplete}
       />
-      
-      {isFinalBreak && (
-        <div className="my-4 text-white font-bold text-xl animate-pulse">
-          FINAL BREAK - PREPARING RESULTS
-        </div>
-      )}
       
       <TimerControls 
         isMatchComplete={isMatchComplete}
