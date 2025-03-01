@@ -48,9 +48,9 @@ export const useTimer = ({
         onComplete();
       } else {
         // Set appropriate time for different phases
-        const phaseTime = nextPhase.includes('break') ? 90 : // 1.5 minutes for breaks
-                         nextPhase === 'final_break' ? 60 : // 1 minute final break
-                         nextPhase === 'results_display' ? 60 : // 1 minute results
+        const phaseTime = nextPhase.includes('break') ? 60 : // 60 seconds for all breaks
+                         nextPhase === 'final_break' ? 60 : // 60 seconds final break
+                         nextPhase === 'results_display' ? 60 : // 60 seconds results
                          initialMinutes * 60; // Regular set time
         
         setTimeLeft(phaseTime);
@@ -105,7 +105,7 @@ export const useTimer = ({
       if (currentSetNumber >= 1 && currentSetNumber <= 3) {
         const nextPhase = currentSetNumber === 3 ? 'final_break' : `break${currentSetNumber}`;
         setMatchPhase(nextPhase as MatchPhase);
-        setTimeLeft(currentSetNumber === 3 ? 60 : 90);
+        setTimeLeft(60); // Set all breaks to 60 seconds
         setIsRunning(true);
       }
     }
