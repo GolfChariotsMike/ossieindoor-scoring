@@ -1,3 +1,4 @@
+
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 import { Button } from "@/components/ui/button";
@@ -36,18 +37,19 @@ export const Timer = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
-  const longPressDelay = 5000; // Changed from 10000 to 5000 (5 seconds)
+  const longPressDelay = 5000; // 5 seconds
 
   const {
     timeLeft,
     handleStartStop,
     handleReset,
     handleSkipPhase,
-    progressToNextPhase
+    progressToNextPhase,
+    matchPhase
   } = useTimer({
     initialMinutes,
     onComplete: () => {
-      console.log('Timer complete or skipped with fixture:', fixture);
+      console.log('Timer complete or skipped with fixture:', fixture, 'matchPhase:', matchPhase);
       onComplete();
     },
     onSwitchTeams,
@@ -58,6 +60,9 @@ export const Timer = ({
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
+
+  // Determine if we're in the final break phase
+  const isFinalBreak = matchPhase === 'final_break';
 
   const handleSkip = () => {
     handleSkipPhase();
@@ -136,9 +141,15 @@ export const Timer = ({
       <TimerDisplay 
         minutes={minutes}
         seconds={seconds}
-        isBreak={isBreak}
+        isBreak={isBreak || isFinalBreak} // Also use break style for final break
         isMatchComplete={isMatchComplete}
       />
+      
+      {isFinalBreak && (
+        <div className="my-4 text-white font-bold text-xl animate-pulse">
+          FINAL BREAK - PREPARING RESULTS
+        </div>
+      )}
       
       <TimerControls 
         isMatchComplete={isMatchComplete}

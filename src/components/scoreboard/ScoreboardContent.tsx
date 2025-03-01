@@ -1,3 +1,4 @@
+
 import { Match, Fixture } from "@/types/volleyball";
 import { Timer } from "./Timer";
 import { BackButton } from "./BackButton";
@@ -19,6 +20,8 @@ interface ScoreboardContentProps {
   onExitConfirmationChange: (show: boolean) => void;
   onConfirmExit: () => void;
   fixture?: Fixture;
+  onTimerComplete: () => void;
+  showResultsScreen: boolean;
 }
 
 export const ScoreboardContent = ({
@@ -30,7 +33,9 @@ export const ScoreboardContent = ({
   showExitConfirmation,
   onExitConfirmationChange,
   onConfirmExit,
-  fixture
+  fixture,
+  onTimerComplete,
+  showResultsScreen
 }: ScoreboardContentProps) => {
   const navigate = useNavigate();
 
@@ -39,11 +44,11 @@ export const ScoreboardContent = ({
   }
 
   return (
-    <div className={`min-h-screen ${gameState.isMatchComplete ? 'bg-white' : 'bg-volleyball-red'}`}>
+    <div className={`min-h-screen ${gameState.isMatchComplete && showResultsScreen ? 'bg-white' : 'bg-volleyball-red'}`}>
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
         <BackButton onClick={onBack} />
         
-        {gameState.isMatchComplete && (
+        {gameState.isMatchComplete && showResultsScreen && (
           <div className="absolute top-6 right-6 z-10">
             <Button
               variant="outline"
@@ -58,7 +63,7 @@ export const ScoreboardContent = ({
         )}
 
         <div className="flex flex-col justify-between h-full">
-          {gameState.isMatchComplete ? (
+          {gameState.isMatchComplete && showResultsScreen ? (
             <ResultsScreen
               match={match}
               setScores={gameState.setScores}
@@ -69,7 +74,7 @@ export const ScoreboardContent = ({
             <>
               <Timer
                 initialMinutes={14}
-                onComplete={gameState.handleTimerComplete}
+                onComplete={onTimerComplete}
                 onSwitchTeams={gameState.handleSwitchTeams}
                 isBreak={gameState.isBreak}
                 isMatchComplete={gameState.isMatchComplete}

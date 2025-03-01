@@ -36,6 +36,7 @@ export const ScoreboardContainer = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const [showEndOfNightSummary, setShowEndOfNightSummary] = useState(false);
+  const [showResultsScreen, setShowResultsScreen] = useState(false);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousFixtureIdRef = useRef<string | null>(null);
   const isTransitioningToResults = useRef<boolean>(false);
@@ -62,36 +63,55 @@ export const ScoreboardContainer = () => {
       gameState.resetGameState();
       previousFixtureIdRef.current = fixture.Id;
       isTransitioningToResults.current = false;
+      setShowResultsScreen(false);
       setShowEndOfNightSummary(false);
     }
   }, [fixture?.Id, gameState.resetGameState]);
 
+  // Handle match completion and prepare for results display
   useEffect(() => {
     if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
-      console.log('Match complete, preparing for results screen');
+      console.log('Match complete, preparing for final break before results screen');
       isTransitioningToResults.current = true;
-
-      // Only save scores locally now, not to Supabase
-      setTimeout(() => {
-        gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away)
-          .catch(error => {
-            console.error('Error saving match scores locally:', error);
-            toast({
-              title: "Local Storage Error",
-              description: "Failed to save scores locally. Please take a screenshot of the scores.",
-              variant: "destructive",
-            });
-          })
-          .finally(() => {
-            console.log('Starting results display timer');
-            setResultsDisplayStartTime(Date.now());
-          });
-      }, 100);
     }
-  }, [gameState.isMatchComplete, match, gameState.setScores, gameState.hasGameStarted]);
+  }, [gameState.isMatchComplete, match, gameState.hasGameStarted]);
 
+  // This function is called when the timer completed or a phase is skipped
+  const handleTimerComplete = () => {
+    console.log('Timer complete called with matchPhase from ScoreboardContainer');
+    
+    // We want to show the results screen only after the final break is complete
+    if (gameState.isMatchComplete) {
+      if (!showResultsScreen) {
+        console.log('Final break completed, showing results screen now');
+        setShowResultsScreen(true);
+        
+        // Save scores locally
+        if (match) {
+          gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away)
+            .catch(error => {
+              console.error('Error saving match scores locally:', error);
+              toast({
+                title: "Local Storage Error",
+                description: "Failed to save scores locally. Please take a screenshot of the scores.",
+                variant: "destructive",
+              });
+            })
+            .finally(() => {
+              console.log('Starting results display timer');
+              setResultsDisplayStartTime(Date.now());
+            });
+        }
+      }
+    } else {
+      // Normal timer completion for non-final phases
+      gameState.handleTimerComplete();
+    }
+  };
+
+  // Handle the results display transition to next match
   useEffect(() => {
-    if (resultsDisplayStartTime) {
+    if (resultsDisplayStartTime && showResultsScreen) {
       if (transitionTimeoutRef.current) {
         clearTimeout(transitionTimeoutRef.current);
       }
@@ -121,7 +141,7 @@ export const ScoreboardContainer = () => {
         }
       };
     }
-  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch]);
+  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, showResultsScreen]);
 
   const handleBack = () => {
     if (gameState.hasGameStarted) {
@@ -164,6 +184,8 @@ export const ScoreboardContainer = () => {
       onExitConfirmationChange={setShowExitConfirmation}
       onConfirmExit={confirmExit}
       fixture={fixture}
+      onTimerComplete={handleTimerComplete}
+      showResultsScreen={showResultsScreen}
     />
   );
 };
