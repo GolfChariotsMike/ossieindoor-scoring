@@ -32,17 +32,34 @@ export const useGameState = () => {
       setHasInitializedPhases(true);
     }
     
+    // Allow scoring regardless of whether it's a break or not
     _handleScore(team, increment, match);
   }, [_handleScore, hasInitializedPhases]);
 
   // Handle timer complete
   const handleTimerComplete = useCallback(() => {
     if (isBreak) {
+      // When the break is over, we transition to the next set
       setIsBreak(false);
-      setCurrentScore({ home: 0, away: 0 });
-      handleSwitchTeams(); // Switch teams on each new set
       
-      if (!isMatchComplete) {
+      // Save the current scores to the set scores
+      const newSetScores = {
+        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
+        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
+      };
+      
+      setSetScores(newSetScores);
+      
+      // Reset scores for the next set
+      setCurrentScore({ home: 0, away: 0 });
+      
+      // Switch teams for the next set
+      handleSwitchTeams();
+      
+      if (newSetScores.home.length >= 3) {
+        setIsMatchComplete(true);
+        console.log('Match complete after break, all sets finished');
+      } else {
         console.log('Break over, new set starting');
       }
     } else {
@@ -51,20 +68,9 @@ export const useGameState = () => {
         return;
       }
 
-      const newSetScores = {
-        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
-        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
-      };
-      
-      setSetScores(newSetScores);
+      // Set is complete, start a break
       setIsBreak(true);
-      
-      if (newSetScores.home.length >= 3) {
-        setIsMatchComplete(true);
-        console.log('Match complete, all sets finished');
-      } else {
-        console.log('Set complete, starting break');
-      }
+      console.log('Set complete, starting break. Scores will continue to be tracked during break.');
     }
   }, [
     isBreak, 
