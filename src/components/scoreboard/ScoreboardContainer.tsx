@@ -111,7 +111,7 @@ export const ScoreboardContainer = () => {
           console.error('Error in match transition:', error);
           setShowEndOfNightSummary(true);
         }
-      }, 60000); // Changed from 10000 to 60000 (60 seconds) to keep results visible longer
+      }, 50000); // Changed from 60000 to 50000 (50 seconds) to keep results visible for the requested duration
 
       return () => {
         if (transitionTimeoutRef.current) {
