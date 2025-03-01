@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { Score, SetScores, Match } from '@/types/volleyball';
+import { Score, Match } from '@/types/volleyball';
 import { useScoring } from './useScoring';
 import { saveMatchScores } from '@/utils/matchDatabase';
 
@@ -22,7 +22,8 @@ export const useGameState = () => {
     handleScore: _handleScore,
     handleSwitchTeams,
     setSetScores,
-    setScores
+    setScores,
+    setScores: _setScores
   } = useScoring();
 
   // Handle score with match data
@@ -80,25 +81,40 @@ export const useGameState = () => {
 
   // Save match scores to Supabase
   const saveMatchScoresToDatabase = useCallback(async (matchId: string, homeScores: number[], awayScores: number[]) => {
-    // Pass false for submitToSupabase parameter - we'll only submit at the end of the night
-    return saveMatchScores(matchId, homeScores, awayScores, false);
+    try {
+      console.log('Saving match scores to database:', {
+        matchId,
+        homeScores,
+        awayScores
+      });
+      // Pass false for submitToSupabase parameter - we'll only submit at the end of the night
+      return await saveMatchScores(matchId, homeScores, awayScores, false);
+    } catch (error) {
+      console.error('Error in saveMatchScoresToDatabase:', error);
+      throw error;
+    }
   }, []);
 
   // Save scores locally without submitting to Supabase
   const saveScoresLocally = useCallback(async (matchId: string, homeScores: number[], awayScores: number[]) => {
-    console.log('Saving scores locally only:', {
-      matchId,
-      homeScores, 
-      awayScores,
-      isTeamsSwitched
-    });
+    try {
+      console.log('Saving scores locally only:', {
+        matchId,
+        homeScores, 
+        awayScores,
+        isTeamsSwitched
+      });
 
-    // Adjust scores based on whether teams are switched
-    const finalHomeScores = isTeamsSwitched ? awayScores : homeScores;
-    const finalAwayScores = isTeamsSwitched ? homeScores : awayScores;
-    
-    // Save to IndexedDB but don't submit to Supabase yet
-    return saveMatchScores(matchId, finalHomeScores, finalAwayScores, false);
+      // Adjust scores based on whether teams are switched
+      const finalHomeScores = isTeamsSwitched ? awayScores : homeScores;
+      const finalAwayScores = isTeamsSwitched ? homeScores : awayScores;
+      
+      // Save to IndexedDB but don't submit to Supabase yet
+      return await saveMatchScores(matchId, finalHomeScores, finalAwayScores, false);
+    } catch (error) {
+      console.error('Error in saveScoresLocally:', error);
+      throw error;
+    }
   }, [isTeamsSwitched]);
 
   // Reset game state for new match

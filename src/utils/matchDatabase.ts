@@ -1,5 +1,5 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { SetScores } from "@/types/volleyball";
 import { toast } from "@/components/ui/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
 
@@ -14,7 +14,6 @@ interface PendingScore {
 }
 
 const MAX_RETRIES = 5;
-const RETRY_INTERVAL = 30000; // 30 seconds
 
 let isProcessing = false;
 
@@ -28,6 +27,8 @@ const processPendingScores = async (forceProcess = false) => {
     isProcessing = true;
     const pendingScores = await getPendingScores();
     console.log('Processing pending scores:', pendingScores.length);
+
+    let processedCount = 0;
 
     for (const score of pendingScores) {
       try {
@@ -67,6 +68,7 @@ const processPendingScores = async (forceProcess = false) => {
               set2_away_score: score.awayScores[1] || 0,
               set3_home_score: score.homeScores[2] || 0,
               set3_away_score: score.awayScores[2] || 0,
+              has_final_score: true
             })
             .eq('id', existingData.id);
 
@@ -80,6 +82,7 @@ const processPendingScores = async (forceProcess = false) => {
 
         await removePendingScore(score.id);
         console.log('Successfully processed pending score:', score.id);
+        processedCount++;
       } catch (error) {
         console.error('Failed to process pending score:', score.id, error);
         score.retryCount += 1;
@@ -91,7 +94,7 @@ const processPendingScores = async (forceProcess = false) => {
       }
     }
     
-    return pendingScores.length; // Return the number of processed scores
+    return processedCount; // Return the number of processed scores
   } catch (error) {
     console.error('Error processing pending scores:', error);
     throw error;
