@@ -66,12 +66,12 @@ export const ScoreboardContainer = () => {
       setShowResultsScreen(false);
       setShowEndOfNightSummary(false);
     }
-  }, [fixture?.Id, gameState.resetGameState]);
+  }, [fixture?.Id, gameState]);
 
   // Handle match completion and prepare for results display
   useEffect(() => {
     if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
-      console.log('Match complete, preparing for final break before results screen');
+      console.log('Match complete, preparing for break3 before results screen');
       isTransitioningToResults.current = true;
     }
   }, [gameState.isMatchComplete, match, gameState.hasGameStarted]);
@@ -81,7 +81,7 @@ export const ScoreboardContainer = () => {
     console.log('Timer complete called with matchPhase from ScoreboardContainer');
     
     if (gameState.isMatchComplete && !showResultsScreen) {
-      console.log('Final break completed, showing results screen now');
+      console.log('Break3 completed, showing results screen now');
       setShowResultsScreen(true);
       
       // Save scores locally

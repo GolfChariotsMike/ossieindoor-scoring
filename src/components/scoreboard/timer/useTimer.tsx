@@ -32,7 +32,7 @@ export const useTimer = ({
       "set2", 
       "break2", 
       "set3",
-      "final_break",
+      "break3",
       "results_display",
       "complete"
     ];
@@ -48,7 +48,7 @@ export const useTimer = ({
         onComplete();
       } else {
         // Set appropriate time for different phases
-        const phaseTime = nextPhase === 'break1' || nextPhase === 'break2' || nextPhase === 'final_break' ? 60 : // 60 seconds for all breaks
+        const phaseTime = nextPhase === 'break1' || nextPhase === 'break2' || nextPhase === 'break3' ? 60 : // 60 seconds for all breaks
                          nextPhase === 'results_display' ? 60 : // 60 seconds results
                          initialMinutes * 60; // Regular set time
         
@@ -113,12 +113,12 @@ export const useTimer = ({
         setTimeLeft(60); // 60 seconds break
         setIsRunning(true);
       } else if (matchPhase === 'set3') {
-        // After set 3 ends, transition to final_break
-        setMatchPhase('final_break');
-        setTimeLeft(60); // 60 seconds final break
+        // After set 3 ends, transition to break3 (previously final_break)
+        setMatchPhase('break3');
+        setTimeLeft(60); // 60 seconds break3
         setIsRunning(true);
-      } else if (matchPhase === 'final_break') {
-        // After final break, go to results display
+      } else if (matchPhase === 'break3') {
+        // After break3, go to results display
         setMatchPhase('results_display');
         setTimeLeft(60); // 60 seconds results display
         setIsRunning(true);
