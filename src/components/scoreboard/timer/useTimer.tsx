@@ -113,7 +113,7 @@ export const useTimer = ({
         setTimeLeft(60); // 60 seconds break
         setIsRunning(true);
       } else if (matchPhase === 'set3') {
-        // After set 3 ends, transition to break3 (previously final_break)
+        // After set 3 ends, transition to break3
         setMatchPhase('break3');
         setTimeLeft(60); // 60 seconds break3
         setIsRunning(true);

@@ -80,7 +80,7 @@ export const ScoreboardContainer = () => {
   const handleTimerComplete = () => {
     console.log('Timer complete called with matchPhase from ScoreboardContainer');
     
-    if (gameState.isMatchComplete && !showResultsScreen) {
+    if (gameState.isMatchComplete && gameState.isBreak && !showResultsScreen) {
       console.log('Break3 completed, showing results screen now');
       setShowResultsScreen(true);
       
