@@ -33,7 +33,6 @@ export const useTimer = ({
       "break2", 
       "set3",
       "final_break",
-      "results_display",
       "complete"
     ];
     
@@ -49,8 +48,6 @@ export const useTimer = ({
       } else {
         // Set appropriate time for different phases
         const phaseTime = nextPhase.includes('break') ? 60 : // 60 seconds for all breaks
-                         nextPhase === 'final_break' ? 60 : // 60 seconds final break
-                         nextPhase === 'results_display' ? 60 : // 60 seconds results
                          initialMinutes * 60; // Regular set time
         
         setTimeLeft(phaseTime);
