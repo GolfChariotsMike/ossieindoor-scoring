@@ -1,3 +1,4 @@
+
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
 interface TimerProps {
   initialMinutes: number;
@@ -36,7 +38,7 @@ export const Timer = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
-  const longPressDelay = 5000; // Changed from 10000 to 5000 (5 seconds)
+  const longPressDelay = 5000; // 5 seconds
 
   const {
     timeLeft,
@@ -48,6 +50,12 @@ export const Timer = ({
     initialMinutes,
     onComplete: () => {
       console.log('Timer complete or skipped with fixture:', fixture);
+      // Notify user of phase change
+      toast({
+        title: isBreak ? "Set starting" : "Break starting",
+        description: isBreak ? "Set timer has started" : "Break timer has started",
+        duration: 3000,
+      });
       onComplete();
     },
     onSwitchTeams,
@@ -61,8 +69,11 @@ export const Timer = ({
 
   const handleSkip = () => {
     handleSkipPhase();
-    // Ensure the complete callback is triggered when skipping
-    onComplete();
+    toast({
+      title: "Phase skipped",
+      description: "Moving to next phase",
+      duration: 3000,
+    });
     setDialogOpen(false);
   };
 

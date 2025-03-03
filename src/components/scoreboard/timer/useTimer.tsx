@@ -53,8 +53,12 @@ export const useTimer = ({
         setTimeLeft(phaseTime);
         setIsRunning(true);
         
-        if (nextPhase.startsWith('set') && currentIndex > 0) {
-          onComplete(); // Only notify parent when transitioning to a new set (not first set)
+        // Call onComplete when transitioning to a new set or break
+        // This ensures consistent behavior with the skip function
+        if (nextPhase.startsWith('set') || nextPhase.includes('break')) {
+          if (currentIndex > 0) { // Don't call for the initial transition to set1
+            onComplete();
+          }
         }
       }
       
@@ -104,9 +108,12 @@ export const useTimer = ({
         setMatchPhase(nextPhase as MatchPhase);
         setTimeLeft(60); // Set all breaks to 60 seconds
         setIsRunning(true);
+        
+        // Ensure onComplete is called here too, for consistency with skip function
+        onComplete();
       }
     }
-  }, [isBreak, matchPhase, timeLeft]);
+  }, [isBreak, matchPhase, timeLeft, onComplete]);
 
   const handleStartStop = () => {
     if (matchPhase === "not_started") {
