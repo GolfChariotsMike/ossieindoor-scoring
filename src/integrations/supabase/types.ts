@@ -259,6 +259,36 @@ export type Database = {
           },
         ]
       }
+      league_notes: {
+        Row: {
+          created_at: string | null
+          date: string
+          day_context: string | null
+          id: string
+          note: string
+          priority: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          day_context?: string | null
+          id?: string
+          note: string
+          priority: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          day_context?: string | null
+          id?: string
+          note?: string
+          priority?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       match_data_v2: {
         Row: {
           away_bonus_points: number | null
@@ -631,6 +661,78 @@ export type Database = {
           },
         ]
       }
+      team_preference_notes: {
+        Row: {
+          contact_number: string | null
+          created_at: string | null
+          date: string
+          day_context: string | null
+          experience_level: string | null
+          id: string
+          note: string
+          permanent_days: string[] | null
+          team_id: string
+          team_name: string
+          umpire_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          contact_number?: string | null
+          created_at?: string | null
+          date?: string
+          day_context?: string | null
+          experience_level?: string | null
+          id?: string
+          note: string
+          permanent_days?: string[] | null
+          team_id: string
+          team_name: string
+          umpire_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          contact_number?: string | null
+          created_at?: string | null
+          date?: string
+          day_context?: string | null
+          experience_level?: string | null
+          id?: string
+          note?: string
+          permanent_days?: string[] | null
+          team_id?: string
+          team_name?: string
+          umpire_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      team_shared_players: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          team_original_ids: string[] | null
+          teams: string[]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          team_original_ids?: string[] | null
+          teams: string[]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          team_original_ids?: string[] | null
+          teams?: string[]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       team_statistics: {
         Row: {
           bonus_points: number | null
@@ -706,6 +808,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      team_time_preferences: {
+        Row: {
+          created_at: string | null
+          day_context: string
+          id: string
+          preference_type: Database["public"]["Enums"]["time_preference_type"]
+          team_id: string
+          team_name: string
+          time_slot: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_context: string
+          id?: string
+          preference_type: Database["public"]["Enums"]["time_preference_type"]
+          team_id: string
+          team_name: string
+          time_slot: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_context?: string
+          id?: string
+          preference_type?: Database["public"]["Enums"]["time_preference_type"]
+          team_id?: string
+          team_name?: string
+          time_slot?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       teams: {
         Row: {

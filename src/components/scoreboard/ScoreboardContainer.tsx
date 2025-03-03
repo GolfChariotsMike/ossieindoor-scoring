@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -137,8 +136,18 @@ export const ScoreboardContainer = () => {
     const nextMatch = findNextMatch(nextMatches);
     if (nextMatch) {
       handleStartNextMatch(nextMatch);
+      toast({
+        title: "Scores Published",
+        description: "Match scores have been successfully saved and published.",
+        variant: "default",
+      });
     } else {
       setShowEndOfNightSummary(true);
+      toast({
+        title: "End of Matches",
+        description: "All matches completed. Please review the end of night summary.",
+        variant: "default",
+      });
     }
   };
 
