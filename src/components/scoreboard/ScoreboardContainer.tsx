@@ -1,3 +1,4 @@
+
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -133,22 +134,40 @@ export const ScoreboardContainer = () => {
   };
 
   const handleManualNextMatch = () => {
-    const nextMatch = findNextMatch(nextMatches);
-    if (nextMatch) {
-      handleStartNextMatch(nextMatch);
-      toast({
-        title: "Scores Published",
-        description: "Match scores have been successfully saved and published.",
-        variant: "default",
-      });
-    } else {
-      setShowEndOfNightSummary(true);
-      toast({
-        title: "End of Matches",
-        description: "All matches completed. Please review the end of night summary.",
-        variant: "default",
-      });
-    }
+    // Show loading toast
+    toast({
+      title: "Publishing Scores",
+      description: "Saving and publishing match scores...",
+      variant: "default",
+    });
+    
+    setTimeout(() => {
+      try {
+        const nextMatch = findNextMatch(nextMatches);
+        if (nextMatch) {
+          handleStartNextMatch(nextMatch);
+          toast({
+            title: "Scores Published",
+            description: "Match scores have been successfully saved and published.",
+            variant: "default",
+          });
+        } else {
+          setShowEndOfNightSummary(true);
+          toast({
+            title: "End of Matches",
+            description: "All matches completed. Please review the end of night summary.",
+            variant: "default",
+          });
+        }
+      } catch (error) {
+        console.error('Error publishing scores:', error);
+        toast({
+          title: "Publishing Failed",
+          description: "There was an error publishing the scores. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }, 1000); // Add a small delay to show the publishing process
   };
 
   if (showEndOfNightSummary) {
