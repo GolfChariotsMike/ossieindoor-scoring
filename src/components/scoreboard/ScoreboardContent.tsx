@@ -1,3 +1,4 @@
+
 import { Match, Fixture } from "@/types/volleyball";
 import { Timer } from "./Timer";
 import { BackButton } from "./BackButton";
@@ -19,7 +20,6 @@ interface ScoreboardContentProps {
   onExitConfirmationChange: (show: boolean) => void;
   onConfirmExit: () => void;
   fixture?: Fixture;
-  isPublishing: boolean;
 }
 
 export const ScoreboardContent = ({
@@ -31,8 +31,7 @@ export const ScoreboardContent = ({
   showExitConfirmation,
   onExitConfirmationChange,
   onConfirmExit,
-  fixture,
-  isPublishing
+  fixture
 }: ScoreboardContentProps) => {
   const navigate = useNavigate();
 
