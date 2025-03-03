@@ -95,8 +95,17 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
         }
       });
       
-      // Force a full page reload to reset all state
-      window.location.href = `/scoreboard/${courtId}?fixture=${encodeURIComponent(JSON.stringify(nextMatch))}`;
+      // Show a loading toast
+      toast({
+        title: "Loading Next Match",
+        description: `Loading ${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`,
+      });
+      
+      // Use a small timeout to ensure toast is shown before page reload
+      setTimeout(() => {
+        // Force a full page reload to reset all state
+        window.location.href = `/scoreboard/${courtId}?fixture=${encodeURIComponent(JSON.stringify(nextMatch))}`;
+      }, 500);
     } catch (error) {
       console.error('Failed to start next match:', {
         error,

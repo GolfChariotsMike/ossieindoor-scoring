@@ -40,6 +40,9 @@ export const ScoreboardContainer = () => {
   const previousFixtureIdRef = useRef<string | null>(null);
   const isTransitioningToResults = useRef<boolean>(false);
 
+  // Define the results display duration constant to ensure consistency
+  const RESULTS_DISPLAY_DURATION = 20; // Reduced from 50 to 20 seconds
+
   const gameState = useGameState();
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
@@ -96,12 +99,16 @@ export const ScoreboardContainer = () => {
         clearTimeout(transitionTimeoutRef.current);
       }
 
+      console.log(`Setting up transition timeout for ${RESULTS_DISPLAY_DURATION} seconds at`, new Date().toISOString());
+      
       transitionTimeoutRef.current = setTimeout(() => {
+        console.log('Transition timeout triggered at', new Date().toISOString());
+        
         try {
           const nextMatch = findNextMatch(nextMatches);
           
           if (nextMatch) {
-            console.log('Found next match, transitioning...');
+            console.log('Found next match, transitioning to:', nextMatch.Id);
             handleStartNextMatch(nextMatch);
           } else {
             console.log('No next match found, showing end of night summary');
@@ -109,12 +116,18 @@ export const ScoreboardContainer = () => {
           }
         } catch (error) {
           console.error('Error in match transition:', error);
+          toast({
+            title: "Transition Error",
+            description: "There was a problem transitioning to the next match.",
+            variant: "destructive",
+          });
           setShowEndOfNightSummary(true);
         }
-      }, 50000); // Changed from 60000 to 50000 (50 seconds) to keep results visible for the requested duration
+      }, RESULTS_DISPLAY_DURATION * 1000); // Convert seconds to milliseconds
 
       return () => {
         if (transitionTimeoutRef.current) {
+          console.log('Cleaning up transition timeout');
           clearTimeout(transitionTimeoutRef.current);
         }
       };

@@ -1,4 +1,3 @@
-
 import { Match, SetScores } from "@/types/volleyball";
 import { Fireworks } from "./Fireworks";
 import { Button } from "@/components/ui/button";
@@ -29,6 +28,8 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   const [scoresSaved, setScoresSaved] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 5000; // 5 seconds
+
+  const RESULTS_DISPLAY_DURATION = 20; // 20 seconds - MUST match ScoreboardContainer
 
   const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
     let setPoints = 0;
@@ -117,14 +118,18 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   };
 
   useEffect(() => {
-    const displayDuration = 50; // 50 seconds display time
-    let timeLeft = displayDuration;
+    console.log(`Results screen countdown started for ${RESULTS_DISPLAY_DURATION} seconds`);
+    const startTime = Date.now();
+    let timeLeft = RESULTS_DISPLAY_DURATION;
 
     const interval = setInterval(() => {
-      timeLeft -= 1;
+      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      timeLeft = Math.max(0, RESULTS_DISPLAY_DURATION - elapsedSeconds);
       
       if (timeLeft <= 0) {
         setCountdown("Starting next match...");
+        console.log('Countdown complete, next match should start soon');
+        clearInterval(interval);
       } else {
         setCountdown(`Auto-starting next match in ${timeLeft} seconds`);
       }
