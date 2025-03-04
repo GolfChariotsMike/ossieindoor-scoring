@@ -1,12 +1,13 @@
-
 import { useState, useCallback } from 'react';
 import { Score, Match } from '@/types/volleyball';
 import { useScoring } from './useScoring';
 import { saveMatchScores } from '@/utils/matchDatabase';
+import { enableForcedOfflineMode, isOffline } from '@/utils/offlineMode';
 
 export const useGameState = () => {
   const [isBreak, setIsBreak] = useState(false);
   const [hasInitializedPhases, setHasInitializedPhases] = useState(false);
+  const [hasEnabledOfflineMode, setHasEnabledOfflineMode] = useState(false);
   
   const { 
     currentScore, 
@@ -30,11 +31,18 @@ export const useGameState = () => {
   const handleScore = useCallback((team: "home" | "away", increment: boolean, match?: Match) => {
     if (!hasInitializedPhases) {
       setHasInitializedPhases(true);
+      
+      // Enable offline mode on first score if not already offline
+      if (!hasEnabledOfflineMode && !isOffline()) {
+        console.log('First score recorded - enabling offline mode');
+        enableForcedOfflineMode();
+        setHasEnabledOfflineMode(true);
+      }
     }
     
     // Allow scoring regardless of whether it's a break or not
     _handleScore(team, increment, match);
-  }, [_handleScore, hasInitializedPhases]);
+  }, [_handleScore, hasInitializedPhases, hasEnabledOfflineMode]);
 
   // Handle timer complete
   const handleTimerComplete = useCallback(() => {
@@ -133,6 +141,7 @@ export const useGameState = () => {
     setIsMatchComplete(false);
     setIsBreak(false);
     setHasInitializedPhases(false);
+    setHasEnabledOfflineMode(false);
   }, [setCurrentScore, setSetScores, setIsTeamsSwitched, setHasGameStarted, setFirstSetRecorded, setIsMatchComplete]);
 
   return {

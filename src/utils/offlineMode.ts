@@ -66,6 +66,18 @@ export const disableForcedOfflineMode = () => {
 };
 
 /**
+ * Ensure we're in online mode (for main pages)
+ */
+export const ensureOnlineMode = () => {
+  if (forcedOfflineMode) {
+    disableForcedOfflineMode();
+    console.log('Forced online mode for main page navigation');
+    return true;
+  }
+  return false;
+};
+
+/**
  * Check if the application is currently in offline mode
  * (either forced or due to actual network status)
  */

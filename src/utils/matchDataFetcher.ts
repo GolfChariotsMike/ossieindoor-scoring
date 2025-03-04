@@ -1,11 +1,10 @@
-
 import { toast } from "@/hooks/use-toast";
 import { format, parse } from "date-fns";
 import { Match, Fixture } from "@/types/volleyball";
 import { LEAGUE_URLS } from "@/config/leagueConfig";
 import { parseXMLResponse } from "@/utils/xmlParser";
 import { saveCourtMatches, getCourtMatches } from "@/services/indexedDB";
-import { isOffline, enableForcedOfflineMode } from "@/utils/offlineMode";
+import { isOffline } from "@/utils/offlineMode";
 
 const fetchFromUrl = async (url: string, date: string) => {
   try {
@@ -67,11 +66,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
         const cachedMatches = await getCourtMatches(courtId, formattedDate);
         if (cachedMatches.length > 0) {
           console.log('Found cached matches:', cachedMatches.length);
-          if (!isOffline()) {
-            console.log('Fixtures already loaded, enabling offline mode');
-            enableForcedOfflineMode();
-          }
-          return cachedMatches[0]; // Return the first match for this court
+          return cachedMatches;
         }
       } catch (error) {
         console.error('Error reading from cache:', error);
@@ -159,11 +154,8 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       await saveCourtMatches(courtMatches);
       console.log('Saved fixtures to IndexedDB:', courtMatches.length);
       
-      // After successfully loading and caching fixtures, enable offline mode
-      if (fixtures.length > 0) {
-        console.log('Enabling forced offline mode after fixture load');
-        enableForcedOfflineMode();
-      }
+      // REMOVED: Do not enable offline mode after fixture load
+      // We'll enable it when the first game starts instead
     } catch (error) {
       console.error('Error caching fixtures:', error);
     }

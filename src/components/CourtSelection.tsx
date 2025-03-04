@@ -4,10 +4,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { format, startOfDay } from "date-fns";
 import { Calendar as CalendarIcon, Upload } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { ensureOnlineMode } from "@/utils/offlineMode";
 
 const CourtSelection = () => {
   const navigate = useNavigate();
@@ -16,6 +17,13 @@ const CourtSelection = () => {
   const [open, setOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>("/lovable-uploads/1b9b6b64-0bcc-42d0-9d2b-dd0c359ad5d2.png");
   const courts = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  useEffect(() => {
+    const wasOffline = ensureOnlineMode();
+    if (wasOffline) {
+      console.log('Main page loaded - switched to online mode');
+    }
+  }, []);
 
   const handleCourtSelection = (court: number) => {
     const selectedDate = startOfDay(date);
@@ -142,7 +150,6 @@ const CourtSelection = () => {
         </div>
       </div>
 
-      {/* Admin button at the bottom */}
       <div className="absolute bottom-4 right-4">
         <Button
           variant="ghost"
