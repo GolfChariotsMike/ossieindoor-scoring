@@ -16,6 +16,7 @@ interface ScoreboardContentProps {
   gameState: any; // Using any here as the gameState type is complex and internal
   onBack: () => void;
   onManualNextMatch: () => void;
+  onEndOfNight?: () => void;
   showExitConfirmation: boolean;
   onExitConfirmationChange: (show: boolean) => void;
   onConfirmExit: () => void;
@@ -28,6 +29,7 @@ export const ScoreboardContent = ({
   gameState,
   onBack,
   onManualNextMatch,
+  onEndOfNight,
   showExitConfirmation,
   onExitConfirmationChange,
   onConfirmExit,
@@ -65,6 +67,7 @@ export const ScoreboardContent = ({
               setScores={gameState.setScores}
               isTeamsSwitched={gameState.isTeamsSwitched}
               onStartNextMatch={onManualNextMatch}
+              onEndOfNight={onEndOfNight}
             />
           ) : (
             <>

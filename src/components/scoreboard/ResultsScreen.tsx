@@ -1,7 +1,7 @@
 import { Match, SetScores } from "@/types/volleyball";
 import { Fireworks } from "./Fireworks";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowRight, CheckCircle, Flag } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import {
   AlertDialog,
@@ -19,10 +19,12 @@ interface ResultsScreenProps {
   setScores: SetScores;
   isTeamsSwitched: boolean;
   onStartNextMatch?: () => void;
+  onEndOfNight?: () => void;
 }
 
-export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch }: ResultsScreenProps) => {
+export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch, onEndOfNight }: ResultsScreenProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [endOfNightDialogOpen, setEndOfNightDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
   const [countdown, setCountdown] = useState<string>("");
   const [scoresSaved, setScoresSaved] = useState(false);
@@ -117,6 +119,17 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
     }
   };
 
+  const handleEndOfNight = () => {
+    setEndOfNightDialogOpen(true);
+  };
+
+  const confirmEndOfNight = () => {
+    if (onEndOfNight) {
+      onEndOfNight();
+    }
+    setEndOfNightDialogOpen(false);
+  };
+
   useEffect(() => {
     console.log(`Results screen countdown started for ${RESULTS_DISPLAY_DURATION} seconds`);
     const startTime = Date.now();
@@ -181,24 +194,37 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
             <p className="text-2xl font-score text-black mb-2 animate-pulse">
               {countdown}
             </p>
-            <Button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log('Next match button clicked');
-              }}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              onTouchCancel={handleTouchCancel}
-              onMouseDown={handleTouchStart}
-              onMouseUp={handleTouchEnd}
-              onMouseLeave={handleTouchCancel}
-              className={`bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale
-                ${isLongPress ? 'bg-volleyball-red/70' : 'bg-volleyball-red'}`}
-            >
-              <ArrowRight className="w-8 h-8 mr-3" />
-              Start Next Match
-            </Button>
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('Next match button clicked');
+                }}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchCancel}
+                onMouseDown={handleTouchStart}
+                onMouseUp={handleTouchEnd}
+                onMouseLeave={handleTouchCancel}
+                className={`bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale
+                  ${isLongPress ? 'bg-volleyball-red/70' : 'bg-volleyball-red'}`}
+              >
+                <ArrowRight className="w-8 h-8 mr-3" />
+                Start Next Match
+              </Button>
+              
+              {onEndOfNight && (
+                <Button
+                  type="button"
+                  onClick={handleEndOfNight}
+                  className="bg-volleyball-black text-white hover:bg-volleyball-black/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg"
+                >
+                  <Flag className="w-8 h-8 mr-3" />
+                  END OF NIGHT
+                </Button>
+              )}
+            </div>
 
             <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <AlertDialogContent>
@@ -212,6 +238,22 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handleStartNext}>Start Next Match</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={endOfNightDialogOpen} onOpenChange={setEndOfNightDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Finalize All Results for the Night?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will take you to the end of night summary where you can review and submit all match scores. 
+                    Are you sure there are no more matches to score tonight?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmEndOfNight}>Finalize Results</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

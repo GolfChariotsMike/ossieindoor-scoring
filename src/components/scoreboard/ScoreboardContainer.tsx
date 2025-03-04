@@ -1,3 +1,4 @@
+
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -154,6 +155,10 @@ export const ScoreboardContainer = () => {
     }
   };
 
+  const handleEndOfNight = () => {
+    setShowEndOfNightSummary(true);
+  };
+
   if (showEndOfNightSummary) {
     return (
       <EndOfNightSummary 
@@ -170,6 +175,7 @@ export const ScoreboardContainer = () => {
       gameState={gameState}
       onBack={handleBack}
       onManualNextMatch={handleManualNextMatch}
+      onEndOfNight={handleEndOfNight}
       showExitConfirmation={showExitConfirmation}
       onExitConfirmationChange={setShowExitConfirmation}
       onConfirmExit={confirmExit}
