@@ -1,4 +1,3 @@
-
 export interface PendingScore {
   id: string;
   matchId: string;
@@ -10,16 +9,18 @@ export interface PendingScore {
   lastError?: string;
 }
 
-export interface DBStore {
+export interface DbIndexDefinition {
+  name: string;
+  keyPath: string | string[];
+  options?: IDBIndexParameters;
+}
+
+export interface DbStoreDefinition {
   name: string;
   keyPath: string;
-  indexes: Array<{
-    name: string;
-    keyPath: string;
-    options?: IDBIndexParameters;
-  }>;
+  indexes: DbIndexDefinition[];
 }
 
 export interface DBSchema {
-  [key: string]: DBStore;
+  [key: string]: DbStoreDefinition;
 }

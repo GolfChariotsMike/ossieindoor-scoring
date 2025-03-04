@@ -6,7 +6,20 @@ let dbInstance: IDBDatabase | null = null;
 
 export const initDB = async (): Promise<IDBDatabase> => {
   if (dbInstance && dbInstance.transaction) {
-    return dbInstance;
+    try {
+      // Test if the connection is actually working with a small transaction
+      const testTransaction = dbInstance.transaction(Object.keys(dbSchema)[0], 'readonly');
+      testTransaction.abort(); // Just testing if it works, no need to complete
+      return dbInstance;
+    } catch (error) {
+      console.warn('Existing DB instance failed connectivity test, creating new connection:', error);
+      try {
+        dbInstance.close();
+      } catch (e) {
+        console.warn('Error while closing previous connection:', e);
+      }
+      dbInstance = null;
+    }
   }
 
   let retries = 0;
@@ -47,15 +60,19 @@ export const initDB = async (): Promise<IDBDatabase> => {
           
           // Create or update stores based on schema
           Object.values(dbSchema).forEach(store => {
-            if (!db.objectStoreNames.contains(store.name)) {
-              const objectStore = db.createObjectStore(store.name, { keyPath: store.keyPath });
-              
-              // Create indexes
-              store.indexes.forEach(index => {
-                objectStore.createIndex(index.name, index.keyPath, index.options);
-              });
-              
-              console.log(`Created ${store.name} store with indexes`);
+            try {
+              if (!db.objectStoreNames.contains(store.name)) {
+                const objectStore = db.createObjectStore(store.name, { keyPath: store.keyPath });
+                
+                // Create indexes
+                store.indexes.forEach(index => {
+                  objectStore.createIndex(index.name, index.keyPath, index.options || {});
+                });
+                
+                console.log(`Created ${store.name} store with indexes`);
+              }
+            } catch (error) {
+              console.error(`Error creating/updating store ${store.name}:`, error);
             }
           });
 

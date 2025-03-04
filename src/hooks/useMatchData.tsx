@@ -1,10 +1,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Match, Fixture } from "@/types/volleyball";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { findExistingMatch, createNewMatch, transformToMatch } from "@/services/matchService";
 import { generateMatchCode } from "@/utils/matchCodeGenerator";
 import { findCachedMatch, createCachedMatch, ensureMatchCacheSchema } from "@/services/db/operations/matchCacheOperations";
+import { resetConnection } from "@/services/db/connection";
 
 // Ensure the match cache schema is set up when this module loads
 ensureMatchCacheSchema();
@@ -21,10 +22,20 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         console.log('Generated match code:', matchCode);
         
         // First, try to find the match in local cache
-        const cachedMatch = await findCachedMatch(matchCode);
-        if (cachedMatch) {
-          console.log('Found cached match in local storage:', cachedMatch);
-          return transformToMatch(cachedMatch);
+        try {
+          const cachedMatch = await findCachedMatch(matchCode);
+          if (cachedMatch) {
+            console.log('Found cached match in local storage:', cachedMatch);
+            return transformToMatch(cachedMatch);
+          }
+        } catch (cacheError) {
+          console.error('Error checking local cache for match:', cacheError);
+          // Try to reset the connection for next operations
+          try {
+            await resetConnection();
+          } catch (resetError) {
+            console.error('Failed to reset connection:', resetError);
+          }
         }
         
         // If not in cache and we're online, try Supabase
@@ -33,17 +44,45 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
             const existingMatch = await findExistingMatch(matchCode);
             if (existingMatch) {
               console.log('Found existing match in Supabase:', existingMatch);
+              
+              // Try to cache the Supabase match locally for future offline use
+              try {
+                await createCachedMatch(courtId, fixture, matchCode);
+                console.log('Cached Supabase match locally');
+              } catch (cachingError) {
+                console.error('Failed to cache Supabase match locally:', cachingError);
+              }
+              
               return transformToMatch(existingMatch);
             }
-          } catch (error) {
-            console.error('Error checking Supabase for match:', error);
+          } catch (supabaseError) {
+            console.error('Error checking Supabase for match:', supabaseError);
             // Continue to local creation
           }
         }
 
         // If not found online or we're offline, create locally
         console.log(navigator.onLine ? 'Creating new match locally:' : 'Offline - Creating match locally:', fixture);
-        const newMatch = await createCachedMatch(courtId, fixture, matchCode);
+        
+        let newMatch;
+        try {
+          newMatch = await createCachedMatch(courtId, fixture, matchCode);
+        } catch (createError) {
+          console.error('Failed to create match in local cache:', createError);
+          // Create a fallback match object directly
+          newMatch = {
+            id: `fallback-${courtId}-${Date.now()}`,
+            court_number: parseInt(courtId),
+            start_time: new Date().toISOString(),
+            home_team_id: fixture?.HomeTeamId || 'unknown',
+            home_team_name: fixture?.HomeTeam || 'Team A',
+            away_team_id: fixture?.AwayTeamId || 'unknown',
+            away_team_name: fixture?.AwayTeam || 'Team B',
+            division: fixture?.DivisionName || 'Unknown',
+            isLocal: true,
+            isFallback: true
+          };
+        }
         
         // If we're online, also try to save to Supabase (but don't wait for it)
         if (navigator.onLine) {
@@ -75,7 +114,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           startTime: new Date().toISOString(),
           homeTeam: { id: "team-1", name: fixture?.HomeTeam || "Team A" },
           awayTeam: { id: "team-2", name: fixture?.AwayTeam || "Team B" },
-          division: fixture?.DivisionName
+          division: fixture?.DivisionName || "Unknown"
         };
       }
     },
