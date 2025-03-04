@@ -31,26 +31,63 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
     
     try {
       const currentFixtureDate = parseFixtureDate(fixture.DateTime);
+      const currentFixtureId = fixture.Id;
+      
+      console.log('Finding next match after:', {
+        currentFixtureId,
+        currentFixtureDate: format(currentFixtureDate, 'yyyy-MM-dd HH:mm'),
+        currentFixtureTeams: `${fixture.HomeTeam} vs ${fixture.AwayTeam}`,
+        courtId
+      });
+      
+      // Filter matches to only those on the same court
+      const sameCourtMatches = matches.filter(m => 
+        m.PlayingAreaName === `Court ${courtId}`
+      );
+
+      console.log(`Found ${sameCourtMatches.length} matches on Court ${courtId}`);
       
       // Sort matches by date
-      const sortedMatches = [...matches].sort((a, b) => 
+      const sortedMatches = [...sameCourtMatches].sort((a, b) => 
         parseFixtureDate(a.DateTime).getTime() - parseFixtureDate(b.DateTime).getTime()
       );
       
-      // Find matches on the same court that start after the current match
+      // Log the sorted matches for debugging
+      sortedMatches.forEach((match, i) => {
+        console.log(`Match ${i+1}: ${match.Id} - ${match.HomeTeam} vs ${match.AwayTeam} at ${match.DateTime}`);
+      });
+      
+      // Find the index of the current match
+      const currentMatchIndex = sortedMatches.findIndex(m => m.Id === currentFixtureId);
+      console.log('Current match index:', currentMatchIndex);
+      
+      // If we found the current match and there's a next one, return it
+      if (currentMatchIndex !== -1 && currentMatchIndex < sortedMatches.length - 1) {
+        const nextMatch = sortedMatches[currentMatchIndex + 1];
+        console.log('Next match found:', {
+          id: nextMatch.Id,
+          teams: `${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`,
+          time: nextMatch.DateTime
+        });
+        return nextMatch;
+      }
+      
+      // If we couldn't find by index, try the time-based approach as fallback
+      console.log('Fallback to time-based next match search');
       const nextMatch = sortedMatches.find((m: Fixture) => 
-        m.Id !== fixture.Id && 
-        m.PlayingAreaName === `Court ${courtId}` && 
+        m.Id !== currentFixtureId && 
         parseFixtureDate(m.DateTime) > currentFixtureDate
       );
       
-      console.log('Next match search results:', {
-        currentFixture: fixture.Id,
-        currentTime: currentFixtureDate.toISOString(),
-        nextMatchId: nextMatch?.Id,
-        nextMatchTime: nextMatch ? parseFixtureDate(nextMatch.DateTime).toISOString() : null,
-        searchedMatches: sortedMatches.length
-      });
+      if (nextMatch) {
+        console.log('Next match found by time:', {
+          id: nextMatch.Id,
+          teams: `${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`,
+          time: nextMatch.DateTime
+        });
+      } else {
+        console.log('No next match found on this court');
+      }
       
       return nextMatch;
     } catch (error) {

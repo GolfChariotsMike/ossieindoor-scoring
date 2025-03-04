@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 import { format, parse } from "date-fns";
 import { Match, Fixture } from "@/types/volleyball";
@@ -149,13 +150,11 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       ...fixture
     }));
 
-    // Save all fixtures to IndexedDB for offline access
+    // Save all fixtures to IndexedDB for offline access, 
+    // regardless of whether a specific court was requested
     try {
       await saveCourtMatches(courtMatches);
       console.log('Saved fixtures to IndexedDB:', courtMatches.length);
-      
-      // REMOVED: Do not enable offline mode after fixture load
-      // We'll enable it when the first game starts instead
     } catch (error) {
       console.error('Error caching fixtures:', error);
     }

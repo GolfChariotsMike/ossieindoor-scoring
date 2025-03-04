@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -7,6 +8,8 @@ import { format, parse } from "date-fns";
 import { Fixture } from "@/types/volleyball";
 import { isOffline } from "@/utils/offlineMode";
 import { getCourtMatches } from "@/services/db/operations/matchOperations";
+import { toast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 const CourtFixtures = () => {
   const { courtId, date } = useParams();
@@ -24,31 +27,51 @@ const CourtFixtures = () => {
     isOfflineMode: isOffline()
   });
 
-  const { data: matches = [], isLoading } = useQuery({
+  const { data: matches = [], isLoading, refetch } = useQuery({
     queryKey: ["matches", date, courtId],
     queryFn: async () => {
       console.log('Fetching matches in CourtFixtures...');
       
       // First try to get court matches from IndexedDB
-      if (isOffline()) {
-        try {
-          console.log('Getting matches from local IndexedDB...');
-          const localMatches = await getCourtMatches(courtId || '', formattedDate);
-          console.log('Local matches retrieved:', localMatches);
+      try {
+        console.log('Getting matches from local IndexedDB...');
+        const localMatches = await getCourtMatches(courtId || '', formattedDate);
+        console.log('Local matches retrieved:', localMatches);
+        
+        if (localMatches.length > 0) {
           return localMatches;
-        } catch (error) {
-          console.error('Error fetching local matches:', error);
+        } else if (isOffline()) {
+          // If we're offline and have no cached matches, that's a problem
+          toast({
+            title: "No matches available offline",
+            description: "No matches found in local storage. Please reconnect to the internet and try again.",
+            variant: "destructive",
+          });
+          return [];
         }
+      } catch (error) {
+        console.error('Error fetching local matches:', error);
+        // Continue to normal fetch if there was an error with IndexedDB
       }
       
       // If not in cache or error occurred, try normal fetch
-      return fetchMatchData(undefined, parsedDate);
+      const fetchedMatches = await fetchMatchData(undefined, parsedDate);
+      console.log('Fetched matches from remote:', Array.isArray(fetchedMatches) ? fetchedMatches.length : 'not an array');
+      return fetchedMatches;
     },
     // Don't retry in offline mode as it will keep failing
     retry: isOffline() ? false : 3,
     // Consider data fresh for longer in offline mode
     staleTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60 * 5, // 1 hour vs 5 minutes
   });
+
+  // Try to refetch if we initially have no matches
+  useEffect(() => {
+    if (!isLoading && Array.isArray(matches) && matches.length === 0 && !isOffline()) {
+      console.log('No matches loaded initially, attempting refetch...');
+      refetch();
+    }
+  }, [isLoading, matches, refetch]);
 
   console.log('Received matches:', matches);
 

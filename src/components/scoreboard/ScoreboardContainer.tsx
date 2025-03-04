@@ -41,6 +41,7 @@ export const ScoreboardContainer = () => {
   const previousFixtureIdRef = useRef<string | null>(null);
   const isTransitioningToResults = useRef<boolean>(false);
   const transitionErrorCount = useRef<number>(0);
+  const hasTriedRefetchingMatches = useRef<boolean>(false);
 
   // Define the results display duration constant to ensure consistency
   const RESULTS_DISPLAY_DURATION = 50; // 50 seconds for results display
@@ -49,12 +50,26 @@ export const ScoreboardContainer = () => {
   const { data: match, isLoading, error } = useMatchData(courtId!, fixture);
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
 
-  const { data: nextMatches = [], isLoading: isLoadingMatches, error: matchesError } = useQuery({
-    queryKey: ["matches", fixture?.DateTime ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')],
+  const queryDate = fixture?.DateTime 
+    ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd') 
+    : format(new Date(), 'yyyy-MM-dd');
+
+  const { 
+    data: nextMatches = [], 
+    isLoading: isLoadingMatches, 
+    error: matchesError,
+    refetch: refetchMatches 
+  } = useQuery({
+    queryKey: ["matches", queryDate],
     queryFn: async () => {
       try {
         const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
+        console.log('Fetching matches for date:', format(queryDate, 'yyyy-MM-dd'));
         const result = await fetchMatchData(undefined, queryDate);
+        
+        // Log the number of matches found for debugging
+        console.log(`Found ${Array.isArray(result) ? result.length : 0} matches for date ${format(queryDate, 'yyyy-MM-dd')}`);
+        
         return (Array.isArray(result) ? result : []).map(item => ({
           ...item,
           Id: item.Id || item.id || `${item.DateTime}-${item.PlayingAreaName}`,
@@ -71,6 +86,18 @@ export const ScoreboardContainer = () => {
   });
 
   useEffect(() => {
+    // Log the fixtures we've loaded to help debug matching issues
+    if (nextMatches.length > 0) {
+      console.log('Available matches for transitions:', nextMatches.length);
+      const courtMatches = nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`);
+      console.log(`Matches for Court ${courtId}:`, courtMatches.length);
+      courtMatches.forEach((match, index) => {
+        console.log(`  Match ${index + 1}: ${match.Id} - ${match.HomeTeam} vs ${match.AwayTeam} at ${match.DateTime}`);
+      });
+    }
+  }, [nextMatches, courtId]);
+
+  useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
       console.log('New fixture detected, resetting game state:', fixture.Id);
       gameState.resetGameState();
@@ -78,6 +105,7 @@ export const ScoreboardContainer = () => {
       isTransitioningToResults.current = false;
       setShowEndOfNightSummary(false);
       transitionErrorCount.current = 0;
+      hasTriedRefetchingMatches.current = false;
     }
   }, [fixture?.Id, gameState.resetGameState]);
 
@@ -117,6 +145,37 @@ export const ScoreboardContainer = () => {
         console.log('Transition timeout triggered at', new Date().toISOString());
         
         try {
+          // If we have no matches or they are few, try to refetch once
+          if ((nextMatches.length === 0 || nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`).length <= 1) 
+              && !hasTriedRefetchingMatches.current) {
+            
+            console.log('Limited or no matches found, attempting to refetch matches data');
+            hasTriedRefetchingMatches.current = true;
+            
+            refetchMatches().then(result => {
+              console.log('Refetched matches result:', {
+                success: result.isSuccess,
+                matchCount: result.data?.length || 0
+              });
+              
+              // After refetching, try to find the next match again
+              const nextMatch = findNextMatch(result.data || []);
+              
+              if (nextMatch) {
+                console.log('Found next match after refetching:', nextMatch.Id);
+                handleStartNextMatch(nextMatch);
+              } else {
+                console.log('No next match found after refetching, showing end of night summary');
+                setShowEndOfNightSummary(true);
+              }
+            }).catch(error => {
+              console.error('Error refetching matches:', error);
+              setShowEndOfNightSummary(true);
+            });
+            
+            return; // Exit early as we'll handle transition after refetch
+          }
+          
           const nextMatch = findNextMatch(nextMatches);
           
           if (nextMatch) {
@@ -124,6 +183,14 @@ export const ScoreboardContainer = () => {
             handleStartNextMatch(nextMatch);
           } else {
             console.log('No next match found, showing end of night summary');
+            // Log the court matches to help debug why no next match was found
+            const courtMatches = nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`);
+            console.log(`Court ${courtId} matches:`, courtMatches.map(m => ({
+              id: m.Id,
+              dateTime: m.DateTime,
+              teams: `${m.HomeTeam} vs ${m.AwayTeam}`
+            })));
+            
             setShowEndOfNightSummary(true);
           }
         } catch (error) {
@@ -151,7 +218,7 @@ export const ScoreboardContainer = () => {
         }
       };
     }
-  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch]);
+  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, courtId, refetchMatches]);
 
   const handleBack = () => {
     if (gameState.hasGameStarted) {
