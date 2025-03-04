@@ -70,8 +70,7 @@ export const disableForcedOfflineMode = () => {
  * (either forced or due to actual network status)
  */
 export const isOffline = (): boolean => {
-  const status = forcedOfflineMode || !navigator.onLine;
-  return status;
+  return forcedOfflineMode || !navigator.onLine;
 };
 
 /**
@@ -82,6 +81,19 @@ export const getOfflineStatus = (): { forced: boolean, network: boolean } => {
     forced: forcedOfflineMode,
     network: !navigator.onLine
   };
+};
+
+/**
+ * Toggle offline mode
+ */
+export const toggleOfflineMode = (): boolean => {
+  if (forcedOfflineMode) {
+    disableForcedOfflineMode();
+    return false;
+  } else {
+    enableForcedOfflineMode();
+    return true;
+  }
 };
 
 /**

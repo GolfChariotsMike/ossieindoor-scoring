@@ -5,21 +5,49 @@ import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { Button } from "@/components/ui/button";
 import { format, parse } from "date-fns";
 import { Fixture } from "@/types/volleyball";
+import { isOffline } from "@/utils/offlineMode";
+import { getCourtMatches } from "@/services/db/operations/matchOperations";
 
 const CourtFixtures = () => {
   const { courtId, date } = useParams();
   const navigate = useNavigate();
   
   const parsedDate = date ? parse(date, 'yyyy-MM-dd', new Date()) : new Date();
+  const formattedDate = format(parsedDate, 'dd/MM/yyyy');
+  
   console.log('CourtFixtures date parsing:', {
     urlDate: date,
     parsedDate: parsedDate.toISOString(),
-    formattedForDisplay: format(parsedDate, 'yyyy-MM-dd')
+    formattedForDisplay: format(parsedDate, 'yyyy-MM-dd'),
+    formattedForQuery: formattedDate,
+    courtId,
+    isOfflineMode: isOffline()
   });
 
   const { data: matches = [], isLoading } = useQuery({
-    queryKey: ["matches", date],
-    queryFn: () => fetchMatchData(undefined, parsedDate),
+    queryKey: ["matches", date, courtId],
+    queryFn: async () => {
+      console.log('Fetching matches in CourtFixtures...');
+      
+      // First try to get court matches from IndexedDB
+      if (isOffline()) {
+        try {
+          console.log('Getting matches from local IndexedDB...');
+          const localMatches = await getCourtMatches(courtId || '', formattedDate);
+          console.log('Local matches retrieved:', localMatches);
+          return localMatches;
+        } catch (error) {
+          console.error('Error fetching local matches:', error);
+        }
+      }
+      
+      // If not in cache or error occurred, try normal fetch
+      return fetchMatchData(undefined, parsedDate);
+    },
+    // Don't retry in offline mode as it will keep failing
+    retry: isOffline() ? false : 3,
+    // Consider data fresh for longer in offline mode
+    staleTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60 * 5, // 1 hour vs 5 minutes
   });
 
   console.log('Received matches:', matches);
@@ -28,9 +56,14 @@ const CourtFixtures = () => {
     ? matches
         .filter((match: Fixture) => match.PlayingAreaName === `Court ${courtId}`)
         .sort((a: Fixture, b: Fixture) => {
-          const timeA = parse(a.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-          const timeB = parse(b.DateTime, 'dd/MM/yyyy HH:mm', new Date());
-          return timeA.getTime() - timeB.getTime();
+          try {
+            const timeA = parse(a.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+            const timeB = parse(b.DateTime, 'dd/MM/yyyy HH:mm', new Date());
+            return timeA.getTime() - timeB.getTime();
+          } catch (error) {
+            console.error('Error parsing date during sorting:', error);
+            return 0;
+          }
         })
     : [];
 
@@ -80,6 +113,13 @@ const CourtFixtures = () => {
             Back
           </Button>
         </div>
+
+        {isOffline() && (
+          <div className="bg-yellow-600 text-volleyball-cream p-4 mb-6 rounded-lg">
+            <p className="text-xl font-medium">You are in offline mode</p>
+            <p>Fixtures loaded from local cache</p>
+          </div>
+        )}
 
         <div className="space-y-6">
           {courtFixtures.length > 0 ? (
