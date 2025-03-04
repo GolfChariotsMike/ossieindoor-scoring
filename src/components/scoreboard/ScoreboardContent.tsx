@@ -63,8 +63,7 @@ export const ScoreboardContent = ({
             <ResultsScreen
               match={match}
               setScores={gameState.setScores}
-              isTeamsSwitched={gameState.isTeamsSwitched}
-              onStartNextMatch={onManualNextMatch}
+              onNextMatch={onManualNextMatch}
             />
           ) : (
             <>

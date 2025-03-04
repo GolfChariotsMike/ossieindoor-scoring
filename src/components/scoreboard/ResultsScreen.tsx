@@ -1,3 +1,4 @@
+
 import { Match, SetScores } from "@/types/volleyball";
 import { Fireworks } from "./Fireworks";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ interface ResultsScreenProps {
   match: Match;
   setScores: SetScores;
   onNextMatch: () => void;
-  onEndOfNight: boolean;
+  onEndOfNight?: boolean;
 }
 
 export const ResultsScreen = ({ match, setScores, onNextMatch, onEndOfNight }: ResultsScreenProps) => {
@@ -28,7 +29,7 @@ export const ResultsScreen = ({ match, setScores, onNextMatch, onEndOfNight }: R
   const timerRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 5000; // 5 seconds
 
-  const RESULTS_DISPLAY_DURATION = 50; // Changed back to 50 seconds - MUST match ScoreboardContainer
+  const RESULTS_DISPLAY_DURATION = 50; // 50 seconds - MUST match ScoreboardContainer
 
   const calculateTeamResults = () => {
     const homeScore = setScores.home.reduce((acc, score) => acc + score, 0);
