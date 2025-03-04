@@ -52,6 +52,12 @@ export const getConnection = async (): Promise<IDBDatabase> => {
             }
           };
           
+          // Add onerror handler to catch connection errors
+          activeConnection.onerror = (event) => {
+            console.error('IndexedDB connection error:', event);
+            // Don't reset connection here as it might still be usable for other operations
+          };
+          
           resolve(activeConnection);
           break; // Successfully connected, exit the retry loop
         } catch (error) {
@@ -84,14 +90,19 @@ export const getRetryDelay = (retryCount: number, backoffArray: number[]): numbe
 // New function to safely close the connection
 export const closeConnection = () => {
   if (activeConnection) {
-    activeConnection.close();
-    activeConnection = null;
-    connectionPromise = null;
-    console.log('IndexedDB connection manually closed');
+    try {
+      activeConnection.close();
+    } catch (error) {
+      console.error('Error closing IndexedDB connection:', error);
+    } finally {
+      activeConnection = null;
+      connectionPromise = null;
+      console.log('IndexedDB connection manually closed');
+    }
   }
 };
 
-// New function to reset the connection if it's in a problematic state
+// Function to reset the connection if it's in a problematic state
 export const resetConnection = async (): Promise<IDBDatabase> => {
   if (activeConnection) {
     try {

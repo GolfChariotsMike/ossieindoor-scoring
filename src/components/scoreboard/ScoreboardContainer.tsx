@@ -12,6 +12,7 @@ import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { format, parse } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { EndOfNightSummary } from "./EndOfNightSummary";
+import { isOffline } from "@/utils/offlineMode";
 
 const parseFixtureDate = (dateStr: string) => {
   try {
@@ -39,24 +40,34 @@ export const ScoreboardContainer = () => {
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousFixtureIdRef = useRef<string | null>(null);
   const isTransitioningToResults = useRef<boolean>(false);
+  const transitionErrorCount = useRef<number>(0);
 
   // Define the results display duration constant to ensure consistency
   const RESULTS_DISPLAY_DURATION = 50; // 50 seconds for results display
 
   const gameState = useGameState();
-  const { data: match, isLoading } = useMatchData(courtId!, fixture);
+  const { data: match, isLoading, error } = useMatchData(courtId!, fixture);
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
 
-  const { data: nextMatches = [] } = useQuery({
+  const { data: nextMatches = [], isLoading: isLoadingMatches, error: matchesError } = useQuery({
     queryKey: ["matches", fixture?.DateTime ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')],
     queryFn: async () => {
-      const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
-      const result = await fetchMatchData(undefined, queryDate);
-      return (Array.isArray(result) ? result : []).map(item => ({
-        ...item,
-        Id: item.Id || item.id || `${item.DateTime}-${item.PlayingAreaName}`,
-      })) as Fixture[];
+      try {
+        const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
+        const result = await fetchMatchData(undefined, queryDate);
+        return (Array.isArray(result) ? result : []).map(item => ({
+          ...item,
+          Id: item.Id || item.id || `${item.DateTime}-${item.PlayingAreaName}`,
+        })) as Fixture[];
+      } catch (error) {
+        console.error("Error loading next matches:", error);
+        return []; // Return empty array as fallback
+      }
     },
+    // Prevent retries in offline mode
+    retry: isOffline() ? false : 2,
+    // Increase stale time to reduce unnecessary refetches
+    staleTime: 60000,
   });
 
   useEffect(() => {
@@ -66,6 +77,7 @@ export const ScoreboardContainer = () => {
       previousFixtureIdRef.current = fixture.Id;
       isTransitioningToResults.current = false;
       setShowEndOfNightSummary(false);
+      transitionErrorCount.current = 0;
     }
   }, [fixture?.Id, gameState.resetGameState]);
 
@@ -116,12 +128,19 @@ export const ScoreboardContainer = () => {
           }
         } catch (error) {
           console.error('Error in match transition:', error);
-          toast({
-            title: "Transition Error",
-            description: "There was a problem transitioning to the next match.",
-            variant: "destructive",
-          });
-          setShowEndOfNightSummary(true);
+          transitionErrorCount.current += 1;
+          
+          // If we've had multiple transition errors, just go to summary
+          if (transitionErrorCount.current >= 2) {
+            console.log('Multiple transition errors, showing end of night summary');
+            setShowEndOfNightSummary(true);
+          } else {
+            toast({
+              title: "Transition Error",
+              description: "There was a problem transitioning to the next match.",
+              variant: "destructive",
+            });
+          }
         }
       }, RESULTS_DISPLAY_DURATION * 1000); // Convert seconds to milliseconds
 
@@ -147,10 +166,20 @@ export const ScoreboardContainer = () => {
   };
 
   const handleManualNextMatch = () => {
-    const nextMatch = findNextMatch(nextMatches);
-    if (nextMatch) {
-      handleStartNextMatch(nextMatch);
-    } else {
+    try {
+      const nextMatch = findNextMatch(nextMatches);
+      if (nextMatch) {
+        handleStartNextMatch(nextMatch);
+      } else {
+        setShowEndOfNightSummary(true);
+      }
+    } catch (error) {
+      console.error('Error in manual next match:', error);
+      toast({
+        title: "Navigation Error",
+        description: "There was a problem finding the next match. Going to summary instead.",
+        variant: "destructive",
+      });
       setShowEndOfNightSummary(true);
     }
   };

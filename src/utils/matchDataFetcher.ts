@@ -1,5 +1,5 @@
 
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { format, parse } from "date-fns";
 import { Match, Fixture } from "@/types/volleyball";
 import { LEAGUE_URLS } from "@/config/leagueConfig";
@@ -15,14 +15,33 @@ const fetchFromUrl = async (url: string, date: string) => {
     }
     
     console.log('Fetching from URL:', url, 'with date:', date);
-    const response = await fetch(`${url}&Date=${date}`);
-    if (!response.ok) {
-      throw new Error("Failed to fetch fixture data");
+    
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    try {
+      const response = await fetch(`${url}&Date=${date}`, { 
+        signal: controller.signal 
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch fixture data: ${response.status} ${response.statusText}`);
+      }
+      
+      const text = await response.text();
+      console.log('Raw XML Response for URL:', url);
+      console.log(text);
+      return text;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Network request timed out');
+      }
+      throw error;
     }
-    const text = await response.text();
-    console.log('Raw XML Response for URL:', url);
-    console.log(text);
-    return text;
   } catch (error) {
     console.error('Error fetching from URL:', url, error);
     throw error;
@@ -48,6 +67,10 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
         const cachedMatches = await getCourtMatches(courtId, formattedDate);
         if (cachedMatches.length > 0) {
           console.log('Found cached matches:', cachedMatches.length);
+          if (!isOffline()) {
+            console.log('Fixtures already loaded, enabling offline mode');
+            enableForcedOfflineMode();
+          }
           return cachedMatches[0]; // Return the first match for this court
         }
       } catch (error) {
@@ -61,11 +84,12 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       
       if (courtId) {
         return {
-          id: "match-1",
+          id: `default-match-${courtId}`,
           court: parseInt(courtId),
           startTime: new Date().toISOString(),
           homeTeam: { id: "team-1", name: "Team A" },
           awayTeam: { id: "team-2", name: "Team B" },
+          division: "Default Division"
         };
       }
       
@@ -73,7 +97,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     }
 
     const urls = LEAGUE_URLS[dayOfWeek];
-    if (!urls) {
+    if (!urls || urls.length === 0) {
       console.error('No URLs configured for day:', dayOfWeek);
       throw new Error("No URLs configured for this day");
     }
@@ -136,7 +160,6 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       console.log('Saved fixtures to IndexedDB:', courtMatches.length);
       
       // After successfully loading and caching fixtures, enable offline mode
-      // This is the key change to implement the requirement
       if (fixtures.length > 0) {
         console.log('Enabling forced offline mode after fixture load');
         enableForcedOfflineMode();
@@ -152,21 +175,22 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       
       if (!currentMatch) {
         return {
-          id: "match-1",
+          id: `default-match-${courtId}-${Date.now()}`,
           court: parseInt(courtId),
           startTime: new Date().toISOString(),
           homeTeam: { id: "team-1", name: "Team A" },
           awayTeam: { id: "team-2", name: "Team B" },
+          division: "Default Division"
         };
       }
 
       return {
-        id: currentMatch.Id,
+        id: currentMatch.Id || `match-${Date.now()}`,
         court: parseInt(courtId),
         startTime: currentMatch.DateTime,
         division: currentMatch.DivisionName,
-        homeTeam: { id: currentMatch.HomeTeamId, name: currentMatch.HomeTeam },
-        awayTeam: { id: currentMatch.AwayTeamId, name: currentMatch.AwayTeam },
+        homeTeam: { id: currentMatch.HomeTeamId || `home-${Date.now()}`, name: currentMatch.HomeTeam },
+        awayTeam: { id: currentMatch.AwayTeamId || `away-${Date.now()}`, name: currentMatch.AwayTeam },
       };
     }
 
@@ -182,11 +206,12 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     
     if (courtId) {
       return {
-        id: "match-1",
+        id: `fallback-match-${courtId}-${Date.now()}`,
         court: parseInt(courtId),
         startTime: new Date().toISOString(),
         homeTeam: { id: "team-1", name: "Team A" },
         awayTeam: { id: "team-2", name: "Team B" },
+        division: "Default Division"
       };
     }
     

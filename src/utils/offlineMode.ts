@@ -10,6 +10,7 @@ try {
   const storedValue = localStorage.getItem(OFFLINE_MODE_KEY);
   if (storedValue) {
     forcedOfflineMode = storedValue === 'true';
+    console.log('Initialized offline mode from storage:', forcedOfflineMode);
   }
 } catch (error) {
   console.error('Error reading offline mode from localStorage:', error);
@@ -22,14 +23,19 @@ export const enableForcedOfflineMode = () => {
   forcedOfflineMode = true;
   try {
     localStorage.setItem(OFFLINE_MODE_KEY, 'true');
+    console.log('Offline mode enabled and saved to localStorage');
   } catch (error) {
     console.error('Error saving offline mode to localStorage:', error);
   }
-  toast({
-    title: "Offline Mode Enabled",
-    description: "All requests will be handled locally until end of night.",
-    duration: 3000,
-  });
+  
+  // Don't show toast if we're already in offline mode
+  if (navigator.onLine) {
+    toast({
+      title: "Offline Mode Enabled",
+      description: "All requests will be handled locally until end of night.",
+      duration: 3000,
+    });
+  }
 };
 
 /**
@@ -39,14 +45,24 @@ export const disableForcedOfflineMode = () => {
   forcedOfflineMode = false;
   try {
     localStorage.setItem(OFFLINE_MODE_KEY, 'false');
+    console.log('Offline mode disabled and saved to localStorage');
   } catch (error) {
     console.error('Error saving offline mode to localStorage:', error);
   }
-  toast({
-    title: "Online Mode Restored",
-    description: "Connection to server has been re-established.",
-    duration: 3000,
-  });
+  
+  if (navigator.onLine) {
+    toast({
+      title: "Online Mode Restored",
+      description: "Connection to server has been re-established.",
+      duration: 3000,
+    });
+  } else {
+    toast({
+      title: "Online Mode Attempted",
+      description: "Server connection will be restored when network is available.",
+      duration: 3000,
+    });
+  }
 };
 
 /**
@@ -54,7 +70,18 @@ export const disableForcedOfflineMode = () => {
  * (either forced or due to actual network status)
  */
 export const isOffline = (): boolean => {
-  return forcedOfflineMode || !navigator.onLine;
+  const status = forcedOfflineMode || !navigator.onLine;
+  return status;
+};
+
+/**
+ * Get the current offline mode status for displaying in UI
+ */
+export const getOfflineStatus = (): { forced: boolean, network: boolean } => {
+  return {
+    forced: forcedOfflineMode,
+    network: !navigator.onLine
+  };
 };
 
 /**
@@ -64,6 +91,7 @@ export const resetOfflineMode = () => {
   forcedOfflineMode = false;
   try {
     localStorage.removeItem(OFFLINE_MODE_KEY);
+    console.log('Offline mode reset and removed from localStorage');
   } catch (error) {
     console.error('Error removing offline mode from localStorage:', error);
   }
