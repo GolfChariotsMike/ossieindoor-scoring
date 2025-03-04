@@ -17,6 +17,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { Save, ArrowLeft } from "lucide-react";
 import { getPendingScores } from "@/services/indexedDB";
 import { processPendingScores } from "@/utils/matchDatabase";
+import { disableForcedOfflineMode, isOffline } from "@/utils/offlineMode";
 
 interface EndOfNightSummaryProps {
   courtId: string;
@@ -50,6 +51,44 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         // First get any pending scores from IndexedDB
         const pendingScores = await getPendingScores();
         console.log('Found pending scores:', pendingScores.length);
+
+        // If offline, only use pending scores data
+        if (isOffline()) {
+          console.log('Offline mode - showing only locally stored data');
+          
+          // Create local match summary objects from pending scores
+          const localMatches = pendingScores.map(score => ({
+            id: score.matchId,
+            match_id: score.matchId,
+            match_date: score.timestamp,
+            court_number: parseInt(courtId),
+            division: 'Local',
+            home_team_name: 'Local Team A',
+            away_team_name: 'Local Team B',
+            set1_home_score: score.homeScores[0] || 0,
+            set1_away_score: score.awayScores[0] || 0,
+            set2_home_score: score.homeScores[1] || 0,
+            set2_away_score: score.awayScores[1] || 0,
+            set3_home_score: score.homeScores[2] || 0,
+            set3_away_score: score.awayScores[2] || 0,
+            is_active: true,
+            has_final_score: false,
+            home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
+            away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
+            home_bonus_points: 0,
+            away_bonus_points: 0,
+            home_total_match_points: 0,
+            away_total_match_points: 0,
+            points_percentage: 0,
+            created_at: score.timestamp,
+            updated_at: score.timestamp,
+            home_result: '',
+            away_result: '',
+            fixture_start_time: null
+          }));
+          
+          return localMatches;
+        }
 
         // Get match details for pending scores
         const pendingMatchDetails = await Promise.all(
@@ -156,6 +195,9 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         description: "Processing all match scores...",
       });
 
+      // Disable offline mode for end-of-night sync
+      disableForcedOfflineMode();
+      
       // Process all pending scores with force flag
       const processedCount = await processPendingScores(true);
       

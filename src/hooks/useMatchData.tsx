@@ -6,6 +6,7 @@ import { findExistingMatch, createNewMatch, transformToMatch } from "@/services/
 import { generateMatchCode } from "@/utils/matchCodeGenerator";
 import { findCachedMatch, createCachedMatch, ensureMatchCacheSchema } from "@/services/db/operations/matchCacheOperations";
 import { resetConnection } from "@/services/db/connection";
+import { isOffline } from "@/utils/offlineMode";
 
 // Ensure the match cache schema is set up when this module loads
 ensureMatchCacheSchema();
@@ -38,8 +39,8 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           }
         }
         
-        // If not in cache and we're online, try Supabase
-        if (navigator.onLine) {
+        // If not in cache and we're not in offline mode, try Supabase
+        if (!isOffline()) {
           try {
             const existingMatch = await findExistingMatch(matchCode);
             if (existingMatch) {
@@ -62,7 +63,7 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         }
 
         // If not found online or we're offline, create locally
-        console.log(navigator.onLine ? 'Creating new match locally:' : 'Offline - Creating match locally:', fixture);
+        console.log(isOffline() ? 'Offline - Creating match locally:' : 'Creating new match locally:', fixture);
         
         let newMatch;
         try {
@@ -84,8 +85,8 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           };
         }
         
-        // If we're online, also try to save to Supabase (but don't wait for it)
-        if (navigator.onLine) {
+        // If we're not in offline mode, also try to save to Supabase (but don't wait for it)
+        if (!isOffline()) {
           createNewMatch(courtId, fixture, matchCode)
             .then(serverMatch => {
               console.log('Successfully created match in Supabase as well:', serverMatch);

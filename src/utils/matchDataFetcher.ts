@@ -5,9 +5,15 @@ import { Match, Fixture } from "@/types/volleyball";
 import { LEAGUE_URLS } from "@/config/leagueConfig";
 import { parseXMLResponse } from "@/utils/xmlParser";
 import { saveCourtMatches, getCourtMatches } from "@/services/indexedDB";
+import { isOffline, enableForcedOfflineMode } from "@/utils/offlineMode";
 
 const fetchFromUrl = async (url: string, date: string) => {
   try {
+    // If in offline mode, don't fetch from remote
+    if (isOffline()) {
+      throw new Error("Offline mode - cannot fetch fixture data");
+    }
+    
     console.log('Fetching from URL:', url, 'with date:', date);
     const response = await fetch(`${url}&Date=${date}`);
     if (!response.ok) {
@@ -47,6 +53,23 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       } catch (error) {
         console.error('Error reading from cache:', error);
       }
+    }
+
+    // If we're in offline mode and don't have cached matches, return default data
+    if (isOffline()) {
+      console.log('Offline mode enabled, using default match data');
+      
+      if (courtId) {
+        return {
+          id: "match-1",
+          court: parseInt(courtId),
+          startTime: new Date().toISOString(),
+          homeTeam: { id: "team-1", name: "Team A" },
+          awayTeam: { id: "team-2", name: "Team B" },
+        };
+      }
+      
+      return [];
     }
 
     const urls = LEAGUE_URLS[dayOfWeek];
@@ -111,6 +134,13 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     try {
       await saveCourtMatches(courtMatches);
       console.log('Saved fixtures to IndexedDB:', courtMatches.length);
+      
+      // After successfully loading and caching fixtures, enable offline mode
+      // This is the key change to implement the requirement
+      if (fixtures.length > 0) {
+        console.log('Enabling forced offline mode after fixture load');
+        enableForcedOfflineMode();
+      }
     } catch (error) {
       console.error('Error caching fixtures:', error);
     }

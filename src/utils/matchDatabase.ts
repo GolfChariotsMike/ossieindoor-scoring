@@ -1,7 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
+import { isOffline } from "@/utils/offlineMode";
 
 interface PendingScore {
   id: string;
@@ -29,14 +30,22 @@ const processPendingScores = async (forceProcess = false) => {
     console.log('Processing pending scores:', pendingScores.length);
 
     let processedCount = 0;
+    
+    // If we're in forced offline mode and not explicitly forcing processing,
+    // don't try to send scores to Supabase
+    if (isOffline() && !forceProcess) {
+      console.log('In offline mode, pending scores will be processed later');
+      isProcessing = false;
+      return 0;
+    }
 
     for (const score of pendingScores) {
       try {
         await updatePendingScoreStatus(score.id, 'processing');
         
         // Check if we have network connectivity
-        if (!navigator.onLine) {
-          console.log('No network connection, will retry later');
+        if (isOffline()) {
+          console.log('No network connection or offline mode enabled, will retry later');
           await updatePendingScoreStatus(score.id, 'pending');
           continue;
         }
@@ -236,7 +245,7 @@ export const saveMatchScores = async (
     }
 
     // We'll only reach this point if submitToSupabase is true (end of night summary)
-    if (!navigator.onLine) {
+    if (isOffline()) {
       toast({
         title: "You're offline",
         description: "Scores saved locally and will be uploaded when connection is restored.",
@@ -252,7 +261,7 @@ export const saveMatchScores = async (
     console.error('Error saving match scores:', error);
     
     // Only try to log errors to Supabase if we're online and explicitly submitting
-    if (navigator.onLine && submitToSupabase) {
+    if (!isOffline() && submitToSupabase) {
       try {
         await supabase.from('crash_logs').insert({
           error_type: 'match_score_save_error',
