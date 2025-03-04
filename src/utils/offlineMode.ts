@@ -67,6 +67,7 @@ export const disableForcedOfflineMode = () => {
 
 /**
  * Ensure we're in online mode (for main pages)
+ * @returns true if mode was changed, false if it was already online
  */
 export const ensureOnlineMode = () => {
   if (forcedOfflineMode) {
@@ -82,7 +83,13 @@ export const ensureOnlineMode = () => {
  * (either forced or due to actual network status)
  */
 export const isOffline = (): boolean => {
-  return forcedOfflineMode || !navigator.onLine;
+  const status = forcedOfflineMode || !navigator.onLine;
+  console.log('Offline status check:', { 
+    forcedOfflineMode, 
+    networkOffline: !navigator.onLine,
+    result: status 
+  });
+  return status;
 };
 
 /**

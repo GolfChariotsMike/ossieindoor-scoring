@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { format, parse } from "date-fns";
 import { Fixture } from "@/types/volleyball";
 import { isOffline } from "@/utils/offlineMode";
-import { getCourtMatches } from "@/services/db/operations/matchOperations";
+import { getCourtMatches, saveCourtMatches } from "@/services/indexedDB";
 import { toast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 
@@ -55,9 +55,34 @@ const CourtFixtures = () => {
       }
       
       // If not in cache or error occurred, try normal fetch
-      const fetchedMatches = await fetchMatchData(undefined, parsedDate);
-      console.log('Fetched matches from remote:', Array.isArray(fetchedMatches) ? fetchedMatches.length : 'not an array');
-      return fetchedMatches;
+      try {
+        const fetchedMatches = await fetchMatchData(undefined, parsedDate);
+        console.log('Fetched matches from remote:', Array.isArray(fetchedMatches) ? fetchedMatches.length : 'not an array');
+        
+        // Explicitly cache all matches for offline usage
+        if (Array.isArray(fetchedMatches) && fetchedMatches.length > 0) {
+          try {
+            // Prepare match data for caching
+            const courtMatches = fetchedMatches.map(fixture => ({
+              id: fixture.Id || `${fixture.DateTime}-${fixture.PlayingAreaName}`,
+              PlayingAreaName: fixture.PlayingAreaName,
+              DateTime: fixture.DateTime,
+              ...fixture
+            }));
+            
+            // Save all matches to IndexedDB for later offline use
+            await saveCourtMatches(courtMatches);
+            console.log('Cached all fixtures for future offline use', courtMatches.length);
+          } catch (cacheError) {
+            console.error('Error caching fixtures for offline use:', cacheError);
+          }
+        }
+        
+        return fetchedMatches;
+      } catch (fetchError) {
+        console.error('Error fetching matches:', fetchError);
+        return [];
+      }
     },
     // Don't retry in offline mode as it will keep failing
     retry: isOffline() ? false : 3,

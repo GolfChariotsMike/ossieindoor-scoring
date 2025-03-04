@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { parse, format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
+import { isOffline } from "@/utils/offlineMode";
 
 export const useNextMatch = (courtId: string, fixture?: Fixture) => {
   const navigate = useNavigate();
@@ -24,7 +25,8 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
     if (!fixture || matches.length === 0) {
       console.log('No fixture or matches available for next match search', {
         hasFixture: !!fixture,
-        matchesCount: matches.length
+        matchesCount: matches.length,
+        isOfflineMode: isOffline()
       });
       return null;
     }
@@ -37,7 +39,9 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
         currentFixtureId,
         currentFixtureDate: format(currentFixtureDate, 'yyyy-MM-dd HH:mm'),
         currentFixtureTeams: `${fixture.HomeTeam} vs ${fixture.AwayTeam}`,
-        courtId
+        courtId,
+        availableMatchesCount: matches.length,
+        offlineMode: isOffline()
       });
       
       // Filter matches to only those on the same court
@@ -58,13 +62,24 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
       });
       
       // Find the index of the current match
-      const currentMatchIndex = sortedMatches.findIndex(m => m.Id === currentFixtureId);
-      console.log('Current match index:', currentMatchIndex);
+      let currentMatchIndex = sortedMatches.findIndex(m => m.Id === currentFixtureId);
+      console.log('Current match index using ID:', currentMatchIndex);
+      
+      // Fallback to find by teams if ID match fails (helpful in offline mode where IDs might be different)
+      if (currentMatchIndex === -1) {
+        console.log('Trying to find current match by teams instead of ID');
+        currentMatchIndex = sortedMatches.findIndex(m => 
+          m.HomeTeam === fixture.HomeTeam && 
+          m.AwayTeam === fixture.AwayTeam &&
+          m.DateTime === fixture.DateTime
+        );
+        console.log('Current match index using teams and time:', currentMatchIndex);
+      }
       
       // If we found the current match and there's a next one, return it
       if (currentMatchIndex !== -1 && currentMatchIndex < sortedMatches.length - 1) {
         const nextMatch = sortedMatches[currentMatchIndex + 1];
-        console.log('Next match found:', {
+        console.log('Next match found by index:', {
           id: nextMatch.Id,
           teams: `${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`,
           time: nextMatch.DateTime
@@ -74,22 +89,27 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
       
       // If we couldn't find by index, try the time-based approach as fallback
       console.log('Fallback to time-based next match search');
-      const nextMatch = sortedMatches.find((m: Fixture) => 
-        m.Id !== currentFixtureId && 
+      const matchesAfterCurrent = sortedMatches.filter(m => 
         parseFixtureDate(m.DateTime) > currentFixtureDate
       );
       
-      if (nextMatch) {
+      if (matchesAfterCurrent.length > 0) {
+        // Sort again to find the next chronological match
+        const nextMatches = [...matchesAfterCurrent].sort((a, b) => 
+          parseFixtureDate(a.DateTime).getTime() - parseFixtureDate(b.DateTime).getTime()
+        );
+        
+        const nextMatch = nextMatches[0];
         console.log('Next match found by time:', {
           id: nextMatch.Id,
           teams: `${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`,
           time: nextMatch.DateTime
         });
-      } else {
-        console.log('No next match found on this court');
+        return nextMatch;
       }
       
-      return nextMatch;
+      console.log('No next match found on this court');
+      return null;
     } catch (error) {
       console.error('Error finding next match:', {
         error,

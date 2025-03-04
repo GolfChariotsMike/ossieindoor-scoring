@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 import { format, parse } from "date-fns";
 import { Match, Fixture } from "@/types/volleyball";
@@ -9,16 +8,14 @@ import { isOffline } from "@/utils/offlineMode";
 
 const fetchFromUrl = async (url: string, date: string) => {
   try {
-    // If in offline mode, don't fetch from remote
     if (isOffline()) {
       throw new Error("Offline mode - cannot fetch fixture data");
     }
     
     console.log('Fetching from URL:', url, 'with date:', date);
     
-    // Add timeout to prevent hanging requests
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     
     try {
       const response = await fetch(`${url}&Date=${date}`, { 
@@ -59,9 +56,9 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       dayOfWeek,
       courtId,
       selectedDate: selectedDate?.toISOString(),
+      offlineMode: isOffline()
     });
 
-    // Try to get matches from IndexedDB first
     if (courtId) {
       try {
         const cachedMatches = await getCourtMatches(courtId, formattedDate);
@@ -74,7 +71,6 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       }
     }
 
-    // If we're in offline mode and don't have cached matches, return default data
     if (isOffline()) {
       console.log('Offline mode enabled, using default match data');
       
@@ -98,7 +94,6 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       throw new Error("No URLs configured for this day");
     }
 
-    // Fetch and parse data from all URLs for the day
     const allFixtures = await Promise.all(
       urls.map(async (url) => {
         try {
@@ -111,29 +106,17 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       })
     );
 
-    // Combine and flatten fixtures from all sources
     let fixtures = allFixtures.flat();
     console.log('Total number of fixtures found:', fixtures.length);
 
-    // Filter fixtures by the selected date
     fixtures = fixtures.filter(fixture => {
       if (!fixture?.DateTime) return false;
       
       try {
-        // Parse the fixture date in the format "dd/MM/yyyy HH:mm"
         const fixtureDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
         const targetDate = parse(formattedDate, 'dd/MM/yyyy', new Date());
         
-        // Compare only the date parts (ignore time)
         const isSameDate = format(fixtureDate, 'yyyy-MM-dd') === format(targetDate, 'yyyy-MM-dd');
-        
-        console.log('Date comparison for fixture:', {
-          fixtureDateTime: fixture.DateTime,
-          parsedFixtureDate: format(fixtureDate, 'yyyy-MM-dd'),
-          targetDate: format(targetDate, 'yyyy-MM-dd'),
-          isSameDate,
-          court: fixture.PlayingAreaName
-        });
         
         return isSameDate;
       } catch (error) {
@@ -142,7 +125,6 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       }
     });
 
-    // Map XMLFixtures to CourtMatch format before saving
     const courtMatches = fixtures.map(fixture => ({
       id: fixture.Id || `${fixture.DateTime}-${fixture.PlayingAreaName}`,
       PlayingAreaName: fixture.PlayingAreaName,
@@ -150,11 +132,9 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       ...fixture
     }));
 
-    // Save all fixtures to IndexedDB for offline access, 
-    // regardless of whether a specific court was requested
     try {
       await saveCourtMatches(courtMatches);
-      console.log('Saved fixtures to IndexedDB:', courtMatches.length);
+      console.log('Saved ALL fixtures to IndexedDB:', courtMatches.length);
     } catch (error) {
       console.error('Error caching fixtures:', error);
     }
