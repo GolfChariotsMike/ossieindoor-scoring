@@ -85,7 +85,7 @@ export const useGameState = () => {
     handleSwitchTeams
   ]);
 
-  // Save match scores to Supabase
+  // Save match scores to database (modified to always use local storage first)
   const saveMatchScoresToDatabase = useCallback(async (matchId: string, homeScores: number[], awayScores: number[]) => {
     try {
       console.log('Saving match scores to database:', {
@@ -93,7 +93,7 @@ export const useGameState = () => {
         homeScores,
         awayScores
       });
-      // Pass false for submitToSupabase parameter - we'll only submit at the end of the night
+      // Always pass false for submitToSupabase parameter - we'll only submit at the end of the night
       return await saveMatchScores(matchId, homeScores, awayScores, false);
     } catch (error) {
       console.error('Error in saveMatchScoresToDatabase:', error);
