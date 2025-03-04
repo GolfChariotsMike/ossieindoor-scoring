@@ -17,7 +17,8 @@ export const dbSchema: DBSchema = {
     keyPath: 'id',
     indexes: [
       { name: 'courtNumber', keyPath: 'PlayingAreaName' },
-      { name: 'matchDate', keyPath: 'DateTime' }
+      { name: 'matchDate', keyPath: 'DateTime' },
+      { name: 'matchCode', keyPath: 'matchCode' }
     ]
   }
 };
