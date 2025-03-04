@@ -41,7 +41,7 @@ export const ScoreboardContainer = () => {
   const isTransitioningToResults = useRef<boolean>(false);
 
   // Define the results display duration constant to ensure consistency
-  const RESULTS_DISPLAY_DURATION = 50; // Changed back to 50 seconds
+  const RESULTS_DISPLAY_DURATION = 20; // Reduced from 50 to 20 seconds
 
   const gameState = useGameState();
   const { data: match, isLoading } = useMatchData(courtId!, fixture);
