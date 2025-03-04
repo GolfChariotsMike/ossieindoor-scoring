@@ -85,7 +85,7 @@ export const ScoreboardContent = ({
                 setScores={gameState.setScores}
                 match={match}
                 isTeamsSwitched={gameState.isTeamsSwitched}
-                onScoreUpdate={gameState.handleScore}
+                onScoreUpdate={gameState.handleScoreUpdate}
               />
             </>
           )}
