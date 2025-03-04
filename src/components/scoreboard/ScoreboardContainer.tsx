@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -41,7 +40,7 @@ export const ScoreboardContainer = () => {
   const isTransitioningToResults = useRef<boolean>(false);
 
   // Define the results display duration constant to ensure consistency
-  const RESULTS_DISPLAY_DURATION = 20; // Reduced from 50 to 20 seconds
+  const RESULTS_DISPLAY_DURATION = 50; // 50 seconds for results display
 
   const gameState = useGameState();
   const { data: match, isLoading } = useMatchData(courtId!, fixture);

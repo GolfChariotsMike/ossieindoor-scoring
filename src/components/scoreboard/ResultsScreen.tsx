@@ -29,7 +29,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   const timerRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 5000; // 5 seconds
 
-  const RESULTS_DISPLAY_DURATION = 20; // 20 seconds - MUST match ScoreboardContainer
+  const RESULTS_DISPLAY_DURATION = 50; // 50 seconds - MUST match ScoreboardContainer
 
   const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
     let setPoints = 0;
