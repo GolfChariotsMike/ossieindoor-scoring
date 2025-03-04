@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,36 +55,88 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         if (isOffline()) {
           console.log('Offline mode - showing only locally stored data');
           
+          // Create an object to store team name mappings by matchId
+          const matchTeamNames = {};
+          
+          // Try to extract real team names from matchIds first
+          pendingScores.forEach(score => {
+            try {
+              // matchId might contain team names in format "court-dateTime-homeTeam-awayTeam"
+              const parts = score.matchId.split('-');
+              if (parts.length >= 4) {
+                // The format might be complex, so this is a best effort to extract team names
+                let homeTeam = '';
+                let awayTeam = '';
+                
+                // Try to extract team names - this assumes a specific matchId format
+                // For example: "1-20230615-1200-TeamA-TeamB" 
+                if (parts.length === 5) {
+                  // Simple case with clear home and away team segments
+                  homeTeam = parts[3];
+                  awayTeam = parts[4];
+                } else if (parts.length > 5) {
+                  // More complex case where team names might contain hyphens
+                  const courtAndDate = parts.slice(0, 3).join('-'); // First 3 segments are court and date
+                  const remaining = score.matchId.replace(`${courtAndDate}-`, '');
+                  const midpoint = Math.floor(remaining.length / 2);
+                  homeTeam = remaining.substring(0, midpoint);
+                  awayTeam = remaining.substring(midpoint);
+                }
+                
+                // Clean up team names if possible
+                homeTeam = homeTeam.replace(/([A-Z])/g, ' $1').trim();
+                awayTeam = awayTeam.replace(/([A-Z])/g, ' $1').trim();
+                
+                if (homeTeam && awayTeam) {
+                  matchTeamNames[score.matchId] = {
+                    home: homeTeam,
+                    away: awayTeam
+                  };
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing team names from matchId:', error);
+            }
+          });
+          
           // Create local match summary objects from pending scores
-          const localMatches = pendingScores.map(score => ({
-            id: score.matchId,
-            match_id: score.matchId,
-            match_date: score.timestamp,
-            court_number: parseInt(courtId),
-            division: 'Local',
-            home_team_name: 'Local Team A',
-            away_team_name: 'Local Team B',
-            set1_home_score: score.homeScores[0] || 0,
-            set1_away_score: score.awayScores[0] || 0,
-            set2_home_score: score.homeScores[1] || 0,
-            set2_away_score: score.awayScores[1] || 0,
-            set3_home_score: score.homeScores[2] || 0,
-            set3_away_score: score.awayScores[2] || 0,
-            is_active: true,
-            has_final_score: false,
-            home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
-            away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
-            home_bonus_points: 0,
-            away_bonus_points: 0,
-            home_total_match_points: 0,
-            away_total_match_points: 0,
-            points_percentage: 0,
-            created_at: score.timestamp,
-            updated_at: score.timestamp,
-            home_result: '',
-            away_result: '',
-            fixture_start_time: null
-          }));
+          const localMatches = pendingScores.map(score => {
+            // Check if we have team names for this match
+            const teamNames = matchTeamNames[score.matchId] || { 
+              home: 'Home Team', 
+              away: 'Away Team' 
+            };
+            
+            return {
+              id: score.matchId,
+              match_id: score.matchId,
+              match_date: score.timestamp,
+              court_number: parseInt(courtId),
+              division: 'Local',
+              home_team_name: teamNames.home,
+              away_team_name: teamNames.away,
+              set1_home_score: score.homeScores[0] || 0,
+              set1_away_score: score.awayScores[0] || 0,
+              set2_home_score: score.homeScores[1] || 0,
+              set2_away_score: score.awayScores[1] || 0,
+              set3_home_score: score.homeScores[2] || 0,
+              set3_away_score: score.awayScores[2] || 0,
+              is_active: true,
+              has_final_score: false,
+              home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
+              away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
+              home_bonus_points: 0,
+              away_bonus_points: 0,
+              home_total_match_points: 0,
+              away_total_match_points: 0,
+              points_percentage: 0,
+              created_at: score.timestamp,
+              updated_at: score.timestamp,
+              home_result: '',
+              away_result: '',
+              fixture_start_time: null
+            };
+          });
           
           return localMatches;
         }
@@ -134,7 +185,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
           
           if (!matchExists && matchDetails) {
             combinedMatches.push({
-              id: matchDetails.id, // Use the actual match ID instead of the pending score ID
+              id: matchDetails.id,
               match_id: pendingScore.matchId,
               match_date: pendingScore.timestamp,
               court_number: parseInt(courtId),

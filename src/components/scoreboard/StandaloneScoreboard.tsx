@@ -7,6 +7,7 @@ import { BackButton } from "./BackButton";
 import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
 import { ScoreboardLayout } from "./ScoreboardLayout";
 import { format } from "date-fns";
+import { saveMatchScores } from "@/utils/matchDatabase";
 
 const StandaloneScoreboard = () => {
   const navigate = useNavigate();
@@ -22,19 +23,21 @@ const StandaloneScoreboard = () => {
   const startTime = new Date().toISOString();
   const courtNumber = 0;
   const formattedDate = format(new Date(startTime), 'yyyyMMdd-HHmm');
-  const matchCode = `${courtNumber}-${formattedDate}`;
+  const homeTeamName = "HOME TEAM";
+  const awayTeamName = "AWAY TEAM";
+  const matchCode = `${courtNumber}-${formattedDate}-${homeTeamName.replace(/\s+/g, '')}-${awayTeamName.replace(/\s+/g, '')}`;
 
   const genericMatch = {
     id: matchCode,
     court: courtNumber,
     startTime,
-    homeTeam: { id: "home", name: "HOME TEAM" },
-    awayTeam: { id: "away", name: "AWAY TEAM" },
+    homeTeam: { id: "home", name: homeTeamName },
+    awayTeam: { id: "away", name: awayTeamName },
     PlayingAreaName: `Court ${courtNumber}`,
     DateTime: format(new Date(startTime), 'dd/MM/yyyy HH:mm'),
     DivisionName: "Practice",
-    HomeTeam: "HOME TEAM",
-    AwayTeam: "AWAY TEAM",
+    HomeTeam: homeTeamName,
+    AwayTeam: awayTeamName,
     HomeTeamId: "home",
     AwayTeamId: "away"
   };
@@ -65,13 +68,28 @@ const StandaloneScoreboard = () => {
         return;
       }
 
+      const currentHomeScore = isTeamsSwitched ? currentScore.away : currentScore.home;
+      const currentAwayScore = isTeamsSwitched ? currentScore.home : currentScore.away;
+      
       const newSetScores = {
-        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
-        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
+        home: [...setScores.home, currentHomeScore],
+        away: [...setScores.away, currentAwayScore],
       };
       
       setSetScores(newSetScores);
       setIsBreak(true);
+      
+      // Save match scores after each set
+      try {
+        saveMatchScores(
+          matchCode,
+          newSetScores.home,
+          newSetScores.away,
+          false // Don't immediately submit to Supabase
+        );
+      } catch (error) {
+        console.error('Error saving match scores:', error);
+      }
       
       if (newSetScores.home.length >= 3) {
         setIsMatchComplete(true);
