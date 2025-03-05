@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
@@ -179,7 +180,8 @@ const processPendingScores = async (forceProcess = false) => {
     return processedCount;
   } catch (error) {
     console.error('Error processing pending scores:', error);
-    throw error;
+    // Swallow errors to ensure UI functionality continues
+    return 0;
   } finally {
     isProcessing = false;
   }
@@ -191,11 +193,7 @@ window.addEventListener('online', () => {
 
 window.addEventListener('offline', () => {
   console.log('Network connection lost, scores will be saved locally');
-  toast({
-    title: "You're offline",
-    description: "Scores will be saved locally and can be uploaded at the end of the night.",
-    variant: "default",
-  });
+  // Silent notification when going offline to avoid disrupting the scoring experience
 });
 
 export const saveMatchScores = async (
@@ -218,11 +216,6 @@ export const saveMatchScores = async (
 
   if (!matchId || !homeScores.length || !awayScores.length) {
     console.error('Invalid match data:', { matchId, homeScores, awayScores });
-    toast({
-      title: "Error saving scores",
-      description: "Invalid match data provided",
-      variant: "destructive",
-    });
     return;
   }
 
@@ -237,7 +230,12 @@ export const saveMatchScores = async (
       homeTeamName,
       awayTeamName
     };
-    await savePendingScore(pendingScore);
+    
+    // Save to IndexedDB without awaiting to prevent UI blocking
+    savePendingScore(pendingScore)
+      .catch(error => {
+        console.error('Error saving pending score to IndexedDB:', error);
+      });
 
     if (!submitToSupabase) {
       console.log('Scores saved locally only - will be uploaded at end of night');
@@ -245,44 +243,22 @@ export const saveMatchScores = async (
     }
 
     if (isOffline()) {
-      toast({
-        title: "You're offline",
-        description: "Scores saved locally and will be uploaded when connection is restored.",
-        variant: "default",
-      });
+      console.log('Device is offline - scores saved locally and will be uploaded when connection is restored');
       return;
     }
 
-    return await processPendingScores(true);
-  } catch (error) {
-    console.error('Error saving match scores:', error);
-    
-    if (!isOffline() && submitToSupabase) {
-      try {
-        await supabase.from('crash_logs').insert({
-          error_type: 'match_score_save_error',
-          error_message: error instanceof Error ? error.message : 'Unknown error',
-          error_stack: JSON.stringify({
-            matchId,
-            homeScores,
-            awayScores,
-            error
-          }),
-          browser_info: {
-            userAgent: navigator.userAgent,
-            url: window.location.href
-          }
+    // Process scores in the background without awaiting
+    setTimeout(() => {
+      processPendingScores(true)
+        .catch(error => {
+          console.error('Error processing pending scores in background:', error);
         });
-      } catch (logError) {
-        console.error('Failed to log error to crash_logs:', logError);
-      }
-    }
+    }, 100);
     
-    toast({
-      title: "Connection Issues",
-      description: "Scores saved locally and will be uploaded when connection is restored.",
-      variant: "default",
-    });
+    return;
+  } catch (error) {
+    console.error('Error in saveMatchScores:', error);
+    // Swallow errors to ensure UI functionality continues
   }
 };
 

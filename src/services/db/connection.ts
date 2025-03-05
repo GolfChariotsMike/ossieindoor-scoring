@@ -65,7 +65,10 @@ export const getConnection = async (): Promise<IDBDatabase> => {
           console.error(`IndexedDB connection attempt ${connectionRetries} failed:`, error);
           
           if (connectionRetries >= MAX_CONNECTION_RETRIES) {
-            throw error; // Give up after max retries
+            console.error('Max retries reached, failing gracefully');
+            // Instead of rejecting, resolve with null to avoid blocking UI
+            resolve(null as unknown as IDBDatabase);
+            break;
           }
           
           // Wait a bit longer between each retry
@@ -76,7 +79,15 @@ export const getConnection = async (): Promise<IDBDatabase> => {
       console.error('Error initializing IndexedDB connection after multiple attempts:', error);
       activeConnection = null;
       connectionPromise = null;
-      reject(error);
+      // Instead of rejecting, resolve with null to avoid blocking UI
+      resolve(null as unknown as IDBDatabase);
+    } finally {
+      // Reset the connectionPromise regardless of outcome to allow future attempts
+      setTimeout(() => {
+        if (connectionPromise) {
+          connectionPromise = null;
+        }
+      }, 5000);
     }
   });
   
@@ -103,7 +114,7 @@ export const closeConnection = () => {
 };
 
 // Function to reset the connection if it's in a problematic state
-export const resetConnection = async (): Promise<IDBDatabase> => {
+export const resetConnection = async (): Promise<IDBDatabase | null> => {
   if (activeConnection) {
     try {
       activeConnection.close();
@@ -116,5 +127,10 @@ export const resetConnection = async (): Promise<IDBDatabase> => {
   connectionPromise = null;
   connectionRetries = 0;
   
-  return getConnection();
+  try {
+    return await getConnection();
+  } catch (error) {
+    console.error('Error getting connection during reset:', error);
+    return null;
+  }
 };

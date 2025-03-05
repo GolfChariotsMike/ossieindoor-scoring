@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 
 // Track the application's offline mode status
@@ -27,7 +28,7 @@ export const enableForcedOfflineMode = () => {
     console.error('Error saving offline mode to localStorage:', error);
   }
   
-  // Removed the toast notification for offline mode
+  // Silent enabling - don't show toast notification
 };
 
 /**
@@ -129,11 +130,5 @@ window.addEventListener('online', () => {
 
 window.addEventListener('offline', () => {
   console.log('Network connection lost');
-  if (!forcedOfflineMode) {
-    toast({
-      title: "You're offline",
-      description: "Don't worry, everything will work in offline mode.",
-      variant: "default",
-    });
-  }
+  // Silent notification when going offline to avoid disrupting the scoring experience
 });
