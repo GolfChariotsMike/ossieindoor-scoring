@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 
 // Track the application's offline mode status
@@ -27,7 +28,11 @@ export const enableForcedOfflineMode = () => {
     console.error('Error saving offline mode to localStorage:', error);
   }
   
-  // Removed the toast notification for offline mode
+  toast({
+    title: "Offline Mode Enabled",
+    description: "The app will work without internet connection until you disable offline mode.",
+    duration: 3000,
+  });
 };
 
 /**

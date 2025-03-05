@@ -149,19 +149,38 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
           homeTeam: nextMatch.HomeTeam,
           awayTeam: nextMatch.AwayTeam,
           court: nextMatch.PlayingAreaName
-        }
+        },
+        offlineMode: isOffline()
       });
       
-      // Show a loading toast
-      toast({
-        title: "Loading Next Match",
-        description: `Loading ${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`,
-      });
+      // Check if we're offline and handle gracefully
+      if (isOffline()) {
+        toast({
+          title: "Starting Next Match in Offline Mode",
+          description: `Loading ${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`,
+        });
+      } else {
+        toast({
+          title: "Loading Next Match",
+          description: `Loading ${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam}`,
+        });
+      }
       
       // Use a small timeout to ensure toast is shown before page reload
       setTimeout(() => {
-        // Force a full page reload to reset all state
-        window.location.href = `/scoreboard/${courtId}?fixture=${encodeURIComponent(JSON.stringify(nextMatch))}`;
+        try {
+          // Force a full page reload to reset all state
+          window.location.href = `/scoreboard/${courtId}?fixture=${encodeURIComponent(JSON.stringify(nextMatch))}`;
+        } catch (navError) {
+          console.error('Navigation error:', navError);
+          // Fallback to simple navigation if there's an error with the URL construction
+          navigate(`/scoreboard/${courtId}`);
+          toast({
+            title: "Navigation Issue",
+            description: "There was a problem loading the next match. Using basic navigation instead.",
+            variant: "destructive",
+          });
+        }
       }, 500);
     } catch (error) {
       console.error('Failed to start next match:', {

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
@@ -245,11 +246,8 @@ export const saveMatchScores = async (
     }
 
     if (isOffline()) {
-      toast({
-        title: "You're offline",
-        description: "Scores saved locally and will be uploaded when connection is restored.",
-        variant: "default",
-      });
+      // Show no toast during game to avoid disruption - just log
+      console.log('App is offline - scores saved locally and will sync when online');
       return;
     }
 
@@ -278,11 +276,14 @@ export const saveMatchScores = async (
       }
     }
     
-    toast({
-      title: "Connection Issues",
-      description: "Scores saved locally and will be uploaded when connection is restored.",
-      variant: "default",
-    });
+    // Only show a notification on severe errors, not on expected offline situations
+    if (!isOffline() && navigator.onLine) {
+      toast({
+        title: "Connection Issues",
+        description: "Scores saved locally and will be uploaded when connection is restored.",
+        variant: "default",
+      });
+    }
   }
 };
 

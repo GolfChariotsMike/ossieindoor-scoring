@@ -1,3 +1,4 @@
+
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -138,6 +139,13 @@ export const ScoreboardContainer = () => {
         console.log('Transition timeout triggered at', new Date().toISOString());
         
         try {
+          // If we're in offline mode, be more cautious with transitions
+          if (isOffline()) {
+            console.log('In offline mode, showing end of night summary instead of attempting match transition');
+            setShowEndOfNightSummary(true);
+            return;
+          }
+          
           if ((nextMatches.length === 0 || nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`).length <= 1) 
               && !hasTriedRefetchingMatches.current) {
             
@@ -223,6 +231,16 @@ export const ScoreboardContainer = () => {
 
   const handleManualNextMatch = () => {
     try {
+      if (isOffline()) {
+        toast({
+          title: "Offline Mode",
+          description: "Manual match navigation is limited in offline mode.",
+          variant: "default",
+        });
+        setShowEndOfNightSummary(true);
+        return;
+      }
+      
       const nextMatch = findNextMatch(nextMatches);
       if (nextMatch) {
         handleStartNextMatch(nextMatch);
