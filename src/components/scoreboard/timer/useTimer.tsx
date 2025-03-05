@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MatchPhase } from "./types";
 
 interface UseTimerProps {
@@ -22,20 +22,22 @@ export const useTimer = ({
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
+  const phaseTransitionCompleted = useRef<boolean>(false);
+
+  // Define the ordered phases for consistent progression
+  const phases: MatchPhase[] = [
+    "not_started", 
+    "set1", 
+    "break1", 
+    "set2", 
+    "break2", 
+    "set3", 
+    "final_break",
+    "complete"
+  ];
 
   // Phase progression - ensuring ordered flow
   const progressToNextPhase = () => {
-    const phases: MatchPhase[] = [
-      "not_started", 
-      "set1", 
-      "break1", 
-      "set2", 
-      "break2", 
-      "set3", 
-      "final_break",
-      "complete"
-    ];
-    
     const currentIndex = phases.indexOf(matchPhase);
     const nextPhase = phases[currentIndex + 1];
     
@@ -54,15 +56,14 @@ export const useTimer = ({
         setIsRunning(true);
         
         // Call onComplete when transitioning to a new set or break
-        // This ensures consistent behavior with the skip function
-        if (nextPhase.startsWith('set') || nextPhase.includes('break')) {
-          if (currentIndex > 0) { // Don't call for the initial transition to set1
-            onComplete();
-          }
+        if (currentIndex > 0) { // Don't call for the initial transition to set1
+          onComplete();
         }
       }
       
       setMatchPhase(nextPhase);
+      // Reset the transition flag
+      phaseTransitionCompleted.current = false;
     }
   };
 
@@ -84,7 +85,9 @@ export const useTimer = ({
         setTimeLeft(prev => {
           if (prev <= 1) {
             if (interval) clearInterval(interval);
-            progressToNextPhase();
+            
+            // Instead of directly calling progressToNextPhase,
+            // set the time to 0 to let the phase transition effect handle it
             return 0;
           }
           return prev - 1;
@@ -99,27 +102,36 @@ export const useTimer = ({
     };
   }, [isRunning, timeLeft, isMatchComplete]);
 
-  // Enhanced handling for end of sets to enforce proper phase flow
+  // Phase transition logic - unified approach for all phase transitions
   useEffect(() => {
-    if (timeLeft === 0 && matchPhase.includes('set')) {
-      const currentSetNumber = parseInt(matchPhase.charAt(3));
+    // Only trigger the transition if the timer has reached 0 and we haven't already processed
+    // a transition for this phase
+    if (timeLeft === 0 && isRunning && !phaseTransitionCompleted.current) {
+      phaseTransitionCompleted.current = true;
+      console.log(`Timer reached 0 for phase ${matchPhase}, transitioning to next phase`);
       
-      if (currentSetNumber === 3) {
-        console.log('Set 3 ended, ensuring transition to final_break');
-        setMatchPhase('final_break');
-        setTimeLeft(60); // 60 seconds for final break
-        setIsRunning(true);
-        onComplete();
-      } else if (currentSetNumber >= 1 && currentSetNumber <= 2) {
-        const nextPhase = `break${currentSetNumber}` as MatchPhase;
-        console.log(`Set ${currentSetNumber} ended, moving to ${nextPhase}`);
+      const currentIndex = phases.indexOf(matchPhase);
+      const nextPhase = phases[currentIndex + 1];
+      
+      // Safety check to make sure we have a valid next phase
+      if (nextPhase) {
+        console.log(`Auto-transitioning from ${matchPhase} to ${nextPhase}`);
+        
+        if (nextPhase === 'complete') {
+          setIsRunning(false);
+          onComplete();
+        } else {
+          // Set appropriate time for different phases
+          const phaseTime = nextPhase.includes('break') ? 60 : initialMinutes * 60;
+          setTimeLeft(phaseTime);
+          setIsRunning(true);
+          onComplete();
+        }
+        
         setMatchPhase(nextPhase);
-        setTimeLeft(60); // Set all breaks to 60 seconds
-        setIsRunning(true);
-        onComplete();
       }
     }
-  }, [timeLeft, matchPhase, onComplete]);
+  }, [timeLeft, isRunning, matchPhase, onComplete, initialMinutes]);
 
   const handleStartStop = () => {
     if (matchPhase === "not_started") {
@@ -137,54 +149,31 @@ export const useTimer = ({
     }
   };
 
-  // Modified handleSkipPhase to enforce phase progression
+  // Enforce strict phase-by-phase progression
   const handleSkipPhase = () => {
-    const phases: MatchPhase[] = [
-      "not_started", 
-      "set1", 
-      "break1", 
-      "set2", 
-      "break2", 
-      "set3", 
-      "final_break",
-      "complete"
-    ];
-    
     const currentIndex = phases.indexOf(matchPhase);
     const nextPhase = phases[currentIndex + 1];
     
-    // Ensure we never skip the final_break phase
-    if (matchPhase === "set3") {
-      console.log('Skipping from set3 to final_break');
-      setMatchPhase("final_break");
-      setTimeLeft(60); // 60 seconds for final break
+    if (!nextPhase) return; // Safety check
+    
+    console.log(`Skipping from ${matchPhase} to ${nextPhase}`);
+    
+    // Handle all phase transitions consistently 
+    if (nextPhase === 'complete') {
+      setMatchPhase(nextPhase);
+      setIsRunning(false);
+      onComplete();
+    } else {
+      // All other phases - set appropriate time and transition
+      const phaseTime = nextPhase.includes('break') ? 60 : initialMinutes * 60;
+      setTimeLeft(phaseTime);
+      setMatchPhase(nextPhase);
       setIsRunning(true);
       onComplete();
     }
-    // Ensure correct progression from final_break to complete
-    else if (matchPhase === "final_break") {
-      console.log('Skipping from final_break to complete');
-      setMatchPhase("complete");
-      setIsRunning(false);
-      onComplete();
-    }
-    // Normal phase transition
-    else if (nextPhase) {
-      console.log(`Skipping from ${matchPhase} to ${nextPhase}`);
-      
-      if (nextPhase === 'complete') {
-        setMatchPhase("complete");
-        setIsRunning(false);
-        onComplete();
-      } else {
-        // Skip to the next phase with appropriate time
-        const phaseTime = nextPhase.includes('break') ? 60 : initialMinutes * 60;
-        setTimeLeft(phaseTime);
-        setMatchPhase(nextPhase);
-        setIsRunning(true);
-        onComplete();
-      }
-    }
+    
+    // Reset the transition flag for the new phase
+    phaseTransitionCompleted.current = false;
   };
 
   return {
