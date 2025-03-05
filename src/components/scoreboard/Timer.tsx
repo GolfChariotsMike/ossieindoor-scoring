@@ -45,11 +45,12 @@ export const Timer = ({
     handleStartStop,
     handleReset,
     handleSkipPhase,
-    progressToNextPhase
+    progressToNextPhase,
+    matchPhase
   } = useTimer({
     initialMinutes,
     onComplete: () => {
-      console.log('Timer complete or skipped with fixture:', fixture);
+      console.log('Timer complete or skipped with fixture:', fixture, 'Current phase:', matchPhase);
       // Notify user of phase change
       toast({
         title: isBreak ? "Set starting" : "Break starting",
@@ -68,6 +69,7 @@ export const Timer = ({
   const seconds = timeLeft % 60;
 
   const handleSkip = () => {
+    console.log('Manually skipping phase:', matchPhase);
     handleSkipPhase();
     toast({
       title: "Phase skipped",
@@ -107,6 +109,21 @@ export const Timer = ({
     setIsLongPress(false);
   };
 
+  // Debug indicator for current phase - can be removed in production
+  const getPhaseLabel = () => {
+    switch(matchPhase) {
+      case "not_started": return "Not Started";
+      case "set1": return "Set 1";
+      case "break1": return "Break 1";
+      case "set2": return "Set 2";
+      case "break2": return "Break 2";
+      case "set3": return "Set 3";
+      case "final_break": return "Final Break";
+      case "complete": return "Complete";
+      default: return matchPhase;
+    }
+  };
+
   return (
     <div className="text-center relative">
       <div className="absolute top-0 right-0">
@@ -142,6 +159,11 @@ export const Timer = ({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      </div>
+      
+      {/* Phase indicator for debugging */}
+      <div className="text-xs text-white absolute top-0 left-0 bg-black/50 px-2 py-1 rounded">
+        {getPhaseLabel()}
       </div>
       
       <TimerDisplay 

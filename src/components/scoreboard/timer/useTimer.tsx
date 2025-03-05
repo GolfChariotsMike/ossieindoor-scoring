@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { MatchPhase } from "./types";
 
@@ -23,6 +22,7 @@ export const useTimer = ({
   const [isRunning, setIsRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
   const phaseTransitionCompleted = useRef<boolean>(false);
+  const currentPhaseTimeRef = useRef<number | null>(null);
 
   // Define the ordered phases for consistent progression
   const phases: MatchPhase[] = [
@@ -35,6 +35,14 @@ export const useTimer = ({
     "final_break",
     "complete"
   ];
+
+  // Get the appropriate time for a phase
+  const getPhaseTime = (phase: MatchPhase): number => {
+    if (phase.includes('break')) {
+      return 60; // 60 seconds for breaks
+    }
+    return initialMinutes * 60; // Regular time for sets
+  };
 
   // Phase progression - ensuring ordered flow
   const progressToNextPhase = () => {
@@ -49,10 +57,10 @@ export const useTimer = ({
         onComplete();
       } else {
         // Set appropriate time for different phases
-        const phaseTime = nextPhase.includes('break') ? 60 : // 60 seconds for all breaks
-                         initialMinutes * 60; // Regular set time
+        const phaseTime = getPhaseTime(nextPhase);
         
         setTimeLeft(phaseTime);
+        currentPhaseTimeRef.current = phaseTime;
         setIsRunning(true);
         
         // Call onComplete when transitioning to a new set or break
@@ -72,6 +80,7 @@ export const useTimer = ({
     if (fixture?.Id) {
       setMatchPhase("set1");
       setTimeLeft(initialMinutes * 60);
+      currentPhaseTimeRef.current = initialMinutes * 60;
       setIsRunning(true);
     }
   }, [fixture?.Id, initialMinutes]);
@@ -85,9 +94,6 @@ export const useTimer = ({
         setTimeLeft(prev => {
           if (prev <= 1) {
             if (interval) clearInterval(interval);
-            
-            // Instead of directly calling progressToNextPhase,
-            // set the time to 0 to let the phase transition effect handle it
             return 0;
           }
           return prev - 1;
@@ -102,18 +108,17 @@ export const useTimer = ({
     };
   }, [isRunning, timeLeft, isMatchComplete]);
 
-  // Phase transition logic - unified approach for all phase transitions
+  // Phase transition logic - triggered ONLY when timer reaches 0
   useEffect(() => {
-    // Only trigger the transition if the timer has reached 0 and we haven't already processed
+    // Only trigger the transition if the timer has reached 0, is running, and we haven't already processed
     // a transition for this phase
     if (timeLeft === 0 && isRunning && !phaseTransitionCompleted.current) {
-      phaseTransitionCompleted.current = true;
-      console.log(`Timer reached 0 for phase ${matchPhase}, transitioning to next phase`);
+      console.log(`Timer reached 0 for phase ${matchPhase}, handling phase transition`);
+      phaseTransitionCompleted.current = true; // Prevent double transitions
       
       const currentIndex = phases.indexOf(matchPhase);
       const nextPhase = phases[currentIndex + 1];
       
-      // Safety check to make sure we have a valid next phase
       if (nextPhase) {
         console.log(`Auto-transitioning from ${matchPhase} to ${nextPhase}`);
         
@@ -122,10 +127,15 @@ export const useTimer = ({
           onComplete();
         } else {
           // Set appropriate time for different phases
-          const phaseTime = nextPhase.includes('break') ? 60 : initialMinutes * 60;
+          const phaseTime = getPhaseTime(nextPhase);
           setTimeLeft(phaseTime);
-          setIsRunning(true);
+          currentPhaseTimeRef.current = phaseTime;
+          
+          // Call onComplete for phase transition events
           onComplete();
+          
+          // Keep timer running for the next phase
+          setIsRunning(true);
         }
         
         setMatchPhase(nextPhase);
@@ -136,6 +146,8 @@ export const useTimer = ({
   const handleStartStop = () => {
     if (matchPhase === "not_started") {
       setMatchPhase("set1");
+      setTimeLeft(initialMinutes * 60);
+      currentPhaseTimeRef.current = initialMinutes * 60;
       setIsRunning(true);
     } else if (!isMatchComplete) {
       setIsRunning(!isRunning);
@@ -144,13 +156,17 @@ export const useTimer = ({
 
   const handleReset = () => {
     if (!isMatchComplete) {
-      setTimeLeft(initialMinutes * 60);
+      // Reset to the current phase's original time
+      const phaseTime = currentPhaseTimeRef.current || getPhaseTime(matchPhase);
+      setTimeLeft(phaseTime);
       setIsRunning(false);
     }
   };
 
   // Enforce strict phase-by-phase progression
   const handleSkipPhase = () => {
+    if (isMatchComplete) return;
+    
     const currentIndex = phases.indexOf(matchPhase);
     const nextPhase = phases[currentIndex + 1];
     
@@ -158,17 +174,23 @@ export const useTimer = ({
     
     console.log(`Skipping from ${matchPhase} to ${nextPhase}`);
     
-    // Handle all phase transitions consistently 
+    // For all phases, ensure we're moving to the NEXT phase only
     if (nextPhase === 'complete') {
       setMatchPhase(nextPhase);
       setIsRunning(false);
       onComplete();
     } else {
-      // All other phases - set appropriate time and transition
-      const phaseTime = nextPhase.includes('break') ? 60 : initialMinutes * 60;
+      // This is critical - we need to display each phase for the right amount of time
+      const phaseTime = getPhaseTime(nextPhase);
       setTimeLeft(phaseTime);
+      currentPhaseTimeRef.current = phaseTime;
+      
       setMatchPhase(nextPhase);
+      
+      // Start the timer for this phase - especially important for breaks
       setIsRunning(true);
+      
+      // Notify of phase transition
       onComplete();
     }
     
