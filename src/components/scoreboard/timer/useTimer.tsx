@@ -31,7 +31,7 @@ export const useTimer = ({
       "break1", 
       "set2", 
       "break2", 
-      "set3",
+      "set3", 
       "final_break",
       "complete"
     ];
@@ -99,12 +99,17 @@ export const useTimer = ({
     };
   }, [isRunning, timeLeft, isMatchComplete]);
 
-  // Handle breaks
+  // Handle end of sets and ensure final break is shown
   useEffect(() => {
     if (isBreak && matchPhase.includes('set') && timeLeft === 0) {
+      // Get the set number from the current phase (e.g., "set3" -> 3)
       const currentSetNumber = parseInt(matchPhase.charAt(3));
+      
       if (currentSetNumber >= 1 && currentSetNumber <= 3) {
+        // Determine next phase: If set3, go to final_break; otherwise, break1 or break2
         const nextPhase = currentSetNumber === 3 ? 'final_break' : `break${currentSetNumber}`;
+        console.log(`Set ${currentSetNumber} ended, moving to ${nextPhase}`);
+        
         setMatchPhase(nextPhase as MatchPhase);
         setTimeLeft(60); // Set all breaks to 60 seconds
         setIsRunning(true);
