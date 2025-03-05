@@ -1,4 +1,3 @@
-
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,7 @@ export const Timer = ({
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 5000; // 5 seconds
-  const onCompleteRef = useRef<() => void>(onComplete);
+  const onCompleteRef = useRef(onComplete);
 
   // Update ref when onComplete changes
   useEffect(() => {
@@ -139,7 +138,6 @@ export const Timer = ({
     setIsLongPress(false);
   };
 
-  // Debug indicator for current phase - can be removed in production
   const getPhaseLabel = () => {
     switch(matchPhase) {
       case "not_started": return "Not Started";
@@ -154,7 +152,6 @@ export const Timer = ({
     }
   };
 
-  // Display notification about special phases
   const getPhaseDescription = () => {
     if (matchPhase === "final_break") {
       return "Final 1-minute break";
@@ -201,12 +198,10 @@ export const Timer = ({
         </AlertDialog>
       </div>
       
-      {/* Phase indicator for debugging */}
       <div className="text-xs text-white absolute top-0 left-0 bg-black/50 px-2 py-1 rounded">
         {getPhaseLabel()}
       </div>
       
-      {/* Phase description (for final break) */}
       {phaseDescription && (
         <div className="text-sm text-white absolute top-7 left-0 bg-black/50 px-2 py-1 rounded animate-pulse">
           {phaseDescription}
