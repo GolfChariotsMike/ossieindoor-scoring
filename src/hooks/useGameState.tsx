@@ -47,6 +47,16 @@ export const useGameState = () => {
     setHasGameStarted(true);
   }, [isMatchComplete]);
 
+  // Switch teams (e.g., after a set)
+  const handleSwitchTeams = useCallback(() => {
+    if (isMatchComplete) return;
+    setIsTeamsSwitched(!isTeamsSwitched);
+    setCurrentScore((prev) => ({
+      home: prev.away,
+      away: prev.home
+    }));
+  }, [isMatchComplete, isTeamsSwitched]);
+
   // Handle timer completion (end of set or break)
   const handleTimerComplete = useCallback((matchId?: string, match?: Match) => {
     if (isBreak) {
@@ -132,17 +142,7 @@ export const useGameState = () => {
         });
       }
     }
-  }, [isBreak, currentScore, setScores, isTeamsSwitched, isMatchComplete, finalBreakActive, handleSwitchTeams]);
-
-  // Switch teams (e.g., after a set)
-  const handleSwitchTeams = useCallback(() => {
-    if (isMatchComplete) return;
-    setIsTeamsSwitched(!isTeamsSwitched);
-    setCurrentScore((prev) => ({
-      home: prev.away,
-      away: prev.home
-    }));
-  }, [isMatchComplete, isTeamsSwitched]);
+  }, [isBreak, currentScore, setScores, isTeamsSwitched, isMatchComplete, finalBreakActive, handleSwitchTeams, justCompletedSet]);
 
   // Save current match scores to local storage
   const saveScoresLocally = useCallback(async (matchId: string, homeScores: number[], awayScores: number[], match?: Match) => {

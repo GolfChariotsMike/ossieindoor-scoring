@@ -60,7 +60,8 @@ export const ScoreboardContent = ({
       <ResultsScreen
         match={match}
         setScores={gameState.setScores}
-        onManualNextMatch={onManualNextMatch}
+        isTeamsSwitched={gameState.isTeamsSwitched}
+        onStartNextMatch={onManualNextMatch}
         onEndOfNight={onEndOfNight}
       />
     );
@@ -98,6 +99,7 @@ export const ScoreboardContent = ({
           isBreak={gameState.isBreak}
           isMatchComplete={gameState.isMatchComplete}
           fixture={fixture}
+          onSwitchTeams={gameState.handleSwitchTeams}
         />
 
         <ExitConfirmationDialog
