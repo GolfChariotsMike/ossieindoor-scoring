@@ -47,8 +47,14 @@ export const useTimer = ({
         onComplete();
       } else {
         // Set appropriate time for different phases
-        const phaseTime = nextPhase.includes('break') ? 60 : // 60 seconds for all breaks
-                         initialMinutes * 60; // Regular set time
+        let phaseTime;
+        if (nextPhase.includes('break')) {
+          phaseTime = 60; // 60 seconds for all breaks
+          console.log(`Setting break time to ${phaseTime} seconds for phase ${nextPhase}`);
+        } else {
+          phaseTime = initialMinutes * 60; // Regular set time
+          console.log(`Setting set time to ${phaseTime} seconds for phase ${nextPhase}`);
+        }
         
         setTimeLeft(phaseTime);
         setIsRunning(true);
@@ -80,16 +86,22 @@ export const useTimer = ({
     let interval: NodeJS.Timeout | null = null;
 
     if (isRunning && timeLeft > 0 && !isMatchComplete) {
+      console.log(`Timer running with ${timeLeft} seconds left in phase ${matchPhase}`);
       interval = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
             if (interval) clearInterval(interval);
+            console.log(`Timer reached zero for phase ${matchPhase}`);
             progressToNextPhase();
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
+    } else if (isRunning && timeLeft === 0 && !isMatchComplete) {
+      // Fix for timer getting stuck at 00:00 - force progression if timer is running but at zero
+      console.log(`Timer is at zero but still running in phase ${matchPhase}, forcing progression`);
+      progressToNextPhase();
     }
 
     return () => {
@@ -97,23 +109,10 @@ export const useTimer = ({
         clearInterval(interval);
       }
     };
-  }, [isRunning, timeLeft, isMatchComplete]);
+  }, [isRunning, timeLeft, isMatchComplete, matchPhase]);
 
-  // Handle breaks
-  useEffect(() => {
-    if (isBreak && matchPhase.includes('set') && timeLeft === 0) {
-      const currentSetNumber = parseInt(matchPhase.charAt(3));
-      if (currentSetNumber >= 1 && currentSetNumber <= 3) {
-        const nextPhase = currentSetNumber === 3 ? 'final_break' : `break${currentSetNumber}`;
-        setMatchPhase(nextPhase as MatchPhase);
-        setTimeLeft(60); // Set all breaks to 60 seconds
-        setIsRunning(true);
-        
-        // Ensure onComplete is called here too, for consistency with skip function
-        onComplete();
-      }
-    }
-  }, [isBreak, matchPhase, timeLeft, onComplete]);
+  // Modified - Removed the isBreak useEffect that was potentially causing issues
+  // Now phase progression is handled entirely by the timer logic and progressToNextPhase function
 
   const handleStartStop = () => {
     if (matchPhase === "not_started") {
