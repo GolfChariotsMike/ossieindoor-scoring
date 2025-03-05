@@ -2,7 +2,7 @@ import { Match, SetScores } from "@/types/volleyball";
 import { Fireworks } from "./Fireworks";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Flag } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,11 +25,8 @@ interface ResultsScreenProps {
 export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch, onEndOfNight }: ResultsScreenProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [endOfNightDialogOpen, setEndOfNightDialogOpen] = useState(false);
-  const [isLongPress, setIsLongPress] = useState(false);
-  const [countdown, setCountdown] = useState<string>("");
   const [scoresSaved, setScoresSaved] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout>();
-  const longPressDelay = 5000; // 5 seconds
+  const [countdown, setCountdown] = useState<string>("");
 
   const RESULTS_DISPLAY_DURATION = 50; // 50 seconds - MUST match ScoreboardContainer
 
@@ -80,39 +77,8 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
     return "It's a Draw!";
   };
 
-  const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    console.log('Touch start');
-    timerRef.current = setTimeout(() => {
-      console.log('Long press detected');
-      setIsLongPress(true);
-      setDialogOpen(true);
-    }, longPressDelay);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    console.log('Touch end, isLongPress:', isLongPress);
-    
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    
-    setIsLongPress(false);
-  };
-
-  const handleTouchCancel = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    console.log('Touch cancelled');
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    setIsLongPress(false);
-  };
-
   const handleStartNext = () => {
     if (onStartNextMatch) {
-      // Mark that scores are saved for this match
       setScoresSaved(true);
       onStartNextMatch();
       setDialogOpen(false);
@@ -200,15 +166,9 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
                 onClick={(e) => {
                   e.stopPropagation();
                   console.log('Next match button clicked');
+                  setDialogOpen(true);
                 }}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-                onTouchCancel={handleTouchCancel}
-                onMouseDown={handleTouchStart}
-                onMouseUp={handleTouchEnd}
-                onMouseLeave={handleTouchCancel}
-                className={`bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale
-                  ${isLongPress ? 'bg-volleyball-red/70' : 'bg-volleyball-red'}`}
+                className="bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale"
               >
                 <ArrowRight className="w-8 h-8 mr-3" />
                 Start Next Match
