@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { MatchPhase } from "./types";
 
 interface UseTimerProps {
@@ -22,8 +22,6 @@ export const useTimer = ({
   const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
-  const [phaseTransitioning, setPhaseTransitioning] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Phase progression
   const progressToNextPhase = () => {
@@ -35,7 +33,6 @@ export const useTimer = ({
       "break2", 
       "set3",
       "final_break",
-      "results_display",
       "complete"
     ];
     
@@ -54,9 +51,6 @@ export const useTimer = ({
         if (nextPhase.includes('break')) {
           phaseTime = 60; // 60 seconds for all breaks
           console.log(`Setting break time to ${phaseTime} seconds for phase ${nextPhase}`);
-        } else if (nextPhase === 'results_display') {
-          phaseTime = 50; // 50 seconds for results display
-          console.log(`Setting results display time to ${phaseTime} seconds`);
         } else {
           phaseTime = initialMinutes * 60; // Regular set time
           console.log(`Setting set time to ${phaseTime} seconds for phase ${nextPhase}`);
@@ -67,7 +61,7 @@ export const useTimer = ({
         
         // Call onComplete when transitioning to a new set or break
         // This ensures consistent behavior with the skip function
-        if (nextPhase.startsWith('set') || nextPhase.includes('break') || nextPhase === 'results_display') {
+        if (nextPhase.startsWith('set') || nextPhase.includes('break')) {
           if (currentIndex > 0) { // Don't call for the initial transition to set1
             onComplete();
           }
@@ -76,9 +70,6 @@ export const useTimer = ({
       
       setMatchPhase(nextPhase);
     }
-    
-    // Reset phase transition flag
-    setPhaseTransitioning(false);
   };
 
   // Handle fixture
@@ -87,66 +78,41 @@ export const useTimer = ({
       setMatchPhase("set1");
       setTimeLeft(initialMinutes * 60);
       setIsRunning(true);
-      setPhaseTransitioning(false);
     }
   }, [fixture?.Id, initialMinutes]);
 
-  // Timer logic - updated to be more synchronous and handle transitions like skip phase
+  // Timer logic
   useEffect(() => {
-    // Clean up any existing interval to avoid duplicates
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    let interval: NodeJS.Timeout | null = null;
 
-    if (isRunning && timeLeft > 0 && !isMatchComplete && !phaseTransitioning) {
+    if (isRunning && timeLeft > 0 && !isMatchComplete) {
       console.log(`Timer running with ${timeLeft} seconds left in phase ${matchPhase}`);
-      
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(prevTime => {
-          // When timer reaches 1 second or less
-          if (prevTime <= 1) {
-            console.log(`Timer expiring for phase ${matchPhase}`);
-            
-            // Clear interval immediately
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current);
-              intervalRef.current = null;
-            }
-            
-            // If we're not already transitioning
-            if (!phaseTransitioning) {
-              setPhaseTransitioning(true);
-              // Use setTimeout to ensure state updates have propagated
-              setTimeout(() => {
-                setIsRunning(false);
-                progressToNextPhase();
-              }, 0);
-            }
-            
+      interval = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            if (interval) clearInterval(interval);
+            console.log(`Timer reached zero for phase ${matchPhase}`);
+            progressToNextPhase();
             return 0;
           }
-          return prevTime - 1;
+          return prev - 1;
         });
       }, 1000);
-    } 
-    // Handle case where timer is at zero but still running
-    else if (isRunning && timeLeft === 0 && !isMatchComplete && !phaseTransitioning) {
+    } else if (isRunning && timeLeft === 0 && !isMatchComplete) {
+      // Fix for timer getting stuck at 00:00 - force progression if timer is running but at zero
       console.log(`Timer is at zero but still running in phase ${matchPhase}, forcing progression`);
-      setPhaseTransitioning(true);
-      setIsRunning(false);
-      setTimeout(() => {
-        progressToNextPhase();
-      }, 0);
+      progressToNextPhase();
     }
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      if (interval) {
+        clearInterval(interval);
       }
     };
-  }, [isRunning, timeLeft, isMatchComplete, matchPhase, phaseTransitioning]);
+  }, [isRunning, timeLeft, isMatchComplete, matchPhase]);
+
+  // Modified - Removed the isBreak useEffect that was potentially causing issues
+  // Now phase progression is handled entirely by the timer logic and progressToNextPhase function
 
   const handleStartStop = () => {
     if (matchPhase === "not_started") {
@@ -165,19 +131,7 @@ export const useTimer = ({
   };
 
   const handleSkipPhase = () => {
-    if (phaseTransitioning) return;
-    
-    setPhaseTransitioning(true);
-    console.log(`Manually skipping phase ${matchPhase}`);
-    
-    // Clear any existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    
     setTimeLeft(0);
-    setIsRunning(false);
     progressToNextPhase();
   };
 

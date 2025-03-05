@@ -1,3 +1,4 @@
+
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 import { Button } from "@/components/ui/button";
@@ -44,20 +45,17 @@ export const Timer = ({
     handleStartStop,
     handleReset,
     handleSkipPhase,
-    progressToNextPhase,
-    matchPhase
+    progressToNextPhase
   } = useTimer({
     initialMinutes,
     onComplete: () => {
       console.log('Timer complete or skipped with fixture:', fixture);
       // Notify user of phase change
-      if (matchPhase !== "complete" && matchPhase !== "results_display") {
-        toast({
-          title: isBreak ? "Set starting" : "Break starting",
-          description: isBreak ? "Set timer has started" : "Break timer has started",
-          duration: 3000,
-        });
-      }
+      toast({
+        title: isBreak ? "Set starting" : "Break starting",
+        description: isBreak ? "Set timer has started" : "Break timer has started",
+        duration: 3000,
+      });
       onComplete();
     },
     onSwitchTeams,
