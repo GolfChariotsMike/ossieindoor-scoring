@@ -146,8 +146,16 @@ export const useTimer = ({
       setIsRunning(true);
       onComplete();
     } else {
-      setTimeLeft(0);
-      progressToNextPhase();
+      // For final_break phase, ensure we go to complete, not results directly
+      if (matchPhase === "final_break") {
+        console.log('Skipping from final_break to complete');
+        setMatchPhase("complete");
+        setIsRunning(false);
+        onComplete();
+      } else {
+        setTimeLeft(0);
+        progressToNextPhase();
+      }
     }
   };
 
