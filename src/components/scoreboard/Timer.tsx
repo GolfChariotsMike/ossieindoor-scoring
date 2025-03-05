@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useTimer } from "./timer/useTimer";
 import { Fixture } from "@/types/volleyball";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +42,7 @@ export const Timer = ({
   const onCompleteRef = useRef<() => void>(onComplete);
 
   // Update ref when onComplete changes
-  useRef(() => {
+  useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
