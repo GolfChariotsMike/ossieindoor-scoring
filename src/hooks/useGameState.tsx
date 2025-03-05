@@ -11,6 +11,7 @@ export const useGameState = () => {
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
+  const [finalBreakActive, setFinalBreakActive] = useState(false);
 
   // Initialize game state with match data
   const initializeGameState = useCallback((match: Match) => {
@@ -29,6 +30,7 @@ export const useGameState = () => {
     setIsTeamsSwitched(false);
     setIsMatchComplete(false);
     setHasGameStarted(false);
+    setFinalBreakActive(false);
   }, []);
 
   // Handle score update
@@ -48,6 +50,19 @@ export const useGameState = () => {
     if (isBreak) {
       // End of break
       setIsBreak(false);
+      
+      // If this was the final break, now we can mark the match as complete
+      if (finalBreakActive) {
+        console.log("Final break timer completed - now marking match as complete");
+        setIsMatchComplete(true);
+        setFinalBreakActive(false);
+        toast({
+          title: "Match Complete",
+          description: "The match has ended",
+        });
+        return;
+      }
+      
       setCurrentScore({ home: 0, away: 0 });
       handleSwitchTeams();
       
@@ -74,13 +89,16 @@ export const useGameState = () => {
       setSetScores(newSetScores);
       setIsBreak(true);
       
-      // Determine if match is complete after this set
-      const isComplete = newSetScores.home.length >= 3;
-      if (isComplete) {
-        setIsMatchComplete(true);
+      // Determine if we should enter the final break after this set
+      const isFinalSet = newSetScores.home.length >= 3;
+      
+      if (isFinalSet) {
+        // If this is the final set, enter final break phase
+        console.log("Entering final break phase");
+        setFinalBreakActive(true);
         toast({
-          title: "Match Complete",
-          description: "The match has ended",
+          title: "Set Complete",
+          description: "Starting 1 minute final break",
         });
       } else {
         toast({
@@ -89,7 +107,7 @@ export const useGameState = () => {
         });
       }
     }
-  }, [isBreak, currentScore, setScores, isTeamsSwitched, isMatchComplete]);
+  }, [isBreak, currentScore, setScores, isTeamsSwitched, isMatchComplete, finalBreakActive]);
 
   // Switch teams (e.g., after a set)
   const handleSwitchTeams = useCallback(() => {
@@ -143,6 +161,7 @@ export const useGameState = () => {
     isTeamsSwitched,
     isMatchComplete,
     hasGameStarted,
+    finalBreakActive,
     handleScoreUpdate,
     handleTimerComplete,
     handleSwitchTeams,

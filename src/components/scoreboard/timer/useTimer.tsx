@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { MatchPhase } from "./types";
 
@@ -24,6 +25,7 @@ export const useTimer = ({
   const phaseTransitionCompleted = useRef<boolean>(false);
   const currentPhaseTimeRef = useRef<number | null>(null);
   const hasCalledOnComplete = useRef<boolean>(false);
+  const finalBreakCompleted = useRef<boolean>(false);
 
   // Define the ordered phases for consistent progression
   const phases: MatchPhase[] = [
@@ -48,6 +50,12 @@ export const useTimer = ({
   // Reset completion flag when phase changes
   useEffect(() => {
     hasCalledOnComplete.current = false;
+    
+    // If we're entering the final break, mark that we've not completed it yet
+    if (matchPhase === "final_break") {
+      finalBreakCompleted.current = false;
+      console.log("Entered final break phase - NOT marking match as complete yet");
+    }
   }, [matchPhase]);
 
   // Phase progression - ensuring ordered flow
@@ -97,6 +105,7 @@ export const useTimer = ({
       currentPhaseTimeRef.current = initialMinutes * 60;
       setIsRunning(true);
       hasCalledOnComplete.current = false;
+      finalBreakCompleted.current = false;
     }
   }, [fixture?.Id, initialMinutes]);
 
@@ -131,13 +140,14 @@ export const useTimer = ({
       console.log(`Timer reached 0 for phase ${matchPhase}, handling phase transition`);
       phaseTransitionCompleted.current = true; // Prevent double transitions
       
-      // After final_break, we don't want to auto-transition
+      // For final_break, mark it as completed and then transition to complete
       if (matchPhase === "final_break") {
-        console.log("Final break completed - ending match");
+        console.log("Final break completed - transitioning to match completion");
+        finalBreakCompleted.current = true;
         setIsRunning(false);
         setMatchPhase("complete");
         if (!hasCalledOnComplete.current) {
-          console.log('Calling onComplete after final break');
+          console.log('Calling onComplete after final break completion');
           hasCalledOnComplete.current = true;
           onComplete();
         }
@@ -220,6 +230,7 @@ export const useTimer = ({
       currentPhaseTimeRef.current = phaseTime;
       setMatchPhase(nextPhase);
       setIsRunning(true);
+      finalBreakCompleted.current = false;
       
       // Only notify of phase transition if we haven't already
       if (!hasCalledOnComplete.current) {
@@ -231,6 +242,7 @@ export const useTimer = ({
     // If we're in final_break and skipping to complete
     else if (matchPhase === "final_break" && nextPhase === "complete") {
       console.log("Final break skipped - ending match");
+      finalBreakCompleted.current = true;
       setMatchPhase(nextPhase);
       setIsRunning(false);
       
@@ -282,6 +294,7 @@ export const useTimer = ({
     handleStartStop,
     handleReset,
     handleSkipPhase,
-    progressToNextPhase
+    progressToNextPhase,
+    isFinalBreakCompleted: finalBreakCompleted.current
   };
 };

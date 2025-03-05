@@ -41,12 +41,15 @@ export const ScoreboardContent = ({
     return <LoadingSpinner />;
   }
 
+  // Only show the results screen if match is complete and we're not in final break
+  const showResultsScreen = gameState.isMatchComplete && !gameState.finalBreakActive;
+
   return (
-    <div className={`min-h-screen ${gameState.isMatchComplete ? 'bg-white' : 'bg-volleyball-red'}`}>
+    <div className={`min-h-screen ${showResultsScreen ? 'bg-white' : 'bg-volleyball-red'}`}>
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
         <BackButton onClick={onBack} />
         
-        {gameState.isMatchComplete && (
+        {showResultsScreen && (
           <div className="absolute top-6 right-6 z-10">
             <Button
               variant="outline"
@@ -61,7 +64,7 @@ export const ScoreboardContent = ({
         )}
 
         <div className="flex flex-col justify-between h-full">
-          {gameState.isMatchComplete ? (
+          {showResultsScreen ? (
             <ResultsScreen
               match={match}
               setScores={gameState.setScores}

@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -105,8 +104,8 @@ export const ScoreboardContainer = () => {
   }, [fixture?.Id, gameState.resetGameState]);
 
   useEffect(() => {
-    if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
-      console.log('Match complete, preparing for results screen');
+    if (gameState.isMatchComplete && !gameState.finalBreakActive && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
+      console.log('Match complete (after final break), preparing for results screen');
       isTransitioningToResults.current = true;
 
       setTimeout(() => {
@@ -125,7 +124,7 @@ export const ScoreboardContainer = () => {
           });
       }, 100);
     }
-  }, [gameState.isMatchComplete, match, gameState.setScores, gameState.hasGameStarted]);
+  }, [gameState.isMatchComplete, gameState.finalBreakActive, match, gameState.setScores, gameState.hasGameStarted]);
 
   useEffect(() => {
     if (resultsDisplayStartTime) {

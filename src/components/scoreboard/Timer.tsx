@@ -52,13 +52,14 @@ export const Timer = ({
     handleReset,
     handleSkipPhase,
     progressToNextPhase,
-    matchPhase
+    matchPhase,
+    isFinalBreakCompleted
   } = useTimer({
     initialMinutes,
     onComplete: () => {
       console.log('Timer complete or skipped with fixture:', fixture, 'Current phase:', matchPhase);
       
-      // Different notifications based on phase
+      // Depending on what phase we're transitioning from, show different notifications
       if (matchPhase === "set3") {
         toast({
           title: "Final Break Starting",
@@ -85,6 +86,7 @@ export const Timer = ({
         });
       }
       
+      // Call the provided onComplete callback
       onCompleteRef.current();
     },
     onSwitchTeams,
