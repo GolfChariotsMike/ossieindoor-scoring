@@ -1,4 +1,3 @@
-
 import { Score, SetScores, Match } from "@/types/volleyball";
 import { TeamScore } from "./TeamScore";
 import { SetScoresDisplay } from "./SetScoresDisplay";

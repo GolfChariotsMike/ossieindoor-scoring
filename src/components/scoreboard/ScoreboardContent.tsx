@@ -1,19 +1,21 @@
 
 import { Match, Fixture } from "@/types/volleyball";
+import { Timer } from "./Timer";
 import { BackButton } from "./BackButton";
+import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
+import { GameScores } from "./GameScores";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ResultsScreen } from "./ResultsScreen";
-import { ScoreboardControls } from "./ScoreboardControls";
-import { ScoreboardLayout } from "./ScoreboardLayout";
-import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
-import { useGameState } from "@/hooks/useGameState";
+import { Button } from "@/components/ui/button";
+import { FastForward } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ScoreboardContentProps {
-  match: Match | null;
+  match: Match | undefined;
   isLoading: boolean;
-  gameState: ReturnType<typeof useGameState>;
+  gameState: any; // Using any here as the gameState type is complex and internal
   onBack: () => void;
-  onManualNextMatch?: () => void;
+  onManualNextMatch: () => void;
   onEndOfNight?: () => void;
   showExitConfirmation: boolean;
   onExitConfirmationChange: (show: boolean) => void;
@@ -33,74 +35,61 @@ export const ScoreboardContent = ({
   onConfirmExit,
   fixture
 }: ScoreboardContentProps) => {
-  if (isLoading) {
+  const navigate = useNavigate();
+
+  if (isLoading || !match) {
     return <LoadingSpinner />;
   }
 
-  if (!match) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-volleyball-red">
-        <div className="bg-white p-6 rounded-lg shadow-lg max-w-md text-center">
-          <h2 className="text-xl font-bold mb-4">No Match Found</h2>
-          <p className="mb-6">Unable to load match information.</p>
-          <button 
-            onClick={onBack} 
-            className="bg-volleyball-black text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
-          >
-            Back to Menu
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Display results screen after match completion
-  if (gameState.isMatchComplete && !gameState.finalBreakActive) {
-    return (
-      <ResultsScreen
-        match={match}
-        setScores={gameState.setScores}
-        isTeamsSwitched={gameState.isTeamsSwitched}
-        onStartNextMatch={onManualNextMatch}
-        onEndOfNight={onEndOfNight}
-      />
-    );
-  }
-
-  const formattedMatch = {
-    ...match,
-    PlayingAreaName: `Court ${match.court}`,
-    DateTime: match.startTime,
-    HomeTeam: match.homeTeam.name,
-    AwayTeam: match.awayTeam.name,
-    HomeTeamId: match.homeTeam.id,
-    AwayTeamId: match.awayTeam.id,
-    Id: match.id
-  };
-
   return (
-    <div className="min-h-screen bg-volleyball-red">
+    <div className={`min-h-screen ${gameState.isMatchComplete ? 'bg-white' : 'bg-volleyball-red'}`}>
       <div className="max-w-[1920px] mx-auto relative h-screen p-6">
         <BackButton onClick={onBack} />
+        
+        {gameState.isMatchComplete && (
+          <div className="absolute top-6 right-6 z-10">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="bg-volleyball-black text-volleyball-cream hover:bg-volleyball-black/90 border-volleyball-cream"
+            >
+              <FastForward className="w-4 h-4 mr-1" />
+              Return to Courts
+            </Button>
+          </div>
+        )}
 
-        <ScoreboardLayout
-          isBreak={gameState.isBreak}
-          currentScore={gameState.currentScore}
-          setScores={gameState.setScores}
-          match={match}
-          isTeamsSwitched={gameState.isTeamsSwitched}
-          isMatchComplete={gameState.isMatchComplete}
-          onTimerComplete={() => gameState.handleTimerComplete(match.id, match)}
-          onSwitchTeams={gameState.handleSwitchTeams}
-          onScoreUpdate={gameState.handleScoreUpdate}
-        />
+        <div className="flex flex-col justify-between h-full">
+          {gameState.isMatchComplete ? (
+            <ResultsScreen
+              match={match}
+              setScores={gameState.setScores}
+              isTeamsSwitched={gameState.isTeamsSwitched}
+              onStartNextMatch={onManualNextMatch}
+              onEndOfNight={onEndOfNight}
+            />
+          ) : (
+            <>
+              <Timer
+                initialMinutes={14}
+                onComplete={gameState.handleTimerComplete}
+                onSwitchTeams={gameState.handleSwitchTeams}
+                isBreak={gameState.isBreak}
+                isMatchComplete={gameState.isMatchComplete}
+                fixture={fixture}
+              />
 
-        <ScoreboardControls
-          isBreak={gameState.isBreak}
-          isMatchComplete={gameState.isMatchComplete}
-          fixture={fixture}
-          onSwitchTeams={gameState.handleSwitchTeams}
-        />
+              <GameScores
+                currentScore={gameState.currentScore}
+                setScores={gameState.setScores}
+                match={match}
+                isTeamsSwitched={gameState.isTeamsSwitched}
+                onScoreUpdate={gameState.handleScore}
+              />
+            </>
+          )}
+        </div>
 
         <ExitConfirmationDialog
           open={showExitConfirmation}

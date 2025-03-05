@@ -19,8 +19,6 @@ const StandaloneScoreboard = () => {
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
-  const [finalBreakActive, setFinalBreakActive] = useState(false);
-  const [justCompletedSet, setJustCompletedSet] = useState(false);
 
   const startTime = new Date().toISOString();
   const courtNumber = 0;
@@ -54,40 +52,7 @@ const StandaloneScoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // End of break - Now we save the scores that were accumulated during the set
       setIsBreak(false);
-      
-      // ONLY save scores AFTER break if we just completed a set before this break
-      if (justCompletedSet) {
-        try {
-          saveMatchScores(
-            matchCode,
-            setScores.home,
-            setScores.away,
-            false, // Don't immediately submit to Supabase
-            homeTeamName,
-            awayTeamName
-          );
-          console.log('Saved match scores AFTER break:', setScores);
-        } catch (error) {
-          console.error('Error saving match scores after break:', error);
-        }
-        
-        // Reset the flag
-        setJustCompletedSet(false);
-      }
-      
-      // If this was the final break, mark the match as complete
-      if (finalBreakActive) {
-        setIsMatchComplete(true);
-        setFinalBreakActive(false);
-        toast({
-          title: "Match Complete",
-          description: "The match has ended",
-        });
-        return;
-      }
-      
       setCurrentScore({ home: 0, away: 0 });
       handleSwitchTeams();
       
@@ -98,7 +63,6 @@ const StandaloneScoreboard = () => {
         });
       }
     } else {
-      // End of set
       // Only proceed if there are actual scores
       if (currentScore.home === 0 && currentScore.away === 0) {
         return;
@@ -115,16 +79,23 @@ const StandaloneScoreboard = () => {
       setSetScores(newSetScores);
       setIsBreak(true);
       
-      // Set this flag to indicate we just completed a set and will need to save scores AFTER the break
-      setJustCompletedSet(true);
-      console.log('Set completed, will save scores AFTER break:', newSetScores);
+      // Save match scores after each set
+      try {
+        saveMatchScores(
+          matchCode,
+          newSetScores.home,
+          newSetScores.away,
+          false // Don't immediately submit to Supabase
+        );
+      } catch (error) {
+        console.error('Error saving match scores:', error);
+      }
       
-      const isFinalSet = newSetScores.home.length >= 3;
-      if (isFinalSet) {
-        setFinalBreakActive(true);
+      if (newSetScores.home.length >= 3) {
+        setIsMatchComplete(true);
         toast({
-          title: "Set Complete",
-          description: "Starting 1 minute final break",
+          title: "Match Complete",
+          description: "The match has ended",
         });
       } else {
         toast({

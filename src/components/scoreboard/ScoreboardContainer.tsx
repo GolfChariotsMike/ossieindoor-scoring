@@ -1,3 +1,4 @@
+
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -42,7 +43,8 @@ export const ScoreboardContainer = () => {
   const transitionErrorCount = useRef<number>(0);
   const hasTriedRefetchingMatches = useRef<boolean>(false);
 
-  const RESULTS_DISPLAY_DURATION = 50;
+  // Define the results display duration constant to ensure consistency
+  const RESULTS_DISPLAY_DURATION = 50; // 50 seconds for results display
 
   const gameState = useGameState();
   const { data: match, isLoading, error } = useMatchData(courtId!, fixture);
@@ -65,6 +67,7 @@ export const ScoreboardContainer = () => {
         console.log('Fetching matches for date:', format(queryDate, 'yyyy-MM-dd'));
         const result = await fetchMatchData(undefined, queryDate);
         
+        // Log the number of matches found for debugging
         console.log(`Found ${Array.isArray(result) ? result.length : 0} matches for date ${format(queryDate, 'yyyy-MM-dd')}`);
         
         return (Array.isArray(result) ? result : []).map(item => ({
@@ -76,11 +79,14 @@ export const ScoreboardContainer = () => {
         return []; // Return empty array as fallback
       }
     },
+    // Prevent retries in offline mode
     retry: isOffline() ? false : 2,
+    // Increase stale time to reduce unnecessary refetches
     staleTime: 60000,
   });
 
   useEffect(() => {
+    // Log the fixtures we've loaded to help debug matching issues
     if (nextMatches.length > 0) {
       console.log('Available matches for transitions:', nextMatches.length);
       const courtMatches = nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`);
@@ -104,24 +110,13 @@ export const ScoreboardContainer = () => {
   }, [fixture?.Id, gameState.resetGameState]);
 
   useEffect(() => {
-    if (gameState.isMatchComplete && !gameState.finalBreakActive && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
-      console.log('Match complete (after final break), preparing for results screen');
+    if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
+      console.log('Match complete, preparing for results screen');
       isTransitioningToResults.current = true;
 
-      if (gameState.justCompletedSet) {
-        console.log('Saving scores before results screen due to just completed set');
-        gameState.saveScoresLocally(
-          match.id,
-          gameState.setScores.home,
-          gameState.setScores.away,
-          match
-        ).catch(error => {
-          console.error('Error saving final scores:', error);
-        });
-      }
-
+      // Only save scores locally now, not to Supabase
       setTimeout(() => {
-        gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away, match)
+        gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away)
           .catch(error => {
             console.error('Error saving match scores locally:', error);
             toast({
@@ -136,7 +131,7 @@ export const ScoreboardContainer = () => {
           });
       }, 100);
     }
-  }, [gameState.isMatchComplete, gameState.finalBreakActive, match, gameState.setScores, gameState.hasGameStarted, gameState.justCompletedSet, gameState.saveScoresLocally]);
+  }, [gameState.isMatchComplete, match, gameState.setScores, gameState.hasGameStarted]);
 
   useEffect(() => {
     if (resultsDisplayStartTime) {
@@ -150,12 +145,7 @@ export const ScoreboardContainer = () => {
         console.log('Transition timeout triggered at', new Date().toISOString());
         
         try {
-          if (isOffline()) {
-            console.log('In offline mode, showing end of night summary instead of attempting match transition');
-            setShowEndOfNightSummary(true);
-            return;
-          }
-          
+          // If we have no matches or they are few, try to refetch once
           if ((nextMatches.length === 0 || nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`).length <= 1) 
               && !hasTriedRefetchingMatches.current) {
             
@@ -168,6 +158,7 @@ export const ScoreboardContainer = () => {
                 matchCount: result.data?.length || 0
               });
               
+              // After refetching, try to find the next match again
               const nextMatch = findNextMatch(result.data || []);
               
               if (nextMatch) {
@@ -182,7 +173,7 @@ export const ScoreboardContainer = () => {
               setShowEndOfNightSummary(true);
             });
             
-            return;
+            return; // Exit early as we'll handle transition after refetch
           }
           
           const nextMatch = findNextMatch(nextMatches);
@@ -192,6 +183,7 @@ export const ScoreboardContainer = () => {
             handleStartNextMatch(nextMatch);
           } else {
             console.log('No next match found, showing end of night summary');
+            // Log the court matches to help debug why no next match was found
             const courtMatches = nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`);
             console.log(`Court ${courtId} matches:`, courtMatches.map(m => ({
               id: m.Id,
@@ -205,6 +197,7 @@ export const ScoreboardContainer = () => {
           console.error('Error in match transition:', error);
           transitionErrorCount.current += 1;
           
+          // If we've had multiple transition errors, just go to summary
           if (transitionErrorCount.current >= 2) {
             console.log('Multiple transition errors, showing end of night summary');
             setShowEndOfNightSummary(true);
@@ -216,7 +209,7 @@ export const ScoreboardContainer = () => {
             });
           }
         }
-      }, RESULTS_DISPLAY_DURATION * 1000);
+      }, RESULTS_DISPLAY_DURATION * 1000); // Convert seconds to milliseconds
 
       return () => {
         if (transitionTimeoutRef.current) {
@@ -241,16 +234,6 @@ export const ScoreboardContainer = () => {
 
   const handleManualNextMatch = () => {
     try {
-      if (isOffline()) {
-        toast({
-          title: "Offline Mode",
-          description: "Manual match navigation is limited in offline mode.",
-          variant: "default",
-        });
-        setShowEndOfNightSummary(true);
-        return;
-      }
-      
       const nextMatch = findNextMatch(nextMatches);
       if (nextMatch) {
         handleStartNextMatch(nextMatch);

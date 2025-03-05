@@ -1,10 +1,11 @@
+
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useTimer } from "./timer/useTimer";
 import { Fixture } from "@/types/volleyball";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,55 +39,24 @@ export const Timer = ({
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 5000; // 5 seconds
-  const onCompleteRef = useRef(onComplete);
-
-  // Update ref when onComplete changes
-  useEffect(() => {
-    onCompleteRef.current = onComplete;
-  }, [onComplete]);
 
   const {
     timeLeft,
     handleStartStop,
     handleReset,
     handleSkipPhase,
-    progressToNextPhase,
-    matchPhase,
-    isFinalBreakCompleted
+    progressToNextPhase
   } = useTimer({
     initialMinutes,
     onComplete: () => {
-      console.log('Timer complete or skipped with fixture:', fixture, 'Current phase:', matchPhase);
-      
-      // Depending on what phase we're transitioning from, show different notifications
-      if (matchPhase === "set3") {
-        toast({
-          title: "Final Break Starting",
-          description: "1 minute break before match completion",
-          duration: 3000,
-        });
-      } else if (matchPhase === "final_break") {
-        toast({
-          title: "Match Complete",
-          description: "Final break has ended",
-          duration: 3000,
-        });
-      } else if (matchPhase.includes("break")) {
-        toast({
-          title: "Set Starting",
-          description: "Set timer has started",
-          duration: 3000,
-        });
-      } else {
-        toast({
-          title: "Break Starting",
-          description: "Break timer has started",
-          duration: 3000,
-        });
-      }
-      
-      // Call the provided onComplete callback
-      onCompleteRef.current();
+      console.log('Timer complete or skipped with fixture:', fixture);
+      // Notify user of phase change
+      toast({
+        title: isBreak ? "Set starting" : "Break starting",
+        description: isBreak ? "Set timer has started" : "Break timer has started",
+        duration: 3000,
+      });
+      onComplete();
     },
     onSwitchTeams,
     isBreak,
@@ -98,7 +68,6 @@ export const Timer = ({
   const seconds = timeLeft % 60;
 
   const handleSkip = () => {
-    console.log('Manually skipping phase:', matchPhase);
     handleSkipPhase();
     toast({
       title: "Phase skipped",
@@ -138,29 +107,6 @@ export const Timer = ({
     setIsLongPress(false);
   };
 
-  const getPhaseLabel = () => {
-    switch(matchPhase) {
-      case "not_started": return "Not Started";
-      case "set1": return "Set 1";
-      case "break1": return "Break 1";
-      case "set2": return "Set 2";
-      case "break2": return "Break 2";
-      case "set3": return "Set 3";
-      case "final_break": return "Final Break";
-      case "complete": return "Complete";
-      default: return matchPhase;
-    }
-  };
-
-  const getPhaseDescription = () => {
-    if (matchPhase === "final_break") {
-      return "Final 1-minute break";
-    }
-    return "";
-  };
-
-  const phaseDescription = getPhaseDescription();
-
   return (
     <div className="text-center relative">
       <div className="absolute top-0 right-0">
@@ -197,16 +143,6 @@ export const Timer = ({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-      
-      <div className="text-xs text-white absolute top-0 left-0 bg-black/50 px-2 py-1 rounded">
-        {getPhaseLabel()}
-      </div>
-      
-      {phaseDescription && (
-        <div className="text-sm text-white absolute top-7 left-0 bg-black/50 px-2 py-1 rounded animate-pulse">
-          {phaseDescription}
-        </div>
-      )}
       
       <TimerDisplay 
         minutes={minutes}
