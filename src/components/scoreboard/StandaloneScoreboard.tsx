@@ -20,8 +20,7 @@ const StandaloneScoreboard = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [finalBreakActive, setFinalBreakActive] = useState(false);
-  // Track the scores before the break to save them after the break
-  const [pendingSetScores, setPendingSetScores] = useState<SetScores | null>(null);
+  const [justCompletedSet, setJustCompletedSet] = useState(false);
 
   const startTime = new Date().toISOString();
   const courtNumber = 0;
@@ -55,26 +54,27 @@ const StandaloneScoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // End of break - NOW is when we save the scores that were pending
+      // End of break - Now we save the scores that were accumulated during the set
       setIsBreak(false);
       
-      // Save the pending scores if we have them
-      if (pendingSetScores) {
+      // Only save scores if we just completed a set before this break
+      if (justCompletedSet) {
         try {
           saveMatchScores(
             matchCode,
-            pendingSetScores.home,
-            pendingSetScores.away,
+            setScores.home,
+            setScores.away,
             false, // Don't immediately submit to Supabase
             homeTeamName,
             awayTeamName
           );
-          console.log('Saved match scores after break:', pendingSetScores);
+          console.log('Saved match scores after break:', setScores);
         } catch (error) {
           console.error('Error saving match scores after break:', error);
         }
-        // Clear the pending scores
-        setPendingSetScores(null);
+        
+        // Reset the flag
+        setJustCompletedSet(false);
       }
       
       // If this was the final break, mark the match as complete
@@ -115,9 +115,9 @@ const StandaloneScoreboard = () => {
       setSetScores(newSetScores);
       setIsBreak(true);
       
-      // Store the scores to be saved after the break
-      setPendingSetScores(newSetScores);
-      console.log('Set scores pending to save after break:', newSetScores);
+      // Set this flag to indicate we just completed a set and will need to save scores after the break
+      setJustCompletedSet(true);
+      console.log('Set completed, will save scores after break:', newSetScores);
       
       const isFinalSet = newSetScores.home.length >= 3;
       if (isFinalSet) {

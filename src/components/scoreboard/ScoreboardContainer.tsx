@@ -108,15 +108,15 @@ export const ScoreboardContainer = () => {
       console.log('Match complete (after final break), preparing for results screen');
       isTransitioningToResults.current = true;
 
-      if (gameState.pendingSetScores) {
-        console.log('Saving pending scores before results screen:', gameState.pendingSetScores);
+      if (gameState.justCompletedSet) {
+        console.log('Saving scores before results screen due to just completed set');
         gameState.saveScoresLocally(
-          gameState.pendingSetScores.matchId,
-          gameState.pendingSetScores.homeScores,
-          gameState.pendingSetScores.awayScores,
-          gameState.pendingSetScores.match
+          match.id,
+          gameState.setScores.home,
+          gameState.setScores.away,
+          match
         ).catch(error => {
-          console.error('Error saving final pending scores:', error);
+          console.error('Error saving final scores:', error);
         });
       }
 
@@ -136,7 +136,7 @@ export const ScoreboardContainer = () => {
           });
       }, 100);
     }
-  }, [gameState.isMatchComplete, gameState.finalBreakActive, match, gameState.setScores, gameState.hasGameStarted, gameState.pendingSetScores, gameState.saveScoresLocally]);
+  }, [gameState.isMatchComplete, gameState.finalBreakActive, match, gameState.setScores, gameState.hasGameStarted, gameState.justCompletedSet, gameState.saveScoresLocally]);
 
   useEffect(() => {
     if (resultsDisplayStartTime) {

@@ -12,12 +12,7 @@ export const useGameState = () => {
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
   const [finalBreakActive, setFinalBreakActive] = useState(false);
-  const [pendingSetScores, setPendingSetScores] = useState<{
-    matchId: string;
-    homeScores: number[];
-    awayScores: number[];
-    match?: Match;
-  } | null>(null);
+  const [justCompletedSet, setJustCompletedSet] = useState(false);
 
   // Initialize game state with match data
   const initializeGameState = useCallback((match: Match) => {
@@ -37,7 +32,7 @@ export const useGameState = () => {
     setIsMatchComplete(false);
     setHasGameStarted(false);
     setFinalBreakActive(false);
-    setPendingSetScores(null);
+    setJustCompletedSet(false);
   }, []);
 
   // Handle score update
@@ -53,23 +48,28 @@ export const useGameState = () => {
   }, [isMatchComplete]);
 
   // Handle timer completion (end of set or break)
-  const handleTimerComplete = useCallback(() => {
+  const handleTimerComplete = useCallback((matchId?: string, match?: Match) => {
     if (isBreak) {
       // End of break
       setIsBreak(false);
       
-      // Save any pending set scores now that the break is over
-      if (pendingSetScores) {
-        console.log('Saving pending set scores after break:', pendingSetScores);
+      // Save scores after break only if we just completed a set
+      if (justCompletedSet && matchId) {
+        console.log('Saving scores after break:', { 
+          matchId, 
+          homeScores: setScores.home, 
+          awayScores: setScores.away 
+        });
+        
         saveScoresLocally(
-          pendingSetScores.matchId,
-          pendingSetScores.homeScores,
-          pendingSetScores.awayScores,
-          pendingSetScores.match
+          matchId,
+          setScores.home,
+          setScores.away,
+          match
         ).catch(err => console.error('Failed to save scores after break:', err));
         
-        // Clear pending scores
-        setPendingSetScores(null);
+        // Reset the flag
+        setJustCompletedSet(false);
       }
       
       // If this was the final break, now we can mark the match as complete
@@ -110,6 +110,10 @@ export const useGameState = () => {
       setSetScores(newSetScores);
       setIsBreak(true);
       
+      // Set the flag to indicate we just completed a set
+      setJustCompletedSet(true);
+      console.log('Set completed, will save scores after break:', newSetScores);
+      
       // Determine if we should enter the final break after this set
       const isFinalSet = newSetScores.home.length >= 3;
       
@@ -128,7 +132,7 @@ export const useGameState = () => {
         });
       }
     }
-  }, [isBreak, currentScore, setScores, isTeamsSwitched, isMatchComplete, finalBreakActive, pendingSetScores]);
+  }, [isBreak, currentScore, setScores, isTeamsSwitched, isMatchComplete, finalBreakActive, handleSwitchTeams]);
 
   // Switch teams (e.g., after a set)
   const handleSwitchTeams = useCallback(() => {
@@ -175,17 +179,6 @@ export const useGameState = () => {
     }
   }, []);
 
-  // Store pending scores to be saved after break
-  const storePendingScores = useCallback((matchId: string, homeScores: number[], awayScores: number[], match?: Match) => {
-    console.log('Storing pending scores to save after break:', { matchId, homeScores, awayScores });
-    setPendingSetScores({
-      matchId,
-      homeScores,
-      awayScores,
-      match
-    });
-  }, []);
-
   return {
     currentScore,
     setScores,
@@ -194,13 +187,12 @@ export const useGameState = () => {
     isMatchComplete,
     hasGameStarted,
     finalBreakActive,
-    pendingSetScores,
+    justCompletedSet,
     handleScoreUpdate,
     handleTimerComplete,
     handleSwitchTeams,
     initializeGameState,
     resetGameState,
     saveScoresLocally,
-    storePendingScores,
   };
 };
