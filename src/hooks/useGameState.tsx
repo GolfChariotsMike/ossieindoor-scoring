@@ -63,9 +63,9 @@ export const useGameState = () => {
       // End of break
       setIsBreak(false);
       
-      // Save scores after break only if we just completed a set
+      // Save scores AFTER break if we just completed a set
       if (justCompletedSet && matchId) {
-        console.log('Saving scores after break:', { 
+        console.log('Saving scores AFTER break:', { 
           matchId, 
           homeScores: setScores.home, 
           awayScores: setScores.away 
@@ -120,9 +120,9 @@ export const useGameState = () => {
       setSetScores(newSetScores);
       setIsBreak(true);
       
-      // Set the flag to indicate we just completed a set
+      // Set the flag to indicate we just completed a set - We'll save scores AFTER the break
       setJustCompletedSet(true);
-      console.log('Set completed, will save scores after break:', newSetScores);
+      console.log('Set completed, will save scores AFTER break:', newSetScores);
       
       // Determine if we should enter the final break after this set
       const isFinalSet = newSetScores.home.length >= 3;

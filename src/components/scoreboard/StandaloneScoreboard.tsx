@@ -57,7 +57,7 @@ const StandaloneScoreboard = () => {
       // End of break - Now we save the scores that were accumulated during the set
       setIsBreak(false);
       
-      // Only save scores if we just completed a set before this break
+      // ONLY save scores AFTER break if we just completed a set before this break
       if (justCompletedSet) {
         try {
           saveMatchScores(
@@ -68,7 +68,7 @@ const StandaloneScoreboard = () => {
             homeTeamName,
             awayTeamName
           );
-          console.log('Saved match scores after break:', setScores);
+          console.log('Saved match scores AFTER break:', setScores);
         } catch (error) {
           console.error('Error saving match scores after break:', error);
         }
@@ -115,9 +115,9 @@ const StandaloneScoreboard = () => {
       setSetScores(newSetScores);
       setIsBreak(true);
       
-      // Set this flag to indicate we just completed a set and will need to save scores after the break
+      // Set this flag to indicate we just completed a set and will need to save scores AFTER the break
       setJustCompletedSet(true);
-      console.log('Set completed, will save scores after break:', newSetScores);
+      console.log('Set completed, will save scores AFTER break:', newSetScores);
       
       const isFinalSet = newSetScores.home.length >= 3;
       if (isFinalSet) {
