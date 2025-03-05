@@ -117,9 +117,11 @@ export const useTimer = ({
             
             console.log(`Timer reached zero for phase ${matchPhase}`);
             
-            // Use setTimeout to ensure this happens after the state update
+            // Set timeout to ensure this happens after state update but in the right order
             setTimeout(() => {
-              progressToNextPhase();
+              if (!isPhaseChangingRef.current) {
+                progressToNextPhase();
+              }
             }, 0);
             
             return 0;
