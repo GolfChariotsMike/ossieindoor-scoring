@@ -136,9 +136,19 @@ export const useTimer = ({
     }
   };
 
+  // Modified handleSkipPhase to handle special case for set3
   const handleSkipPhase = () => {
-    setTimeLeft(0);
-    progressToNextPhase();
+    // Special handling for set3 to ensure final_break is shown
+    if (matchPhase === "set3") {
+      console.log('Skipping from set3 to final_break');
+      setMatchPhase("final_break");
+      setTimeLeft(60); // 60 seconds for final break
+      setIsRunning(true);
+      onComplete();
+    } else {
+      setTimeLeft(0);
+      progressToNextPhase();
+    }
   };
 
   return {
