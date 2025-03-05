@@ -23,6 +23,7 @@ export const useTimer = ({
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
   const phaseTransitionCompleted = useRef<boolean>(false);
   const currentPhaseTimeRef = useRef<number | null>(null);
+  const hasCalledOnComplete = useRef<boolean>(false);
 
   // Define the ordered phases for consistent progression
   const phases: MatchPhase[] = [
@@ -44,6 +45,11 @@ export const useTimer = ({
     return initialMinutes * 60; // Regular time for sets
   };
 
+  // Reset completion flag when phase changes
+  useEffect(() => {
+    hasCalledOnComplete.current = false;
+  }, [matchPhase]);
+
   // Phase progression - ensuring ordered flow
   const progressToNextPhase = () => {
     const currentIndex = phases.indexOf(matchPhase);
@@ -54,7 +60,12 @@ export const useTimer = ({
       
       if (nextPhase === 'complete') {
         setIsRunning(false);
-        onComplete();
+        setMatchPhase(nextPhase);
+        if (!hasCalledOnComplete.current) {
+          console.log('Calling onComplete for match completion');
+          hasCalledOnComplete.current = true;
+          onComplete();
+        }
       } else {
         // Set appropriate time for different phases
         const phaseTime = getPhaseTime(nextPhase);
@@ -63,13 +74,16 @@ export const useTimer = ({
         currentPhaseTimeRef.current = phaseTime;
         setIsRunning(true);
         
-        // Call onComplete when transitioning to a new set or break
-        if (currentIndex > 0) { // Don't call for the initial transition to set1
+        // Call onComplete only when transitioning to a new set or break
+        if (currentIndex > 0 && !hasCalledOnComplete.current) { 
+          console.log(`Calling onComplete for transition to ${nextPhase}`);
+          hasCalledOnComplete.current = true;
           onComplete();
         }
+        
+        setMatchPhase(nextPhase);
       }
       
-      setMatchPhase(nextPhase);
       // Reset the transition flag
       phaseTransitionCompleted.current = false;
     }
@@ -82,6 +96,7 @@ export const useTimer = ({
       setTimeLeft(initialMinutes * 60);
       currentPhaseTimeRef.current = initialMinutes * 60;
       setIsRunning(true);
+      hasCalledOnComplete.current = false;
     }
   }, [fixture?.Id, initialMinutes]);
 
@@ -116,6 +131,19 @@ export const useTimer = ({
       console.log(`Timer reached 0 for phase ${matchPhase}, handling phase transition`);
       phaseTransitionCompleted.current = true; // Prevent double transitions
       
+      // After final_break, we don't want to auto-transition
+      if (matchPhase === "final_break") {
+        console.log("Final break completed - ending match");
+        setIsRunning(false);
+        setMatchPhase("complete");
+        if (!hasCalledOnComplete.current) {
+          console.log('Calling onComplete after final break');
+          hasCalledOnComplete.current = true;
+          onComplete();
+        }
+        return;
+      }
+      
       const currentIndex = phases.indexOf(matchPhase);
       const nextPhase = phases[currentIndex + 1];
       
@@ -124,21 +152,29 @@ export const useTimer = ({
         
         if (nextPhase === 'complete') {
           setIsRunning(false);
-          onComplete();
+          setMatchPhase(nextPhase);
+          if (!hasCalledOnComplete.current) {
+            console.log('Calling onComplete for auto-transition to complete');
+            hasCalledOnComplete.current = true;
+            onComplete();
+          }
         } else {
           // Set appropriate time for different phases
           const phaseTime = getPhaseTime(nextPhase);
           setTimeLeft(phaseTime);
           currentPhaseTimeRef.current = phaseTime;
           
-          // Call onComplete for phase transition events
-          onComplete();
+          // Call onComplete for phase transition events if we haven't already
+          if (!hasCalledOnComplete.current) {
+            console.log(`Calling onComplete for auto-transition to ${nextPhase}`);
+            hasCalledOnComplete.current = true;
+            onComplete();
+          }
           
           // Keep timer running for the next phase
           setIsRunning(true);
+          setMatchPhase(nextPhase);
         }
-        
-        setMatchPhase(nextPhase);
       }
     }
   }, [timeLeft, isRunning, matchPhase, onComplete, initialMinutes]);
@@ -149,6 +185,7 @@ export const useTimer = ({
       setTimeLeft(initialMinutes * 60);
       currentPhaseTimeRef.current = initialMinutes * 60;
       setIsRunning(true);
+      hasCalledOnComplete.current = false;
     } else if (!isMatchComplete) {
       setIsRunning(!isRunning);
     }
@@ -160,6 +197,7 @@ export const useTimer = ({
       const phaseTime = currentPhaseTimeRef.current || getPhaseTime(matchPhase);
       setTimeLeft(phaseTime);
       setIsRunning(false);
+      hasCalledOnComplete.current = false;
     }
   };
 
@@ -174,24 +212,63 @@ export const useTimer = ({
     
     console.log(`Skipping from ${matchPhase} to ${nextPhase}`);
     
-    // For all phases, ensure we're moving to the NEXT phase only
-    if (nextPhase === 'complete') {
-      setMatchPhase(nextPhase);
-      setIsRunning(false);
-      onComplete();
-    } else {
-      // This is critical - we need to display each phase for the right amount of time
-      const phaseTime = getPhaseTime(nextPhase);
+    // Important: If skipping from set3 to final_break, don't mark match as complete yet
+    if (matchPhase === "set3" && nextPhase === "final_break") {
+      console.log("Moving to final break phase");
+      const phaseTime = getPhaseTime(nextPhase); // 60 seconds for break
       setTimeLeft(phaseTime);
       currentPhaseTimeRef.current = phaseTime;
-      
       setMatchPhase(nextPhase);
-      
-      // Start the timer for this phase - especially important for breaks
       setIsRunning(true);
       
-      // Notify of phase transition
-      onComplete();
+      // Only notify of phase transition if we haven't already
+      if (!hasCalledOnComplete.current) {
+        console.log('Calling onComplete for skip to final break');
+        hasCalledOnComplete.current = true;
+        onComplete();
+      }
+    }
+    // If we're in final_break and skipping to complete
+    else if (matchPhase === "final_break" && nextPhase === "complete") {
+      console.log("Final break skipped - ending match");
+      setMatchPhase(nextPhase);
+      setIsRunning(false);
+      
+      if (!hasCalledOnComplete.current) {
+        console.log('Calling onComplete for final break skip');
+        hasCalledOnComplete.current = true;
+        onComplete();
+      }
+    }
+    // For all other phases
+    else {
+      if (nextPhase === 'complete') {
+        setMatchPhase(nextPhase);
+        setIsRunning(false);
+        
+        if (!hasCalledOnComplete.current) {
+          console.log('Calling onComplete for skip to complete');
+          hasCalledOnComplete.current = true;
+          onComplete();
+        }
+      } else {
+        // This is critical - we need to display each phase for the right amount of time
+        const phaseTime = getPhaseTime(nextPhase);
+        setTimeLeft(phaseTime);
+        currentPhaseTimeRef.current = phaseTime;
+        
+        setMatchPhase(nextPhase);
+        
+        // Start the timer for this phase - especially important for breaks
+        setIsRunning(true);
+        
+        // Notify of phase transition if we haven't already
+        if (!hasCalledOnComplete.current) {
+          console.log('Calling onComplete for phase skip');
+          hasCalledOnComplete.current = true;
+          onComplete();
+        }
+      }
     }
     
     // Reset the transition flag for the new phase

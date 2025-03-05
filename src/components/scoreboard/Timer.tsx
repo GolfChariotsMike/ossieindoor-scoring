@@ -39,6 +39,12 @@ export const Timer = ({
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 5000; // 5 seconds
+  const onCompleteRef = useRef<() => void>(onComplete);
+
+  // Update ref when onComplete changes
+  useRef(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const {
     timeLeft,
@@ -51,13 +57,35 @@ export const Timer = ({
     initialMinutes,
     onComplete: () => {
       console.log('Timer complete or skipped with fixture:', fixture, 'Current phase:', matchPhase);
-      // Notify user of phase change
-      toast({
-        title: isBreak ? "Set starting" : "Break starting",
-        description: isBreak ? "Set timer has started" : "Break timer has started",
-        duration: 3000,
-      });
-      onComplete();
+      
+      // Different notifications based on phase
+      if (matchPhase === "set3") {
+        toast({
+          title: "Final Break Starting",
+          description: "1 minute break before match completion",
+          duration: 3000,
+        });
+      } else if (matchPhase === "final_break") {
+        toast({
+          title: "Match Complete",
+          description: "Final break has ended",
+          duration: 3000,
+        });
+      } else if (matchPhase.includes("break")) {
+        toast({
+          title: "Set Starting",
+          description: "Set timer has started",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "Break Starting",
+          description: "Break timer has started",
+          duration: 3000,
+        });
+      }
+      
+      onCompleteRef.current();
     },
     onSwitchTeams,
     isBreak,
@@ -124,6 +152,16 @@ export const Timer = ({
     }
   };
 
+  // Display notification about special phases
+  const getPhaseDescription = () => {
+    if (matchPhase === "final_break") {
+      return "Final 1-minute break";
+    }
+    return "";
+  };
+
+  const phaseDescription = getPhaseDescription();
+
   return (
     <div className="text-center relative">
       <div className="absolute top-0 right-0">
@@ -165,6 +203,13 @@ export const Timer = ({
       <div className="text-xs text-white absolute top-0 left-0 bg-black/50 px-2 py-1 rounded">
         {getPhaseLabel()}
       </div>
+      
+      {/* Phase description (for final break) */}
+      {phaseDescription && (
+        <div className="text-sm text-white absolute top-7 left-0 bg-black/50 px-2 py-1 rounded animate-pulse">
+          {phaseDescription}
+        </div>
+      )}
       
       <TimerDisplay 
         minutes={minutes}
