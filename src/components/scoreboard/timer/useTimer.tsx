@@ -23,7 +23,7 @@ export const useTimer = ({
   const [isRunning, setIsRunning] = useState(false);
   const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
 
-  // Phase progression
+  // Phase progression - ensuring ordered flow
   const progressToNextPhase = () => {
     const phases: MatchPhase[] = [
       "not_started", 
@@ -99,26 +99,27 @@ export const useTimer = ({
     };
   }, [isRunning, timeLeft, isMatchComplete]);
 
-  // Handle end of sets and ensure final break is shown
+  // Enhanced handling for end of sets to enforce proper phase flow
   useEffect(() => {
-    if (isBreak && matchPhase.includes('set') && timeLeft === 0) {
-      // Get the set number from the current phase (e.g., "set3" -> 3)
+    if (timeLeft === 0 && matchPhase.includes('set')) {
       const currentSetNumber = parseInt(matchPhase.charAt(3));
       
-      if (currentSetNumber >= 1 && currentSetNumber <= 3) {
-        // Determine next phase: If set3, go to final_break; otherwise, break1 or break2
-        const nextPhase = currentSetNumber === 3 ? 'final_break' : `break${currentSetNumber}`;
+      if (currentSetNumber === 3) {
+        console.log('Set 3 ended, ensuring transition to final_break');
+        setMatchPhase('final_break');
+        setTimeLeft(60); // 60 seconds for final break
+        setIsRunning(true);
+        onComplete();
+      } else if (currentSetNumber >= 1 && currentSetNumber <= 2) {
+        const nextPhase = `break${currentSetNumber}` as MatchPhase;
         console.log(`Set ${currentSetNumber} ended, moving to ${nextPhase}`);
-        
-        setMatchPhase(nextPhase as MatchPhase);
+        setMatchPhase(nextPhase);
         setTimeLeft(60); // Set all breaks to 60 seconds
         setIsRunning(true);
-        
-        // Ensure onComplete is called here too, for consistency with skip function
         onComplete();
       }
     }
-  }, [isBreak, matchPhase, timeLeft, onComplete]);
+  }, [timeLeft, matchPhase, onComplete]);
 
   const handleStartStop = () => {
     if (matchPhase === "not_started") {
@@ -136,25 +137,52 @@ export const useTimer = ({
     }
   };
 
-  // Modified handleSkipPhase to handle special case for set3
+  // Modified handleSkipPhase to enforce phase progression
   const handleSkipPhase = () => {
-    // Special handling for set3 to ensure final_break is shown
+    const phases: MatchPhase[] = [
+      "not_started", 
+      "set1", 
+      "break1", 
+      "set2", 
+      "break2", 
+      "set3", 
+      "final_break",
+      "complete"
+    ];
+    
+    const currentIndex = phases.indexOf(matchPhase);
+    const nextPhase = phases[currentIndex + 1];
+    
+    // Ensure we never skip the final_break phase
     if (matchPhase === "set3") {
       console.log('Skipping from set3 to final_break');
       setMatchPhase("final_break");
       setTimeLeft(60); // 60 seconds for final break
       setIsRunning(true);
       onComplete();
-    } else {
-      // For final_break phase, ensure we go to complete, not results directly
-      if (matchPhase === "final_break") {
-        console.log('Skipping from final_break to complete');
+    }
+    // Ensure correct progression from final_break to complete
+    else if (matchPhase === "final_break") {
+      console.log('Skipping from final_break to complete');
+      setMatchPhase("complete");
+      setIsRunning(false);
+      onComplete();
+    }
+    // Normal phase transition
+    else if (nextPhase) {
+      console.log(`Skipping from ${matchPhase} to ${nextPhase}`);
+      
+      if (nextPhase === 'complete') {
         setMatchPhase("complete");
         setIsRunning(false);
         onComplete();
       } else {
-        setTimeLeft(0);
-        progressToNextPhase();
+        // Skip to the next phase with appropriate time
+        const phaseTime = nextPhase.includes('break') ? 60 : initialMinutes * 60;
+        setTimeLeft(phaseTime);
+        setMatchPhase(nextPhase);
+        setIsRunning(true);
+        onComplete();
       }
     }
   };
