@@ -12,6 +12,12 @@ export const useGameState = () => {
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [hasGameStarted, setHasGameStarted] = useState(false);
   const [finalBreakActive, setFinalBreakActive] = useState(false);
+  const [pendingSetScores, setPendingSetScores] = useState<{
+    matchId: string;
+    homeScores: number[];
+    awayScores: number[];
+    match?: Match;
+  } | null>(null);
 
   // Initialize game state with match data
   const initializeGameState = useCallback((match: Match) => {
@@ -31,6 +37,7 @@ export const useGameState = () => {
     setIsMatchComplete(false);
     setHasGameStarted(false);
     setFinalBreakActive(false);
+    setPendingSetScores(null);
   }, []);
 
   // Handle score update
@@ -50,6 +57,20 @@ export const useGameState = () => {
     if (isBreak) {
       // End of break
       setIsBreak(false);
+      
+      // Save any pending set scores now that the break is over
+      if (pendingSetScores) {
+        console.log('Saving pending set scores after break:', pendingSetScores);
+        saveScoresLocally(
+          pendingSetScores.matchId,
+          pendingSetScores.homeScores,
+          pendingSetScores.awayScores,
+          pendingSetScores.match
+        ).catch(err => console.error('Failed to save scores after break:', err));
+        
+        // Clear pending scores
+        setPendingSetScores(null);
+      }
       
       // If this was the final break, now we can mark the match as complete
       if (finalBreakActive) {
@@ -107,7 +128,7 @@ export const useGameState = () => {
         });
       }
     }
-  }, [isBreak, currentScore, setScores, isTeamsSwitched, isMatchComplete, finalBreakActive]);
+  }, [isBreak, currentScore, setScores, isTeamsSwitched, isMatchComplete, finalBreakActive, pendingSetScores]);
 
   // Switch teams (e.g., after a set)
   const handleSwitchTeams = useCallback(() => {
@@ -154,6 +175,17 @@ export const useGameState = () => {
     }
   }, []);
 
+  // Store pending scores to be saved after break
+  const storePendingScores = useCallback((matchId: string, homeScores: number[], awayScores: number[], match?: Match) => {
+    console.log('Storing pending scores to save after break:', { matchId, homeScores, awayScores });
+    setPendingSetScores({
+      matchId,
+      homeScores,
+      awayScores,
+      match
+    });
+  }, []);
+
   return {
     currentScore,
     setScores,
@@ -162,11 +194,13 @@ export const useGameState = () => {
     isMatchComplete,
     hasGameStarted,
     finalBreakActive,
+    pendingSetScores,
     handleScoreUpdate,
     handleTimerComplete,
     handleSwitchTeams,
     initializeGameState,
     resetGameState,
     saveScoresLocally,
+    storePendingScores,
   };
 };

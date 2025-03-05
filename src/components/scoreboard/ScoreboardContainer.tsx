@@ -108,6 +108,18 @@ export const ScoreboardContainer = () => {
       console.log('Match complete (after final break), preparing for results screen');
       isTransitioningToResults.current = true;
 
+      if (gameState.pendingSetScores) {
+        console.log('Saving pending scores before results screen:', gameState.pendingSetScores);
+        gameState.saveScoresLocally(
+          gameState.pendingSetScores.matchId,
+          gameState.pendingSetScores.homeScores,
+          gameState.pendingSetScores.awayScores,
+          gameState.pendingSetScores.match
+        ).catch(error => {
+          console.error('Error saving final pending scores:', error);
+        });
+      }
+
       setTimeout(() => {
         gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away, match)
           .catch(error => {
@@ -124,7 +136,7 @@ export const ScoreboardContainer = () => {
           });
       }, 100);
     }
-  }, [gameState.isMatchComplete, gameState.finalBreakActive, match, gameState.setScores, gameState.hasGameStarted]);
+  }, [gameState.isMatchComplete, gameState.finalBreakActive, match, gameState.setScores, gameState.hasGameStarted, gameState.pendingSetScores, gameState.saveScoresLocally]);
 
   useEffect(() => {
     if (resultsDisplayStartTime) {
@@ -138,7 +150,6 @@ export const ScoreboardContainer = () => {
         console.log('Transition timeout triggered at', new Date().toISOString());
         
         try {
-          // If we're in offline mode, be more cautious with transitions
           if (isOffline()) {
             console.log('In offline mode, showing end of night summary instead of attempting match transition');
             setShowEndOfNightSummary(true);

@@ -20,6 +20,8 @@ const StandaloneScoreboard = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
   const [finalBreakActive, setFinalBreakActive] = useState(false);
+  // Track the scores before the break to save them after the break
+  const [pendingSetScores, setPendingSetScores] = useState<SetScores | null>(null);
 
   const startTime = new Date().toISOString();
   const courtNumber = 0;
@@ -53,8 +55,27 @@ const StandaloneScoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // End of break - scoring period is over, now we can save the current scores
+      // End of break - NOW is when we save the scores that were pending
       setIsBreak(false);
+      
+      // Save the pending scores if we have them
+      if (pendingSetScores) {
+        try {
+          saveMatchScores(
+            matchCode,
+            pendingSetScores.home,
+            pendingSetScores.away,
+            false, // Don't immediately submit to Supabase
+            homeTeamName,
+            awayTeamName
+          );
+          console.log('Saved match scores after break:', pendingSetScores);
+        } catch (error) {
+          console.error('Error saving match scores after break:', error);
+        }
+        // Clear the pending scores
+        setPendingSetScores(null);
+      }
       
       // If this was the final break, mark the match as complete
       if (finalBreakActive) {
@@ -94,19 +115,9 @@ const StandaloneScoreboard = () => {
       setSetScores(newSetScores);
       setIsBreak(true);
       
-      // Save match scores after each set now that the set is complete
-      try {
-        saveMatchScores(
-          matchCode,
-          newSetScores.home,
-          newSetScores.away,
-          false, // Don't immediately submit to Supabase
-          homeTeamName,
-          awayTeamName
-        );
-      } catch (error) {
-        console.error('Error saving match scores:', error);
-      }
+      // Store the scores to be saved after the break
+      setPendingSetScores(newSetScores);
+      console.log('Set scores pending to save after break:', newSetScores);
       
       const isFinalSet = newSetScores.home.length >= 3;
       if (isFinalSet) {
