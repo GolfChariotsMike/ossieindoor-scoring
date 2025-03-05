@@ -4,7 +4,7 @@ import { Fixture } from "@/types/volleyball";
 import { parse, format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
 import { isOffline } from "@/utils/offlineMode";
-import { getAllCourtMatches } from "@/services/db/operations/matchOperations";
+import { getAllCourtMatches } from "@/services/indexedDB";
 
 export const useNextMatch = (courtId: string, fixture?: Fixture) => {
   const navigate = useNavigate();
@@ -58,8 +58,11 @@ export const useNextMatch = (courtId: string, fixture?: Fixture) => {
               AwayTeam: m.away_team_name || m.AwayTeam,
               HomeTeamId: m.home_team_id || m.HomeTeamId,
               AwayTeamId: m.away_team_id || m.AwayTeamId,
-              DivisionName: m.division || m.DivisionName
-            }));
+              DivisionName: m.division || m.DivisionName,
+              // Add the missing properties required by the Fixture type
+              HomeTeamScore: m.HomeTeamScore || '0',
+              AwayTeamScore: m.AwayTeamScore || '0'
+            })) as Fixture[];
             
             // Combine with any existing matches, avoiding duplicates by ID
             const existingIds = new Set(matches.map(m => m.Id));
