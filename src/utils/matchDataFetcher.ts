@@ -1,9 +1,10 @@
+
 import { toast } from "@/hooks/use-toast";
 import { format, parse } from "date-fns";
 import { Match, Fixture } from "@/types/volleyball";
 import { LEAGUE_URLS } from "@/config/leagueConfig";
 import { parseXMLResponse } from "@/utils/xmlParser";
-import { saveCourtMatches, getCourtMatches } from "@/services/indexedDB";
+import { saveCourtMatches, getCourtMatches, getAllCourtMatches } from "@/services/indexedDB";
 import { isOffline } from "@/utils/offlineMode";
 
 const fetchFromUrl = async (url: string, date: string) => {
@@ -59,13 +60,25 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       offlineMode: isOffline()
     });
 
-    if (courtId) {
+    // If in offline mode and we have a court ID, try to get matches from cache
+    if (isOffline() && courtId) {
+      console.log('Offline mode - trying to get matches from cache first');
       try {
-        const cachedMatches = await getCourtMatches(courtId, formattedDate);
+        // Try getting matches for the specific date first
+        let cachedMatches = await getCourtMatches(courtId, formattedDate);
+        
+        // If no matches found for this date, try all matches for the court
+        if (cachedMatches.length === 0) {
+          console.log('No matches found for specified date, trying all matches for this court');
+          cachedMatches = await getAllCourtMatches(courtId);
+        }
+        
         if (cachedMatches.length > 0) {
           console.log('Found cached matches:', cachedMatches.length);
           return cachedMatches;
         }
+        
+        console.log('No cached matches found, using default match');
       } catch (error) {
         console.error('Error reading from cache:', error);
       }
@@ -76,7 +89,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       
       if (courtId) {
         return {
-          id: `default-match-${courtId}`,
+          id: `default-match-${courtId}-${Date.now()}`,
           court: parseInt(courtId),
           startTime: new Date().toISOString(),
           homeTeam: { id: "team-1", name: "Team A" },
@@ -129,6 +142,13 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       id: fixture.Id || `${fixture.DateTime}-${fixture.PlayingAreaName}`,
       PlayingAreaName: fixture.PlayingAreaName,
       DateTime: fixture.DateTime,
+      // Add these fields to ensure they're available for next match finding
+      HomeTeam: fixture.HomeTeam,
+      AwayTeam: fixture.AwayTeam,
+      HomeTeamId: fixture.HomeTeamId,
+      AwayTeamId: fixture.AwayTeamId,
+      DivisionName: fixture.DivisionName,
+      // Include all original fixture data too
       ...fixture
     }));
 

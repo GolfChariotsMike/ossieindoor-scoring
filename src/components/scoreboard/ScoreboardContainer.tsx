@@ -141,7 +141,7 @@ export const ScoreboardContainer = () => {
 
       console.log(`Setting up transition timeout for ${RESULTS_DISPLAY_DURATION} seconds at`, new Date().toISOString());
       
-      transitionTimeoutRef.current = setTimeout(() => {
+      transitionTimeoutRef.current = setTimeout(async () => {
         console.log('Transition timeout triggered at', new Date().toISOString());
         
         try {
@@ -152,31 +152,28 @@ export const ScoreboardContainer = () => {
             console.log('Limited or no matches found, attempting to refetch matches data');
             hasTriedRefetchingMatches.current = true;
             
-            refetchMatches().then(result => {
-              console.log('Refetched matches result:', {
-                success: result.isSuccess,
-                matchCount: result.data?.length || 0
-              });
-              
-              // After refetching, try to find the next match again
-              const nextMatch = findNextMatch(result.data || []);
-              
-              if (nextMatch) {
-                console.log('Found next match after refetching:', nextMatch.Id);
-                handleStartNextMatch(nextMatch);
-              } else {
-                console.log('No next match found after refetching, showing end of night summary');
-                setShowEndOfNightSummary(true);
-              }
-            }).catch(error => {
-              console.error('Error refetching matches:', error);
-              setShowEndOfNightSummary(true);
+            const refetchResult = await refetchMatches();
+            console.log('Refetched matches result:', {
+              success: refetchResult.isSuccess,
+              matchCount: refetchResult.data?.length || 0
             });
             
-            return; // Exit early as we'll handle transition after refetch
+            // After refetching, try to find the next match again
+            const nextMatch = await findNextMatch(refetchResult.data || []);
+            
+            if (nextMatch) {
+              console.log('Found next match after refetching:', nextMatch.Id);
+              handleStartNextMatch(nextMatch);
+            } else {
+              console.log('No next match found after refetching, showing end of night summary');
+              setShowEndOfNightSummary(true);
+            }
+            
+            return; // Exit early as we've handled transition
           }
           
-          const nextMatch = findNextMatch(nextMatches);
+          // Try to find next match with current match data
+          const nextMatch = await findNextMatch(nextMatches);
           
           if (nextMatch) {
             console.log('Found next match, transitioning to:', nextMatch.Id);
@@ -232,9 +229,9 @@ export const ScoreboardContainer = () => {
     navigate('/');
   };
 
-  const handleManualNextMatch = () => {
+  const handleManualNextMatch = async () => {
     try {
-      const nextMatch = findNextMatch(nextMatches);
+      const nextMatch = await findNextMatch(nextMatches);
       if (nextMatch) {
         handleStartNextMatch(nextMatch);
       } else {

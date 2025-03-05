@@ -12,5 +12,6 @@ export {
   saveCourtMatches,
   getCourtMatches,
   cleanOldMatches,
+  getAllCourtMatches,
 } from './db/operations/matchOperations';
 export { getRetryDelay } from './db/connection';

@@ -45,57 +45,64 @@ export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => 
         
         const store = transaction.objectStore(STORES.COURT_MATCHES);
 
-        // Clear existing matches first
-        const clearRequest = store.clear();
-        clearRequest.onerror = () => {
-          console.error('Error clearing court matches:', clearRequest.error);
-          reject(clearRequest.error);
-        };
+        // We no longer clear existing matches - instead, we'll update or insert
+        // This way we accumulate matches even when in offline mode
+        let completed = 0;
+        let errors = 0;
 
-        clearRequest.onsuccess = () => {
-          let completed = 0;
-          let errors = 0;
-
-          // Ensure each match has required fields
-          const processedMatches = matches.map(match => ({
+        // Ensure each match has required fields and court numbers as strings and ints
+        const processedMatches = matches.map(match => {
+          // Extract court number from PlayingAreaName (e.g., "Court 1" -> "1")
+          let courtNumberStr = '0';
+          if (match.PlayingAreaName && typeof match.PlayingAreaName === 'string') {
+            const matches = match.PlayingAreaName.match(/Court\s+(\d+)/i);
+            if (matches && matches[1]) {
+              courtNumberStr = matches[1];
+            }
+          }
+          
+          return {
             ...match,
             id: match.id || `${match.DateTime}-${match.PlayingAreaName}`,
             PlayingAreaName: match.PlayingAreaName || '',
-            DateTime: match.DateTime || new Date().toISOString()
-          }));
+            DateTime: match.DateTime || new Date().toISOString(),
+            courtNumberStr: courtNumberStr,
+            courtNumber: parseInt(courtNumberStr, 10)
+          };
+        });
 
-          processedMatches.forEach(match => {
-            const request = store.add(match);
+        processedMatches.forEach(match => {
+          // Use put instead of add to update existing records
+          const request = store.put(match);
 
-            request.onsuccess = () => {
-              completed++;
-              if (completed + errors === processedMatches.length) {
-                console.log('Saved court matches to IndexedDB:', completed);
-                resolve();
+          request.onsuccess = () => {
+            completed++;
+            if (completed + errors === processedMatches.length) {
+              console.log('Saved court matches to IndexedDB:', completed);
+              resolve();
+            }
+          };
+
+          request.onerror = () => {
+            console.error('Error saving match to IndexedDB:', request.error);
+            errors++;
+            if (completed + errors === processedMatches.length) {
+              if (completed > 0) {
+                resolve(); // Some matches were saved
+              } else {
+                reject(request.error); // No matches were saved
               }
-            };
+            }
+          };
+        });
 
-            request.onerror = () => {
-              console.error('Error saving match to IndexedDB:', request.error);
-              errors++;
-              if (completed + errors === processedMatches.length) {
-                if (completed > 0) {
-                  resolve(); // Some matches were saved
-                } else {
-                  reject(request.error); // No matches were saved
-                }
-              }
-            };
-          });
-
-          // Handle empty array case
-          if (processedMatches.length === 0) {
-            resolve();
-          }
-        };
+        // Handle empty array case
+        if (processedMatches.length === 0) {
+          resolve();
+        }
         
         transaction.oncomplete = () => {
-          console.log('Transaction completed successfully');
+          console.log('Match save transaction completed successfully');
           resolve();
         };
       });
@@ -118,7 +125,7 @@ export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => 
   }
 };
 
-export const getCourtMatches = async (courtNumber: string, date: string): Promise<CourtMatch[]> => {
+export const getCourtMatches = async (courtNumber: string, date?: string): Promise<CourtMatch[]> => {
   let retries = 0;
   const maxRetries = 3;
   
@@ -151,12 +158,60 @@ export const getCourtMatches = async (courtNumber: string, date: string): Promis
         const request = store.getAll();
 
         request.onsuccess = () => {
-          const matches = request.result.filter(match => {
-            const matchCourt = match.PlayingAreaName === `Court ${courtNumber}`;
-            const matchDate = match.DateTime.split(' ')[0] === date;
-            return matchCourt && matchDate;
+          const allMatches = request.result;
+          console.log(`Retrieved ${allMatches.length} total matches from cache`);
+          
+          // Filter for court first (most important criteria)
+          // We check multiple formats of court number to be resilient
+          const courtMatches = allMatches.filter(match => {
+            // Check for direct courtNumber match (integer)
+            if (match.courtNumber === parseInt(courtNumber)) return true;
+            
+            // Check for courtNumberStr match (string)
+            if (match.courtNumberStr === courtNumber) return true;
+            
+            // Check PlayingAreaName for 'Court X' format
+            if (match.PlayingAreaName === `Court ${courtNumber}`) return true;
+            
+            // Fallback check for any court number in the ID
+            if (match.id && match.id.includes(`_${courtNumber}_`)) return true;
+            
+            return false;
           });
-          resolve(matches);
+          
+          console.log(`Found ${courtMatches.length} matches for Court ${courtNumber}`);
+          
+          // If date is specified, further filter by that
+          if (date) {
+            const dateMatches = courtMatches.filter(match => {
+              if (!match.DateTime) return false;
+              
+              // Try different date formats and comparisons
+              try {
+                // Direct string comparison first (most reliable)
+                if (match.DateTime.includes(date)) return true;
+                
+                // Then try to extract date part for comparison
+                const matchDate = match.DateTime.split(' ')[0];
+                if (matchDate === date) return true;
+                
+                // As a fallback, try to do a more flexible date comparison
+                const matchDateObj = new Date(match.DateTime);
+                const targetDateObj = new Date(date);
+                
+                return matchDateObj.toDateString() === targetDateObj.toDateString();
+              } catch (error) {
+                console.error('Error comparing dates:', error);
+                return false;
+              }
+            });
+            
+            console.log(`After date filtering, found ${dateMatches.length} matches for date ${date}`);
+            resolve(dateMatches);
+          } else {
+            // If no date specified, return all court matches
+            resolve(courtMatches);
+          }
         };
 
         request.onerror = () => {
@@ -165,7 +220,7 @@ export const getCourtMatches = async (courtNumber: string, date: string): Promis
         };
         
         transaction.oncomplete = () => {
-          console.log('Read transaction completed successfully');
+          console.log('Read match transaction completed successfully');
         };
       });
       
@@ -186,6 +241,11 @@ export const getCourtMatches = async (courtNumber: string, date: string): Promis
   return [];
 };
 
+// Add a special method to get ALL matches for a court regardless of date
+export const getAllCourtMatches = async (courtNumber: string): Promise<CourtMatch[]> => {
+  return getCourtMatches(courtNumber); // No date parameter will return all matches
+};
+
 export const cleanOldMatches = async (): Promise<void> => {
   try {
     const db = await getConnection();
@@ -199,9 +259,14 @@ export const cleanOldMatches = async (): Promise<void> => {
         const matches = request.result;
         const deletePromises = matches
           .filter(match => {
-            const matchDate = new Date(match.DateTime.split(' ')[0]);
-            const daysDiff = (now.getTime() - matchDate.getTime()) / (1000 * 3600 * 24);
-            return daysDiff > 7; // Delete matches older than 7 days
+            try {
+              const matchDate = new Date(match.DateTime.split(' ')[0]);
+              const daysDiff = (now.getTime() - matchDate.getTime()) / (1000 * 3600 * 24);
+              return daysDiff > 7; // Delete matches older than 7 days
+            } catch (error) {
+              console.error('Error parsing date for match cleanup:', error);
+              return false; // Don't delete if we can't parse the date
+            }
           })
           .map(match => 
             new Promise<void>((res, rej) => {
