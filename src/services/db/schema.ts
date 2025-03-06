@@ -17,12 +17,8 @@ export const dbSchema: DBSchema = {
     keyPath: 'id',
     indexes: [
       { name: 'courtNumber', keyPath: 'court_number' },
-      { name: 'courtNumberStr', keyPath: 'courtNumberStr' }, // Index for string court numbers
       { name: 'matchDate', keyPath: 'start_time' },
-      { name: 'matchCode', keyPath: 'matchCode', options: { unique: false } },
-      { name: 'playingArea', keyPath: 'PlayingAreaName' }, // Index for 'Court X' format
-      { name: 'courtId', keyPath: 'courtId' }, // Explicit courtId index for direct lookups
-      { name: 'dateTime', keyPath: 'DateTime' } // Add index for date/time filtering
+      { name: 'matchCode', keyPath: 'matchCode', options: { unique: false } }
     ]
   }
 };

@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -5,11 +6,10 @@ import { fetchMatchData } from "@/utils/matchDataFetcher";
 import { Button } from "@/components/ui/button";
 import { format, parse } from "date-fns";
 import { Fixture } from "@/types/volleyball";
-import { isOffline, disableForcedOfflineMode } from "@/utils/offlineMode";
+import { isOffline } from "@/utils/offlineMode";
 import { getCourtMatches, saveCourtMatches } from "@/services/indexedDB";
 import { toast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { RefreshCw } from "lucide-react";
 
 const CourtFixtures = () => {
   const { courtId, date } = useParams();
@@ -27,53 +27,13 @@ const CourtFixtures = () => {
     isOfflineMode: isOffline()
   });
 
-  useEffect(() => {
-    const wasOffline = isOffline();
-    if (wasOffline) {
-      try {
-        console.log('Attempting to go online for fixture loading');
-        disableForcedOfflineMode();
-      } catch (error) {
-        console.error('Error disabling offline mode:', error);
-      }
-    }
-  }, []);
-
   const { data: matches = [], isLoading, refetch } = useQuery({
     queryKey: ["matches", date, courtId],
     queryFn: async () => {
       console.log('Fetching matches in CourtFixtures...');
       
+      // First try to get court matches from IndexedDB
       try {
-        if (navigator.onLine) {
-          try {
-            const fetchedMatches = await fetchMatchData(undefined, parsedDate);
-            console.log('Fetched matches from server:', Array.isArray(fetchedMatches) ? fetchedMatches.length : 'not an array');
-            
-            if (Array.isArray(fetchedMatches) && fetchedMatches.length > 0) {
-              try {
-                const courtMatches = fetchedMatches.map(fixture => ({
-                  id: fixture.Id || `${fixture.DateTime}-${fixture.PlayingAreaName}`,
-                  PlayingAreaName: fixture.PlayingAreaName,
-                  DateTime: fixture.DateTime,
-                  courtId: courtId,
-                  courtNumberStr: courtId,
-                  ...fixture
-                }));
-                
-                await saveCourtMatches(courtMatches);
-                console.log('Cached all fixtures for future offline use', courtMatches.length);
-              } catch (cacheError) {
-                console.error('Error caching fixtures for offline use:', cacheError);
-              }
-            }
-            
-            return fetchedMatches;
-          } catch (fetchError) {
-            console.error('Error fetching from server, will try local cache:', fetchError);
-          }
-        }
-        
         console.log('Getting matches from local IndexedDB...');
         const localMatches = await getCourtMatches(courtId || '', formattedDate);
         console.log('Local matches retrieved:', localMatches);
@@ -81,6 +41,7 @@ const CourtFixtures = () => {
         if (localMatches.length > 0) {
           return localMatches;
         } else if (isOffline()) {
+          // If we're offline and have no cached matches, that's a problem
           toast({
             title: "No matches available offline",
             description: "No matches found in local storage. Please reconnect to the internet and try again.",
@@ -88,29 +49,52 @@ const CourtFixtures = () => {
           });
           return [];
         }
+      } catch (error) {
+        console.error('Error fetching local matches:', error);
+        // Continue to normal fetch if there was an error with IndexedDB
+      }
+      
+      // If not in cache or error occurred, try normal fetch
+      try {
+        const fetchedMatches = await fetchMatchData(undefined, parsedDate);
+        console.log('Fetched matches from remote:', Array.isArray(fetchedMatches) ? fetchedMatches.length : 'not an array');
         
-        if (navigator.onLine) {
-          const lastTryMatches = await fetchMatchData(undefined, parsedDate);
-          console.log('Last attempt fetch results:', lastTryMatches.length);
-          return lastTryMatches;
+        // Explicitly cache all matches for offline usage
+        if (Array.isArray(fetchedMatches) && fetchedMatches.length > 0) {
+          try {
+            // Prepare match data for caching
+            const courtMatches = fetchedMatches.map(fixture => ({
+              id: fixture.Id || `${fixture.DateTime}-${fixture.PlayingAreaName}`,
+              PlayingAreaName: fixture.PlayingAreaName,
+              DateTime: fixture.DateTime,
+              ...fixture
+            }));
+            
+            // Save all matches to IndexedDB for later offline use
+            await saveCourtMatches(courtMatches);
+            console.log('Cached all fixtures for future offline use', courtMatches.length);
+          } catch (cacheError) {
+            console.error('Error caching fixtures for offline use:', cacheError);
+          }
         }
         
-        return [];
-      } catch (error) {
-        console.error('Error in fixture query function:', error);
+        return fetchedMatches;
+      } catch (fetchError) {
+        console.error('Error fetching matches:', fetchError);
         return [];
       }
     },
-    retry: 3,
-    staleTime: 5 * 60 * 1000,
+    // Don't retry in offline mode as it will keep failing
+    retry: isOffline() ? false : 3,
+    // Consider data fresh for longer in offline mode
+    staleTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60 * 5, // 1 hour vs 5 minutes
   });
 
+  // Try to refetch if we initially have no matches
   useEffect(() => {
-    if (!isLoading && Array.isArray(matches) && matches.length === 0 && navigator.onLine) {
+    if (!isLoading && Array.isArray(matches) && matches.length === 0 && !isOffline()) {
       console.log('No matches loaded initially, attempting refetch...');
-      setTimeout(() => {
-        refetch();
-      }, 1000);
+      refetch();
     }
   }, [isLoading, matches, refetch]);
 
@@ -132,15 +116,6 @@ const CourtFixtures = () => {
     : [];
 
   console.log('Filtered and sorted court fixtures:', courtFixtures);
-
-  const handleRefresh = () => {
-    console.log('Manual refresh requested');
-    toast({
-      title: "Refreshing fixtures",
-      description: "Fetching the latest fixture data...",
-    });
-    refetch();
-  };
 
   if (isLoading) {
     return (
@@ -178,23 +153,13 @@ const CourtFixtures = () => {
       <div className="max-w-4xl mx-auto p-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-volleyball-cream">Court {courtId} Fixtures</h1>
-          <div className="flex space-x-4">
-            <Button 
-              variant="outline" 
-              onClick={handleRefresh}
-              className="bg-volleyball-cream text-volleyball-black hover:bg-volleyball-cream/90 text-xl py-6 px-4"
-            >
-              <RefreshCw className="mr-2 h-5 w-5" />
-              Refresh
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate(-1)}
-              className="bg-volleyball-cream text-volleyball-black hover:bg-volleyball-cream/90 text-xl py-6 px-8"
-            >
-              Back
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(-1)}
+            className="bg-volleyball-cream text-volleyball-black hover:bg-volleyball-cream/90 text-xl py-6 px-8"
+          >
+            Back
+          </Button>
         </div>
 
         {isOffline() && (
