@@ -1,7 +1,6 @@
 
 import { initDB } from './initDB';
 
-let activeConnection: IDBDatabase | null = null;
 let connectionPromise: Promise<IDBDatabase> | null = null;
 let connectionRetries = 0;
 const MAX_CONNECTION_RETRIES = 3;
@@ -15,61 +14,19 @@ export const getConnection = async (): Promise<IDBDatabase> => {
     return connectionPromise;
   }
   
-  // If we have an active connection and it's still open, return it
-  if (activeConnection && activeConnection.transaction && !isClosingConnection) {
-    try {
-      // Test if connection is actually working with a small transaction
-      const testTransaction = activeConnection.transaction(Object.keys(activeConnection.objectStoreNames), 'readonly');
-      testTransaction.abort(); // Just testing if it works, no need to complete
-      return activeConnection;
-    } catch (error) {
-      // Connection exists but isn't working - reset and try again
-      console.log('Existing connection failed test, resetting:', error);
-      activeConnection = null;
-    }
-  }
-  
   // Create a new connection promise
-  connectionPromise = new Promise(async (resolve, reject) => {
+  connectionPromise = (async () => {
     try {
       // Add retry logic
       connectionRetries = 0;
       while (connectionRetries < MAX_CONNECTION_RETRIES) {
         try {
-          activeConnection = await initDB();
+          const db = await initDB();
           isClosingConnection = false;
           
-          // Add onclose handler to reset our connection variables
-          activeConnection.onclose = () => {
-            console.log('IndexedDB connection closed');
-            if (!isClosingConnection) {
-              console.log('Connection was closed unexpectedly');
-            }
-            activeConnection = null;
-            connectionPromise = null;
-            isClosingConnection = false;
-          };
-          
-          // Add versionchange handler to close connection properly
-          activeConnection.onversionchange = (event) => {
-            if (activeConnection) {
-              console.log('IndexedDB version changed, closing connection');
-              isClosingConnection = true;
-              activeConnection.close();
-              activeConnection = null;
-              connectionPromise = null;
-              isClosingConnection = false;
-            }
-          };
-          
-          // Add onerror handler to catch connection errors
-          activeConnection.onerror = (event) => {
-            console.error('IndexedDB connection error:', event);
-            // Don't reset connection here as it might still be usable for other operations
-          };
-          
-          resolve(activeConnection);
-          break; // Successfully connected, exit the retry loop
+          // Success - return the db connection
+          connectionRetries = 0;
+          return db;
         } catch (error) {
           connectionRetries++;
           console.error(`IndexedDB connection attempt ${connectionRetries} failed:`, error);
@@ -82,13 +39,16 @@ export const getConnection = async (): Promise<IDBDatabase> => {
           await new Promise(r => setTimeout(r, connectionRetries * 500));
         }
       }
+      
+      throw new Error('Failed to connect to IndexedDB after multiple retries');
     } catch (error) {
       console.error('Error initializing IndexedDB connection after multiple attempts:', error);
-      activeConnection = null;
+      throw error;
+    } finally {
+      // Always clear the promise when done, whether successful or not
       connectionPromise = null;
-      reject(error);
     }
-  });
+  })();
   
   return connectionPromise;
 };
@@ -99,37 +59,25 @@ export const getRetryDelay = (retryCount: number, backoffArray: number[]): numbe
 
 // New function to safely close the connection
 export const closeConnection = () => {
-  if (activeConnection) {
-    try {
-      isClosingConnection = true;
-      activeConnection.close();
-    } catch (error) {
-      console.error('Error closing IndexedDB connection:', error);
-    } finally {
-      activeConnection = null;
-      connectionPromise = null;
-      isClosingConnection = false;
-      console.log('IndexedDB connection manually closed');
-    }
-  }
+  // Don't need to do anything as the actual connection
+  // is managed by initDB.ts and will be closed there
+  console.log('Connection close requested - deferring to initDB module');
 };
 
 // Function to reset the connection if it's in a problematic state
 export const resetConnection = async (): Promise<IDBDatabase> => {
-  if (activeConnection) {
-    try {
-      isClosingConnection = true;
-      activeConnection.close();
-    } catch (e) {
-      console.log('Error while closing connection during reset:', e);
-    } finally {
-      isClosingConnection = false;
-    }
-  }
-  
-  activeConnection = null;
+  // Clear the promise to force a new connection
   connectionPromise = null;
   connectionRetries = 0;
   
+  // Close the existing connection through initDB
+  try {
+    const { closeDB } = await import('./initDB');
+    closeDB();
+  } catch (e) {
+    console.log('Error while closing connection during reset:', e);
+  }
+  
+  // Get a fresh connection
   return getConnection();
 };

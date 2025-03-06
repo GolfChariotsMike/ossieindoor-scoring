@@ -128,9 +128,11 @@ export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => 
         throw error;
       }
       
-      // Reset connection before retry
+      // Reset connection before retry - but wait a moment to ensure cleanup
       try {
         await resetConnection();
+        // Extra delay to ensure old connections are fully closed
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (resetError) {
         console.error('Error resetting connection:', resetError);
       }
@@ -181,7 +183,7 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
           // We check multiple formats of court number to be resilient
           const courtMatches = allMatches.filter(match => {
             // Check for direct courtNumber match (integer)
-            if (match.courtNumber === parseInt(courtNumber)) return true;
+            if (match.court_number === parseInt(courtNumber)) return true;
             
             // Check for courtNumberStr match (string)
             if (match.courtNumberStr === courtNumber) return true;
@@ -249,6 +251,15 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
         return [];
       }
       
+      // Reset the connection before retry
+      try {
+        await resetConnection();
+        // Add a small delay to ensure cleanup
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (resetError) {
+        console.error('Error resetting connection:', resetError);
+      }
+      
       // Wait before retrying
       await new Promise(resolve => setTimeout(resolve, 1000 * retries));
     }
@@ -257,7 +268,6 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
   return [];
 };
 
-// Add a special method to get ALL matches for a court regardless of date
 export const getAllCourtMatches = async (courtNumber: string): Promise<CourtMatch[]> => {
   return getCourtMatches(courtNumber); // No date parameter will return all matches
 };

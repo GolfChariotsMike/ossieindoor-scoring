@@ -20,7 +20,9 @@ export const dbSchema: DBSchema = {
       { name: 'matchDate', keyPath: 'start_time' },
       { name: 'matchCode', keyPath: 'matchCode', options: { unique: false } },
       { name: 'dateTime', keyPath: 'DateTime' },
-      { name: 'playingArea', keyPath: 'PlayingAreaName' }
+      { name: 'playingArea', keyPath: 'PlayingAreaName' },
+      // Add an index for courtNumberStr for more reliable querying
+      { name: 'courtNumberStr', keyPath: 'courtNumberStr', options: { unique: false } }
     ]
   }
 };
