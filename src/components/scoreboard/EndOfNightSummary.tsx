@@ -19,13 +19,16 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
   const { data: matches, isLoading, refetch } = useQuery({
     queryKey: ["matches-summary", courtId],
     queryFn: fetchMatchSummary,
-    onError: (error) => {
-      console.error("Error loading matches:", error);
-      toast({
-        title: "Error loading matches",
-        description: "There was a problem loading the match data. Please try again.",
-        variant: "destructive",
-      });
+    // Remove the onError property and use onSettled for handling errors
+    meta: {
+      onError: (error: Error) => {
+        console.error("Error loading matches:", error);
+        toast({
+          title: "Error loading matches",
+          description: "There was a problem loading the match data. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   });
 

@@ -1,12 +1,14 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Fixture } from "@/types/volleyball";
 import { toast } from "@/hooks/use-toast";
-import { GameState } from "@/hooks/useGameState";
+import { useGameState } from "@/hooks/useGameState";
 import { useNextMatch } from "../NextMatchLogic";
 
 // Results display duration in seconds
 export const RESULTS_DISPLAY_DURATION = 50;
+
+// Define GameState type based on what useGameState returns
+type GameState = ReturnType<typeof useGameState>;
 
 interface UseMatchTransitionProps {
   courtId: string;
@@ -38,7 +40,6 @@ export const useMatchTransition = ({
   
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId, fixture);
 
-  // Effect for when match is completed - start results display and preload next match
   useEffect(() => {
     if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
       console.log('Match complete, preparing for results screen');
@@ -68,7 +69,6 @@ export const useMatchTransition = ({
     }
   }, [gameState.isMatchComplete, match, gameState.hasGameStarted]);
 
-  // Function to preload the next match
   const preloadNextMatch = async () => {
     if (isSearchingNextMatch.current) return;
     isSearchingNextMatch.current = true;
@@ -119,7 +119,6 @@ export const useMatchTransition = ({
     }
   };
 
-  // Timer effect for transitioning to next match after results display
   useEffect(() => {
     if (resultsDisplayStartTime) {
       if (transitionTimeoutRef.current) {
@@ -212,7 +211,6 @@ export const useMatchTransition = ({
     }
   }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, courtId, refetchMatches, preloadedNextMatch]);
 
-  // Return relevant state and functions for use in the main component
   return {
     resultsDisplayStartTime,
     preloadedNextMatch,
