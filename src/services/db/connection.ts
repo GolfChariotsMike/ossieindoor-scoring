@@ -6,6 +6,9 @@ let connectionPromise: Promise<IDBDatabase> | null = null;
 let connectionRetries = 0;
 const MAX_CONNECTION_RETRIES = 3;
 
+// Flag to track if a connection is being closed intentionally
+let isClosingConnection = false;
+
 export const getConnection = async (): Promise<IDBDatabase> => {
   // If we already have an active promise, return it to avoid multiple parallel initialization
   if (connectionPromise) {
@@ -13,10 +16,10 @@ export const getConnection = async (): Promise<IDBDatabase> => {
   }
   
   // If we have an active connection and it's still open, return it
-  if (activeConnection && activeConnection.transaction) {
+  if (activeConnection && activeConnection.transaction && !isClosingConnection) {
     try {
       // Test if connection is actually working with a small transaction
-      const testTransaction = activeConnection.transaction(['pendingScores'], 'readonly');
+      const testTransaction = activeConnection.transaction(Object.keys(activeConnection.objectStoreNames), 'readonly');
       testTransaction.abort(); // Just testing if it works, no need to complete
       return activeConnection;
     } catch (error) {
@@ -34,21 +37,28 @@ export const getConnection = async (): Promise<IDBDatabase> => {
       while (connectionRetries < MAX_CONNECTION_RETRIES) {
         try {
           activeConnection = await initDB();
+          isClosingConnection = false;
           
           // Add onclose handler to reset our connection variables
           activeConnection.onclose = () => {
             console.log('IndexedDB connection closed');
+            if (!isClosingConnection) {
+              console.log('Connection was closed unexpectedly');
+            }
             activeConnection = null;
             connectionPromise = null;
+            isClosingConnection = false;
           };
           
           // Add versionchange handler to close connection properly
-          activeConnection.onversionchange = () => {
+          activeConnection.onversionchange = (event) => {
             if (activeConnection) {
               console.log('IndexedDB version changed, closing connection');
+              isClosingConnection = true;
               activeConnection.close();
               activeConnection = null;
               connectionPromise = null;
+              isClosingConnection = false;
             }
           };
           
@@ -91,12 +101,14 @@ export const getRetryDelay = (retryCount: number, backoffArray: number[]): numbe
 export const closeConnection = () => {
   if (activeConnection) {
     try {
+      isClosingConnection = true;
       activeConnection.close();
     } catch (error) {
       console.error('Error closing IndexedDB connection:', error);
     } finally {
       activeConnection = null;
       connectionPromise = null;
+      isClosingConnection = false;
       console.log('IndexedDB connection manually closed');
     }
   }
@@ -106,9 +118,12 @@ export const closeConnection = () => {
 export const resetConnection = async (): Promise<IDBDatabase> => {
   if (activeConnection) {
     try {
+      isClosingConnection = true;
       activeConnection.close();
     } catch (e) {
       console.log('Error while closing connection during reset:', e);
+    } finally {
+      isClosingConnection = false;
     }
   }
   

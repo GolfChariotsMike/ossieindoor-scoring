@@ -3,22 +3,32 @@ import { DB_NAME, DB_VERSION } from './dbConfig';
 import { dbSchema } from './schema';
 
 let dbInstance: IDBDatabase | null = null;
+let isClosingDb = false;
 
 export const initDB = async (): Promise<IDBDatabase> => {
-  if (dbInstance && dbInstance.transaction) {
+  if (dbInstance && dbInstance.transaction && !isClosingDb) {
     try {
       // Test if the connection is actually working with a small transaction
-      const testTransaction = dbInstance.transaction(Object.keys(dbSchema)[0], 'readonly');
-      testTransaction.abort(); // Just testing if it works, no need to complete
-      return dbInstance;
+      const objectStoreNames = Array.from(dbInstance.objectStoreNames);
+      if (objectStoreNames.length > 0) {
+        const testTransaction = dbInstance.transaction(objectStoreNames, 'readonly');
+        testTransaction.abort(); // Just testing if it works, no need to complete
+        return dbInstance;
+      } else {
+        console.warn('DB instance has no stores, creating new connection');
+        dbInstance = null;
+      }
     } catch (error) {
       console.warn('Existing DB instance failed connectivity test, creating new connection:', error);
       try {
+        isClosingDb = true;
         dbInstance.close();
       } catch (e) {
         console.warn('Error while closing previous connection:', e);
+      } finally {
+        isClosingDb = false;
+        dbInstance = null;
       }
-      dbInstance = null;
     }
   }
 
@@ -41,14 +51,20 @@ export const initDB = async (): Promise<IDBDatabase> => {
 
           // Handle connection closing
           dbInstance.onclose = () => {
-            console.log('IndexedDB connection closed');
+            if (!isClosingDb) {
+              console.log('IndexedDB connection closed unexpectedly');
+            } else {
+              console.log('IndexedDB connection closed as requested');
+            }
             dbInstance = null;
           };
 
           // Handle version change
           dbInstance.onversionchange = () => {
+            isClosingDb = true;
             dbInstance?.close();
             dbInstance = null;
+            isClosingDb = false;
             console.log('IndexedDB version changed, connection closed');
           };
 
@@ -61,6 +77,7 @@ export const initDB = async (): Promise<IDBDatabase> => {
           // Create or update stores based on schema
           Object.values(dbSchema).forEach(store => {
             try {
+              // If store exists, we don't recreate it
               if (!db.objectStoreNames.contains(store.name)) {
                 const objectStore = db.createObjectStore(store.name, { keyPath: store.keyPath });
                 
@@ -95,9 +112,16 @@ export const initDB = async (): Promise<IDBDatabase> => {
 // Cleanup function to close database connection
 export const closeDB = () => {
   if (dbInstance) {
-    dbInstance.close();
-    dbInstance = null;
-    console.log('IndexedDB connection manually closed');
+    try {
+      isClosingDb = true;
+      dbInstance.close();
+    } catch (error) {
+      console.error('Error closing IndexedDB connection:', error);
+    } finally {
+      dbInstance = null;
+      isClosingDb = false;
+      console.log('IndexedDB connection manually closed');
+    }
   }
 };
 

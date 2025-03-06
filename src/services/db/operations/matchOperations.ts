@@ -1,6 +1,5 @@
-
 import { STORES } from '../dbConfig';
-import { getConnection } from '../connection';
+import { getConnection, resetConnection } from '../connection';
 
 interface CourtMatch {
   id: string;
@@ -26,6 +25,11 @@ export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => 
         let transaction;
         
         try {
+          // Make sure the database is ready for a transaction
+          if (!db || !db.objectStoreNames.contains(STORES.COURT_MATCHES)) {
+            throw new Error('Database or store not ready');
+          }
+          
           transaction = db.transaction([STORES.COURT_MATCHES], 'readwrite');
         } catch (error) {
           console.error('Failed to start transaction:', error);
@@ -63,41 +67,46 @@ export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => 
           
           return {
             ...match,
-            id: match.id || `${match.DateTime}-${match.PlayingAreaName}`,
+            id: match.id || `${match.DateTime}-${match.PlayingAreaName}-${Date.now()}`,
             PlayingAreaName: match.PlayingAreaName || '',
             DateTime: match.DateTime || new Date().toISOString(),
             courtNumberStr: courtNumberStr,
-            courtNumber: parseInt(courtNumberStr, 10)
+            court_number: parseInt(courtNumberStr, 10)
           };
         });
 
-        processedMatches.forEach(match => {
+        // Batch processing to avoid too many operations at once
+        const processMatch = (index: number) => {
+          if (index >= processedMatches.length) {
+            if (completed + errors === processedMatches.length) {
+              console.log('Saved court matches to IndexedDB:', completed);
+              resolve();
+            }
+            return;
+          }
+          
+          const match = processedMatches[index];
           // Use put instead of add to update existing records
           const request = store.put(match);
 
           request.onsuccess = () => {
             completed++;
-            if (completed + errors === processedMatches.length) {
-              console.log('Saved court matches to IndexedDB:', completed);
-              resolve();
-            }
+            // Process next match
+            processMatch(index + 1);
           };
 
-          request.onerror = () => {
+          request.onerror = (e) => {
             console.error('Error saving match to IndexedDB:', request.error);
             errors++;
-            if (completed + errors === processedMatches.length) {
-              if (completed > 0) {
-                resolve(); // Some matches were saved
-              } else {
-                reject(request.error); // No matches were saved
-              }
-            }
+            // Continue processing despite error
+            processMatch(index + 1);
           };
-        });
+        };
 
-        // Handle empty array case
-        if (processedMatches.length === 0) {
+        // Start batch processing
+        if (processedMatches.length > 0) {
+          processMatch(0);
+        } else {
           resolve();
         }
         
@@ -117,6 +126,13 @@ export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => 
       if (retries >= maxRetries) {
         console.error('Max retries reached for saving court matches');
         throw error;
+      }
+      
+      // Reset connection before retry
+      try {
+        await resetConnection();
+      } catch (resetError) {
+        console.error('Error resetting connection:', resetError);
       }
       
       // Wait before retrying
