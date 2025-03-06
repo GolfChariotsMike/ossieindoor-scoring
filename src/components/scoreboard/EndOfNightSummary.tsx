@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { fetchMatchSummary } from "./matchSummary/FetchMatchesLogic";
 import { SummaryTable } from "./matchSummary/SummaryTable";
+import { processPendingScores } from "@/utils/matchDatabase";
+import { useState } from "react";
 
 interface EndOfNightSummaryProps {
   courtId: string;
@@ -15,6 +17,7 @@ interface EndOfNightSummaryProps {
 
 export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) => {
   const navigate = useNavigate();
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: matches, isLoading, refetch } = useQuery({
     queryKey: ["matches-summary", courtId],
@@ -32,6 +35,27 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
     }
   });
 
+  const handleSaveAllScores = async () => {
+    setIsSaving(true);
+    try {
+      const count = await processPendingScores(true);
+      toast({
+        title: "Scores Saved",
+        description: `Successfully uploaded ${count} match scores to the server.`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error uploading scores:", error);
+      toast({
+        title: "Error Saving Scores",
+        description: "There was a problem uploading the scores. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -46,6 +70,15 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
             </Button>
             <h1 className="text-2xl font-bold">Court {courtId} - End of Night Summary</h1>
           </div>
+          <Button 
+            variant="default" 
+            onClick={handleSaveAllScores}
+            disabled={isSaving || !matches || matches.length === 0}
+            className="gap-2"
+          >
+            {isSaving ? "Saving..." : "Save All Scores"}
+            <Save className="h-4 w-4" />
+          </Button>
         </div>
 
         {matches && matches.length > 0 ? (
