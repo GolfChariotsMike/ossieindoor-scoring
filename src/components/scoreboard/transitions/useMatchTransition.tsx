@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Fixture } from "@/types/volleyball";
 import { toast } from "@/hooks/use-toast";
@@ -8,7 +7,6 @@ import { useNextMatch } from "../NextMatchLogic";
 // Results display duration in seconds
 export const RESULTS_DISPLAY_DURATION = 50;
 
-// Define GameState type based on what useGameState returns
 type GameState = ReturnType<typeof useGameState>;
 
 interface UseMatchTransitionProps {
@@ -39,8 +37,9 @@ export const useMatchTransition = ({
   const transitionErrorCount = useRef<number>(0);
   const hasTriedRefetchingMatches = useRef<boolean>(false);
   const isSearchingNextMatch = useRef<boolean>(false);
+  const hasSetupTransitionTimer = useRef<boolean>(false);
   
-  const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId, fixture);
+  const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
 
   useEffect(() => {
     if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
@@ -125,7 +124,6 @@ export const useMatchTransition = ({
     }
   };
 
-  // New function to prepare for next match transition
   const prepareForNextMatch = (nextMatch: Fixture) => {
     if (!nextMatch) return;
     
@@ -157,12 +155,14 @@ export const useMatchTransition = ({
   };
 
   useEffect(() => {
-    if (resultsDisplayStartTime) {
+    if (resultsDisplayStartTime && !hasSetupTransitionTimer.current) {
       if (transitionTimeoutRef.current) {
+        console.log('Cleaning up transition timeout');
         clearTimeout(transitionTimeoutRef.current);
       }
 
       console.log(`Setting up transition timeout for ${RESULTS_DISPLAY_DURATION} seconds at`, new Date().toISOString());
+      hasSetupTransitionTimer.current = true;
       
       transitionTimeoutRef.current = setTimeout(async () => {
         console.log('Transition timeout triggered at', new Date().toISOString());
@@ -174,8 +174,6 @@ export const useMatchTransition = ({
           } else {
             console.log('No preloaded match, searching for next match now');
             
-            // If we have no preloaded match, try the standard approach
-            // If we have no matches or they are few, try to refetch once
             if ((nextMatches.length === 0 || nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`).length <= 1) 
                 && !hasTriedRefetchingMatches.current) {
               
@@ -188,7 +186,6 @@ export const useMatchTransition = ({
                 matchCount: refetchResult.data?.length || 0
               });
               
-              // After refetching, try to find the next match again
               const nextMatch = await findNextMatch(refetchResult.data || []);
               
               if (nextMatch) {
@@ -199,10 +196,9 @@ export const useMatchTransition = ({
                 setShowEndOfNightSummary(true);
               }
               
-              return; // Exit early as we've handled transition
+              return;
             }
             
-            // Try to find next match with current match data
             const nextMatch = await findNextMatch(nextMatches);
             
             if (nextMatch) {
@@ -210,7 +206,6 @@ export const useMatchTransition = ({
               handleStartNextMatch(nextMatch);
             } else {
               console.log('No next match found, showing end of night summary');
-              // Log the court matches to help debug why no next match was found
               const courtMatches = nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`);
               console.log(`Court ${courtId} matches:`, courtMatches.map(m => ({
                 id: m.Id,
@@ -225,7 +220,6 @@ export const useMatchTransition = ({
           console.error('Error in match transition:', error);
           transitionErrorCount.current += 1;
           
-          // If we've had multiple transition errors, just go to summary
           if (transitionErrorCount.current >= 2) {
             console.log('Multiple transition errors, showing end of night summary');
             setShowEndOfNightSummary(true);
@@ -237,7 +231,7 @@ export const useMatchTransition = ({
             });
           }
         }
-      }, RESULTS_DISPLAY_DURATION * 1000); // Convert seconds to milliseconds
+      }, RESULTS_DISPLAY_DURATION * 1000);
 
       return () => {
         if (transitionTimeoutRef.current) {
@@ -246,7 +240,7 @@ export const useMatchTransition = ({
         }
       };
     }
-  }, [resultsDisplayStartTime, nextMatches, findNextMatch, handleStartNextMatch, courtId, refetchMatches, preloadedNextMatch]);
+  }, [resultsDisplayStartTime]);
 
   return {
     resultsDisplayStartTime,
