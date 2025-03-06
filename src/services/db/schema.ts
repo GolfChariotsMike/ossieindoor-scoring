@@ -17,10 +17,11 @@ export const dbSchema: DBSchema = {
     keyPath: 'id',
     indexes: [
       { name: 'courtNumber', keyPath: 'court_number' },
-      { name: 'courtNumberStr', keyPath: 'courtNumberStr' }, // Add this index for string court numbers
+      { name: 'courtNumberStr', keyPath: 'courtNumberStr' }, // Index for string court numbers
       { name: 'matchDate', keyPath: 'start_time' },
       { name: 'matchCode', keyPath: 'matchCode', options: { unique: false } },
-      { name: 'playingArea', keyPath: 'PlayingAreaName' } // Add this index for 'Court X' format
+      { name: 'playingArea', keyPath: 'PlayingAreaName' }, // Index for 'Court X' format
+      { name: 'courtId', keyPath: 'courtId' } // Explicit courtId index for direct lookups
     ]
   }
 };

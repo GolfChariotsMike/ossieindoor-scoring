@@ -81,13 +81,28 @@ export const ensureOnlineMode = () => {
  * (either forced or due to actual network status)
  */
 export const isOffline = (): boolean => {
-  const status = forcedOfflineMode || !navigator.onLine;
-  console.log('Offline status check:', { 
-    forcedOfflineMode, 
-    networkOffline: !navigator.onLine,
-    result: status 
-  });
-  return status;
+  // Do a more reliable check for network connectivity
+  try {
+    // First check for forced offline mode
+    if (forcedOfflineMode) {
+      console.log('Offline mode is forced ON via settings');
+      return true;
+    }
+    
+    // Then check navigator.onLine
+    const networkOffline = !navigator.onLine;
+    
+    if (networkOffline) {
+      console.log('Device reports network is offline');
+    } else {
+      console.log('Device reports network is online');
+    }
+    
+    return networkOffline;
+  } catch (error) {
+    console.error('Error checking offline status, assuming online:', error);
+    return false; // Default to online if there's an error
+  }
 };
 
 /**
@@ -128,8 +143,15 @@ export const resetOfflineMode = () => {
 
 // Listen for actual network status changes
 window.addEventListener('online', () => {
+  console.log('Network connection restored');
   if (!forcedOfflineMode) {
-    console.log('Network connection restored (but will not be used if forced offline mode is enabled)');
+    toast({
+      title: "You're back online",
+      description: "Connection has been restored.",
+      variant: "default",
+    });
+  } else {
+    console.log('(Network is online but app is in forced offline mode)');
   }
 });
 
