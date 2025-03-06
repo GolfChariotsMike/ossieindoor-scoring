@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Fixture } from "@/types/volleyball";
 import { toast } from "@/hooks/use-toast";
@@ -31,6 +32,7 @@ export const useMatchTransition = ({
 }: UseMatchTransitionProps) => {
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const [preloadedNextMatch, setPreloadedNextMatch] = useState<Fixture | null>(null);
+  const [isNextMatchReady, setIsNextMatchReady] = useState<boolean>(false);
   
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isTransitioningToResults = useRef<boolean>(false);
@@ -95,6 +97,8 @@ export const useMatchTransition = ({
         if (nextMatch) {
           console.log('Preloaded next match after refetching:', nextMatch.Id);
           setPreloadedNextMatch(nextMatch);
+          setIsNextMatchReady(true);
+          prepareForNextMatch(nextMatch);
         } else {
           console.log('No next match found during preloading');
           setPreloadedNextMatch(null);
@@ -106,6 +110,8 @@ export const useMatchTransition = ({
         if (nextMatch) {
           console.log('Preloaded next match:', nextMatch.Id);
           setPreloadedNextMatch(nextMatch);
+          setIsNextMatchReady(true);
+          prepareForNextMatch(nextMatch);
         } else {
           console.log('No next match found during preloading');
           setPreloadedNextMatch(null);
@@ -116,6 +122,37 @@ export const useMatchTransition = ({
       setPreloadedNextMatch(null);
     } finally {
       isSearchingNextMatch.current = false;
+    }
+  };
+
+  // New function to prepare for next match transition
+  const prepareForNextMatch = (nextMatch: Fixture) => {
+    if (!nextMatch) return;
+    
+    // Show a loading toast to indicate the next match is being prepared
+    toast({
+      title: "Next Match Ready",
+      description: `${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam} will start after the results timer`,
+      duration: 5000,
+    });
+    
+    // If less than 15 seconds left on the timer, start transition now
+    const timeElapsed = Date.now() - (resultsDisplayStartTime || Date.now());
+    const timeLeft = RESULTS_DISPLAY_DURATION * 1000 - timeElapsed;
+    
+    if (timeLeft < 15000 && timeLeft > 0) {
+      console.log(`Less than 15 seconds left (${Math.round(timeLeft/1000)}s), starting transition soon`);
+      
+      // Clear existing timeout and set a shorter one
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+      
+      // Allow 5 more seconds to view results
+      transitionTimeoutRef.current = setTimeout(() => {
+        console.log('Starting next match early due to ready state');
+        handleStartNextMatch(nextMatch);
+      }, 5000);
     }
   };
 
@@ -214,6 +251,7 @@ export const useMatchTransition = ({
   return {
     resultsDisplayStartTime,
     preloadedNextMatch,
+    isNextMatchReady,
     setResultsDisplayStartTime
   };
 };

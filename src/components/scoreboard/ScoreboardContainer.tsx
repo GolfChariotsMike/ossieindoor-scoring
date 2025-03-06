@@ -80,7 +80,11 @@ export const ScoreboardContainer = () => {
   });
 
   // Use our custom hook for match transition logic
-  const { resultsDisplayStartTime } = useMatchTransition({
+  const { 
+    resultsDisplayStartTime,
+    preloadedNextMatch,
+    isNextMatchReady 
+  } = useMatchTransition({
     courtId: courtId!,
     fixture,
     gameState,
@@ -89,6 +93,13 @@ export const ScoreboardContainer = () => {
     refetchMatches,
     setShowEndOfNightSummary
   });
+
+  // Add a visual indicator when a next match is ready
+  useEffect(() => {
+    if (isNextMatchReady && preloadedNextMatch) {
+      // Already showing a toast in the useMatchTransition hook
+    }
+  }, [isNextMatchReady, preloadedNextMatch]);
 
   useEffect(() => {
     // Log the fixtures we've loaded to help debug matching issues
@@ -167,6 +178,7 @@ export const ScoreboardContainer = () => {
       onExitConfirmationChange={setShowExitConfirmation}
       onConfirmExit={confirmExit}
       fixture={fixture}
+      nextMatchReady={isNextMatchReady && preloadedNextMatch ? true : false}
     />
   );
 };

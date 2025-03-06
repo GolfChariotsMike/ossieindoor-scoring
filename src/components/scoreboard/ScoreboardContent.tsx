@@ -21,6 +21,7 @@ interface ScoreboardContentProps {
   onExitConfirmationChange: (show: boolean) => void;
   onConfirmExit: () => void;
   fixture?: Fixture;
+  nextMatchReady?: boolean;
 }
 
 export const ScoreboardContent = ({
@@ -33,7 +34,8 @@ export const ScoreboardContent = ({
   showExitConfirmation,
   onExitConfirmationChange,
   onConfirmExit,
-  fixture
+  fixture,
+  nextMatchReady = false
 }: ScoreboardContentProps) => {
   const navigate = useNavigate();
 
@@ -47,7 +49,12 @@ export const ScoreboardContent = ({
         <BackButton onClick={onBack} />
         
         {gameState.isMatchComplete && (
-          <div className="absolute top-6 right-6 z-10">
+          <div className="absolute top-6 right-6 z-10 flex gap-2">
+            {nextMatchReady && (
+              <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium border border-green-300 animate-pulse">
+                Next Match Ready
+              </div>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -68,6 +75,7 @@ export const ScoreboardContent = ({
               isTeamsSwitched={gameState.isTeamsSwitched}
               onStartNextMatch={onManualNextMatch}
               onEndOfNight={onEndOfNight}
+              nextMatchReady={nextMatchReady}
             />
           ) : (
             <>

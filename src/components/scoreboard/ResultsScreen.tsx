@@ -18,11 +18,12 @@ interface ResultsScreenProps {
   match: Match;
   setScores: SetScores;
   isTeamsSwitched: boolean;
-  onStartNextMatch?: () => void;
+  onStartNextMatch: () => void;
   onEndOfNight?: () => void;
+  nextMatchReady?: boolean;
 }
 
-export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch, onEndOfNight }: ResultsScreenProps) => {
+export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch, onEndOfNight, nextMatchReady }: ResultsScreenProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [endOfNightDialogOpen, setEndOfNightDialogOpen] = useState(false);
   const [scoresSaved, setScoresSaved] = useState(false);
