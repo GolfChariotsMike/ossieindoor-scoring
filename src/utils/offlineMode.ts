@@ -81,7 +81,7 @@ export const ensureOnlineMode = () => {
  * (either forced or due to actual network status)
  */
 export const isOffline = (): boolean => {
-  // Do a more reliable check for network connectivity
+  // Do an active check for network connectivity
   try {
     // First check for forced offline mode
     if (forcedOfflineMode) {
@@ -89,7 +89,7 @@ export const isOffline = (): boolean => {
       return true;
     }
     
-    // Then check navigator.onLine
+    // Then check navigator.onLine - this is more reliable now
     const networkOffline = !navigator.onLine;
     
     if (networkOffline) {
@@ -101,12 +101,12 @@ export const isOffline = (): boolean => {
     return networkOffline;
   } catch (error) {
     console.error('Error checking offline status, assuming online:', error);
-    return false; // Default to online if there's an error
+    return false; // Default to online if there's an error checking
   }
 };
 
 /**
- * Get the current offline mode status for displaying in UI
+ * Get the current offline status for displaying in UI
  */
 export const getOfflineStatus = (): { forced: boolean, network: boolean } => {
   return {

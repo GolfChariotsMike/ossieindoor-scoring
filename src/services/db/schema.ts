@@ -21,7 +21,8 @@ export const dbSchema: DBSchema = {
       { name: 'matchDate', keyPath: 'start_time' },
       { name: 'matchCode', keyPath: 'matchCode', options: { unique: false } },
       { name: 'playingArea', keyPath: 'PlayingAreaName' }, // Index for 'Court X' format
-      { name: 'courtId', keyPath: 'courtId' } // Explicit courtId index for direct lookups
+      { name: 'courtId', keyPath: 'courtId' }, // Explicit courtId index for direct lookups
+      { name: 'dateTime', keyPath: 'DateTime' } // Add index for date/time filtering
     ]
   }
 };
