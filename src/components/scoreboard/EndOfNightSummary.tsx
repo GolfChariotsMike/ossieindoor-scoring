@@ -22,7 +22,6 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
   const { data: matches, isLoading, refetch } = useQuery({
     queryKey: ["matches-summary", courtId],
     queryFn: fetchMatchSummary,
-    // Remove the onError property and use onSettled for handling errors
     meta: {
       onError: (error: Error) => {
         console.error("Error loading matches:", error);
@@ -39,11 +38,22 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
     setIsSaving(true);
     try {
       const count = await processPendingScores(true);
-      toast({
-        title: "Scores Saved",
-        description: `Successfully uploaded ${count} match scores to the server.`,
-        variant: "default",
-      });
+      
+      if (count > 0) {
+        toast({
+          title: "Scores Saved",
+          description: `Successfully uploaded ${count} match scores to the server.`,
+          variant: "default",
+        });
+        // Refetch matches to update the display
+        await refetch();
+      } else {
+        toast({
+          title: "No Scores to Save",
+          description: "There are no pending scores to upload.",
+          variant: "default",
+        });
+      }
     } catch (error) {
       console.error("Error uploading scores:", error);
       toast({

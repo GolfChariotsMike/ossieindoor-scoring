@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
@@ -21,7 +20,7 @@ let isProcessing = false;
 const processPendingScores = async (forceProcess = false) => {
   if (isProcessing && !forceProcess) {
     console.log('Already processing pending scores, skipping...');
-    return;
+    return 0;
   }
 
   try {
@@ -41,6 +40,7 @@ const processPendingScores = async (forceProcess = false) => {
 
     for (const score of pendingScores) {
       try {
+        console.log('Processing score:', score.id);
         await updatePendingScoreStatus(score.id, 'processing');
         
         // Check if we have network connectivity
@@ -180,7 +180,8 @@ const processPendingScores = async (forceProcess = false) => {
       }
     }
     
-    return processedCount; // Return the number of processed scores
+    console.log('Finished processing scores. Total processed:', processedCount);
+    return processedCount;
   } catch (error) {
     console.error('Error processing pending scores:', error);
     throw error;
