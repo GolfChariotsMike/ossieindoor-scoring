@@ -7,6 +7,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { ArrowLeft } from "lucide-react";
 import { fetchMatchSummary } from "./matchSummary/FetchMatchesLogic";
 import { SummaryTable } from "./matchSummary/SummaryTable";
+import { useEffect } from "react";
 
 interface EndOfNightSummaryProps {
   courtId: string;
@@ -16,10 +17,27 @@ interface EndOfNightSummaryProps {
 export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) => {
   const navigate = useNavigate();
 
-  const { data: matches, isLoading, refetch } = useQuery({
+  useEffect(() => {
+    console.log("EndOfNightSummary mounted for court:", courtId);
+    
+    // Check for pending scores in localStorage as a fallback
+    const localStorageKeys = Object.keys(localStorage);
+    const scoreKeys = localStorageKeys.filter(key => key.includes('score') || key.includes('match'));
+    
+    if (scoreKeys.length > 0) {
+      console.log("Found potential score-related items in localStorage:", scoreKeys);
+    } else {
+      console.log("No score-related items found in localStorage");
+    }
+    
+    return () => {
+      console.log("EndOfNightSummary unmounting");
+    };
+  }, [courtId]);
+
+  const { data: matches, isLoading, error, refetch } = useQuery({
     queryKey: ["matches-summary", courtId],
     queryFn: fetchMatchSummary,
-    // Remove the onError property and use onSettled for handling errors
     meta: {
       onError: (error: Error) => {
         console.error("Error loading matches:", error);
@@ -31,6 +49,16 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
       }
     }
   });
+  
+  useEffect(() => {
+    if (error) {
+      console.error("Query error in EndOfNightSummary:", error);
+    }
+    
+    if (matches) {
+      console.log(`EndOfNightSummary received ${matches.length} matches from query`);
+    }
+  }, [matches, error]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -46,12 +74,28 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
             </Button>
             <h1 className="text-2xl font-bold">Court {courtId} - End of Night Summary</h1>
           </div>
+          <Button variant="outline" onClick={() => refetch()}>
+            Refresh Data
+          </Button>
         </div>
 
         {matches && matches.length > 0 ? (
           <SummaryTable matches={matches} />
         ) : (
-          <div className="text-center py-8 text-muted-foreground">No matches recorded today.</div>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No matches recorded today.</p>
+            <p className="mt-4 text-sm">
+              This could be because no matches have been completed, 
+              or because the scores haven't been saved properly.
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => refetch()}
+            >
+              Try Again
+            </Button>
+          </div>
         )}
       </div>
     </div>

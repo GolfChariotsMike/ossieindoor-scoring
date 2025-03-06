@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
@@ -31,8 +30,6 @@ const processPendingScores = async (forceProcess = false) => {
 
     let processedCount = 0;
     
-    // If we're in forced offline mode and not explicitly forcing processing,
-    // don't try to send scores to Supabase
     if (isOffline() && !forceProcess) {
       console.log('In offline mode, pending scores will be processed later');
       isProcessing = false;
@@ -43,14 +40,12 @@ const processPendingScores = async (forceProcess = false) => {
       try {
         await updatePendingScoreStatus(score.id, 'processing');
         
-        // Check if we have network connectivity
         if (isOffline()) {
           console.log('No network connection or offline mode enabled, will retry later');
           await updatePendingScoreStatus(score.id, 'pending');
           continue;
         }
 
-        // Check if a record already exists for this match
         const { data: existingData, error: checkError } = await supabase
           .from('match_data_v2')
           .select()
@@ -86,18 +81,14 @@ const processPendingScores = async (forceProcess = false) => {
           }
         } else {
           console.log('Saving new match data for match:', score.matchId);
-          // Calculate all the required values on the client
-          // Calculate total points
           const homePointsFor = score.homeScores.reduce((acc, s) => acc + s, 0);
           const awayPointsFor = score.awayScores.reduce((acc, s) => acc + s, 0);
 
-          // Calculate sets won
           const homeSetsWon = score.homeScores.reduce((acc, s, index) => 
             acc + (s > score.awayScores[index] ? 1 : 0), 0);
           const awaySetsWon = score.homeScores.reduce((acc, s, index) => 
             acc + (s < score.awayScores[index] ? 1 : 0), 0);
 
-          // Determine match result
           const getResult = (isHomeTeam: boolean) => {
             const teamSetsWon = isHomeTeam ? homeSetsWon : awaySetsWon;
             const opponentSetsWon = isHomeTeam ? awaySetsWon : homeSetsWon;
@@ -106,17 +97,14 @@ const processPendingScores = async (forceProcess = false) => {
             return 'D';
           };
 
-          // Calculate bonus points per set (1 point per 10 points in each set)
           const homeBonusPoints = score.homeScores.reduce((total, setScore) => 
             total + Math.floor(setScore / 10), 0);
           const awayBonusPoints = score.awayScores.reduce((total, setScore) => 
             total + Math.floor(setScore / 10), 0);
 
-          // Calculate total match points (bonus points + set points)
           const homeMatchPoints = homeBonusPoints + (homeSetsWon * 2);
           const awayMatchPoints = awayBonusPoints + (awaySetsWon * 2);
           
-          // Get match details
           const { data: matchData, error: matchError } = await supabase
             .from('matches_v2')
             .select('*')
@@ -133,7 +121,6 @@ const processPendingScores = async (forceProcess = false) => {
             throw new Error('Match not found');
           }
 
-          // Use upsert with match_id as the constraint
           const { error: upsertError } = await supabase
             .from('match_data_v2')
             .upsert({
@@ -180,7 +167,7 @@ const processPendingScores = async (forceProcess = false) => {
       }
     }
     
-    return processedCount; // Return the number of processed scores
+    return processedCount;
   } catch (error) {
     console.error('Error processing pending scores:', error);
     throw error;
@@ -213,7 +200,8 @@ export const saveMatchScores = async (
     homeScores,
     awayScores,
     timestamp: new Date().toISOString(),
-    submitToSupabase
+    submitToSupabase,
+    offline: isOffline()
   });
 
   if (!matchId || !homeScores.length || !awayScores.length) {
@@ -227,24 +215,58 @@ export const saveMatchScores = async (
   }
 
   try {
-    // Always save to IndexedDB as backup
-    const pendingScore: Omit<PendingScore, 'status'> = {
+    const pendingScore = {
       id: `${matchId}-${Date.now()}`,
       matchId,
       homeScores,
       awayScores,
       timestamp: new Date().toISOString(),
-      retryCount: 0
+      retryCount: 0,
+      status: 'pending' as const
     };
-    await savePendingScore(pendingScore);
+    
+    console.log('Saving pending score to IndexedDB:', pendingScore);
+    
+    try {
+      const existingScores = await getPendingScores();
+      console.log(`Found ${existingScores.length} existing pending scores before saving`);
+      if (existingScores.length > 0) {
+        console.log('Sample existing score:', existingScores[0]);
+      }
+    } catch (checkError) {
+      console.error('Error checking existing scores:', checkError);
+    }
+    
+    try {
+      await savePendingScore(pendingScore);
+      console.log('Successfully saved pending score to IndexedDB');
+      
+      const checkScores = await getPendingScores();
+      console.log(`After saving, found ${checkScores.length} pending scores`);
+      
+      const ourScore = checkScores.find(s => s.id === pendingScore.id);
+      if (ourScore) {
+        console.log('Confirmed our score was saved correctly');
+      } else {
+        console.warn('Our score does not appear to be in the pending scores list!');
+      }
+      
+    } catch (saveError) {
+      console.error('Error saving to IndexedDB:', saveError);
+      
+      try {
+        localStorage.setItem(`score-${pendingScore.id}`, JSON.stringify(pendingScore));
+        console.log('Saved to localStorage as fallback');
+      } catch (localStorageError) {
+        console.error('Even localStorage failed:', localStorageError);
+      }
+    }
 
-    // If not submitting to Supabase, just return after saving locally
     if (!submitToSupabase) {
       console.log('Scores saved locally only - will be uploaded at end of night');
       return;
     }
 
-    // We'll only reach this point if submitToSupabase is true (end of night summary)
     if (isOffline()) {
       toast({
         title: "You're offline",
@@ -254,13 +276,10 @@ export const saveMatchScores = async (
       return;
     }
 
-    // Since we're in the end-of-night process, let processPendingScores handle the upload
-    // This avoids duplicating code and ensures consistent processing
     return await processPendingScores(true);
   } catch (error) {
     console.error('Error saving match scores:', error);
     
-    // Only try to log errors to Supabase if we're online and explicitly submitting
     if (!isOffline() && submitToSupabase) {
       try {
         await supabase.from('crash_logs').insert({

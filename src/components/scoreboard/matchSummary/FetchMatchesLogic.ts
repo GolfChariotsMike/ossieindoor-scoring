@@ -5,6 +5,7 @@ import { startOfDay, endOfDay } from "date-fns";
 import { getPendingScores } from "@/services/indexedDB";
 import { isOffline } from "@/utils/offlineMode";
 import { getTeamName } from "./TeamNameUtils";
+import { getAllCourtMatches } from "@/services/db/operations/matchOperations";
 
 export interface SummaryMatch {
   id: string;
@@ -58,6 +59,30 @@ export const fetchMatchSummary: QueryFunction<SummaryMatch[], [string, string]> 
 
     const pendingScores = await getPendingScores();
     console.log("Found pending scores:", pendingScores.length);
+    
+    // Add more detail about the pending scores
+    if (pendingScores.length > 0) {
+      console.log("Pending score details:", pendingScores.map(score => ({
+        id: score.id,
+        matchId: score.matchId,
+        timestamp: score.timestamp,
+        status: score.status,
+        homeScores: score.homeScores,
+        awayScores: score.awayScores
+      })));
+    }
+
+    // Try to directly get all matches from IndexedDB for this court
+    try {
+      const allCourtMatches = await getAllCourtMatches(courtId);
+      console.log(`Direct IndexedDB query for court ${courtId} found ${allCourtMatches.length} matches:`);
+      if (allCourtMatches.length > 0) {
+        console.log("Sample match data:", allCourtMatches[0]);
+        console.log("All match IDs:", allCourtMatches.map(m => m.id).join(", "));
+      }
+    } catch (indexedDBError) {
+      console.error("Error directly querying IndexedDB:", indexedDBError);
+    }
 
     if (isOffline()) {
       console.log("Offline mode - showing only locally stored data");
@@ -65,8 +90,10 @@ export const fetchMatchSummary: QueryFunction<SummaryMatch[], [string, string]> 
       // Improved team name extraction for local matches
       const localMatches = await Promise.all(
         pendingScores.map(async (score) => {
+          console.log(`Processing pending score for match: ${score.matchId}`);
           const homeTeamName = await getTeamName(score.matchId, true);
           const awayTeamName = await getTeamName(score.matchId, false);
+          console.log(`Team names for ${score.matchId}: ${homeTeamName} vs ${awayTeamName}`);
 
           return {
             id: score.matchId,
@@ -100,6 +127,7 @@ export const fetchMatchSummary: QueryFunction<SummaryMatch[], [string, string]> 
         })
       );
 
+      console.log(`Created ${localMatches.length} summary matches from pending scores`);
       return localMatches;
     }
 
@@ -117,7 +145,7 @@ export const fetchMatchSummary: QueryFunction<SummaryMatch[], [string, string]> 
       throw error;
     }
 
-    console.log("Total matches to display:", existingMatches.length);
+    console.log("Total matches to display:", existingMatches?.length || 0);
     return existingMatches || [];
   } catch (error) {
     console.error("Error in match summary query:", error);

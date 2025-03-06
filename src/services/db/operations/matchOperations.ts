@@ -161,20 +161,53 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
           const allMatches = request.result;
           console.log(`Retrieved ${allMatches.length} total matches from cache`);
           
+          // Log details of some matches to help with debugging
+          if (allMatches.length > 0) {
+            console.log("Sample match from IndexedDB:", JSON.stringify({
+              id: allMatches[0].id,
+              PlayingAreaName: allMatches[0].PlayingAreaName,
+              courtNumber: allMatches[0].courtNumber,
+              courtNumberStr: allMatches[0].courtNumberStr
+            }));
+          }
+          
           // Filter for court first (most important criteria)
           // We check multiple formats of court number to be resilient
           const courtMatches = allMatches.filter(match => {
             // Check for direct courtNumber match (integer)
-            if (match.courtNumber === parseInt(courtNumber)) return true;
+            const hasIntegerMatch = match.courtNumber === parseInt(courtNumber);
             
             // Check for courtNumberStr match (string)
-            if (match.courtNumberStr === courtNumber) return true;
+            const hasStringMatch = match.courtNumberStr === courtNumber;
             
             // Check PlayingAreaName for 'Court X' format
-            if (match.PlayingAreaName === `Court ${courtNumber}`) return true;
+            const hasPlayingAreaMatch = match.PlayingAreaName === `Court ${courtNumber}`;
             
             // Fallback check for any court number in the ID
-            if (match.id && match.id.includes(`_${courtNumber}_`)) return true;
+            const hasIdMatch = match.id && match.id.includes(`_${courtNumber}_`);
+            
+            // Log the details for each match and why it was included/excluded
+            if (hasIntegerMatch || hasStringMatch || hasPlayingAreaMatch || hasIdMatch) {
+              console.log(`Match ${match.id} MATCHED court ${courtNumber} via:`, {
+                integerMatch: hasIntegerMatch,
+                stringMatch: hasStringMatch,
+                playingAreaMatch: hasPlayingAreaMatch,
+                idMatch: hasIdMatch,
+                courtNumberValue: match.courtNumber,
+                courtNumberStrValue: match.courtNumberStr,
+                playingAreaValue: match.PlayingAreaName
+              });
+              return true;
+            }
+            
+            // For diagnostics, log some details about non-matching courts
+            if (allMatches.length < 10) { // Only log details if we have a reasonable number
+              console.log(`Match ${match.id} did NOT match court ${courtNumber}:`, {
+                courtNumberValue: match.courtNumber,
+                courtNumberStrValue: match.courtNumberStr,
+                playingAreaValue: match.PlayingAreaName
+              });
+            }
             
             return false;
           });
@@ -189,17 +222,26 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
               // Try different date formats and comparisons
               try {
                 // Direct string comparison first (most reliable)
-                if (match.DateTime.includes(date)) return true;
+                const hasDateString = match.DateTime.includes(date);
                 
                 // Then try to extract date part for comparison
                 const matchDate = match.DateTime.split(' ')[0];
-                if (matchDate === date) return true;
+                const hasDateMatch = matchDate === date;
                 
                 // As a fallback, try to do a more flexible date comparison
                 const matchDateObj = new Date(match.DateTime);
                 const targetDateObj = new Date(date);
+                const hasDateObjMatch = matchDateObj.toDateString() === targetDateObj.toDateString();
                 
-                return matchDateObj.toDateString() === targetDateObj.toDateString();
+                const matches = hasDateString || hasDateMatch || hasDateObjMatch;
+                
+                if (matches) {
+                  console.log(`Match ${match.id} date matched: ${match.DateTime} ↔ ${date}`);
+                } else if (courtMatches.length < 10) {
+                  console.log(`Match ${match.id} date did NOT match: ${match.DateTime} ↔ ${date}`);
+                }
+                
+                return matches;
               } catch (error) {
                 console.error('Error comparing dates:', error);
                 return false;
@@ -234,7 +276,7 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
       }
       
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+      await new Promise(resolve => setTimeout(r => resolve, 1000 * retries));
     }
   }
   
@@ -243,6 +285,7 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
 
 // Add a special method to get ALL matches for a court regardless of date
 export const getAllCourtMatches = async (courtNumber: string): Promise<CourtMatch[]> => {
+  console.log(`Getting ALL court matches for court ${courtNumber}`);
   return getCourtMatches(courtNumber); // No date parameter will return all matches
 };
 
