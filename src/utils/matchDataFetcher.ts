@@ -44,7 +44,7 @@ const fetchFromUrl = async (url: string, date: string) => {
   }
 };
 
-export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
+export const fetchMatchData = async (courtId?: string, selectedDate?: Date): Promise<Fixture[]> => {
   try {
     const date = selectedDate || new Date();
     const formattedDate = format(date, 'dd/MM/yyyy');
@@ -129,27 +129,8 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
           console.error('Error caching fixtures:', error);
         }
 
-        // If looking for a specific court's match
-        if (courtId) {
-          const currentMatch = fixtures.find((match) => match.PlayingAreaName === `Court ${courtId}`);
-          
-          if (!currentMatch) {
-            console.log('No match found online for Court', courtId);
-            throw new Error('No match found online for this court');
-          }
-
-          console.log('Found match online for Court', courtId, ':', currentMatch.HomeTeam, 'vs', currentMatch.AwayTeam);
-          return {
-            id: currentMatch.Id || `match-${Date.now()}`,
-            court: parseInt(courtId),
-            startTime: currentMatch.DateTime,
-            division: currentMatch.DivisionName,
-            homeTeam: { id: currentMatch.HomeTeamId || `home-${Date.now()}`, name: currentMatch.HomeTeam },
-            awayTeam: { id: currentMatch.AwayTeamId || `away-${Date.now()}`, name: currentMatch.AwayTeam },
-          };
-        }
-
-        // If we're just returning all fixtures
+        // If looking for a specific court, return all fixtures anyway
+        // This is a change from the original logic to always return an array
         return fixtures;
       } catch (error) {
         console.warn('Online fetch failed, falling back to local storage:', error);
@@ -171,28 +152,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
         
         if (cachedMatches.length > 0) {
           console.log('Found cached matches:', cachedMatches.length);
-          
-          // If looking for a specific court match, return the first one
-          if (courtId) {
-            const match = cachedMatches[0];
-            console.log('Using cached match:', match.HomeTeam || match.home_team_name, 'vs', match.AwayTeam || match.away_team_name);
-            return {
-              id: match.id,
-              court: parseInt(courtId),
-              startTime: match.start_time || match.DateTime,
-              division: match.division || match.DivisionName,
-              homeTeam: { 
-                id: match.home_team_id || match.HomeTeamId || `home-${Date.now()}`, 
-                name: match.home_team_name || match.HomeTeam 
-              },
-              awayTeam: { 
-                id: match.away_team_id || match.AwayTeamId || `away-${Date.now()}`, 
-                name: match.away_team_name || match.AwayTeam 
-              },
-            };
-          }
-          
-          // Otherwise return all matches
+          // Return the cached matches array
           return cachedMatches;
         }
         
@@ -205,15 +165,20 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     // If we're definitely offline and nothing in cache, use default data
     console.log('Using default match data (offline or no cached data)');
     
+    // Always return an array, even for a single default match
     if (courtId) {
-      return {
+      const defaultMatch = {
         id: `default-match-${courtId}-${Date.now()}`,
-        court: parseInt(courtId),
-        startTime: new Date().toISOString(),
-        homeTeam: { id: "team-1", name: "Team A" },
-        awayTeam: { id: "team-2", name: "Team B" },
-        division: "Default Division"
+        court_number: parseInt(courtId),
+        PlayingAreaName: `Court ${courtId}`,
+        DateTime: formattedDate + " 00:00",
+        HomeTeam: "Team A",
+        AwayTeam: "Team B",
+        HomeTeamId: "team-1",
+        AwayTeamId: "team-2",
+        DivisionName: "Default Division"
       };
+      return [defaultMatch];
     }
     
     return [];
@@ -226,15 +191,20 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
       variant: "destructive",
     });
     
+    // Always return an array for consistency
     if (courtId) {
-      return {
+      const fallbackMatch = {
         id: `fallback-match-${courtId}-${Date.now()}`,
-        court: parseInt(courtId),
-        startTime: new Date().toISOString(),
-        homeTeam: { id: "team-1", name: "Team A" },
-        awayTeam: { id: "team-2", name: "Team B" },
-        division: "Default Division"
+        court_number: parseInt(courtId),
+        PlayingAreaName: `Court ${courtId}`,
+        DateTime: formattedDate + " 00:00",
+        HomeTeam: "Team A",
+        AwayTeam: "Team B",
+        HomeTeamId: "team-1",
+        AwayTeamId: "team-2",
+        DivisionName: "Default Division"
       };
+      return [fallbackMatch];
     }
     
     return [];

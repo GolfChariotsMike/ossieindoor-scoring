@@ -68,9 +68,7 @@ const CourtFixtures = () => {
               }
             }
             
-            if (Array.isArray(fetchedMatches) && fetchedMatches.length > 0) {
-              return fetchedMatches;
-            }
+            return fetchedMatches;
           } catch (fetchError) {
             console.error('Error fetching from server, will try local cache:', fetchError);
           }
@@ -93,7 +91,7 @@ const CourtFixtures = () => {
         
         if (navigator.onLine) {
           const lastTryMatches = await fetchMatchData(undefined, parsedDate);
-          console.log('Last attempt fetch results:', lastTryMatches.length || 0);
+          console.log('Last attempt fetch results:', lastTryMatches.length);
           return lastTryMatches;
         }
         
