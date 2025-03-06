@@ -1,3 +1,4 @@
+
 import { createRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -93,10 +94,14 @@ window.addEventListener('unhandledrejection', async (event) => {
 });
 
 // Clean old matches when the app starts, but only if we're not in offline mode
+// and do it after a small delay to avoid database connection issues during app startup
 if (!isOffline()) {
-  cleanOldMatches().catch(error => {
-    console.error('Failed to clean old matches:', error);
-  });
+  // Delay the cleanup to allow the app to initialize first
+  setTimeout(() => {
+    cleanOldMatches().catch(error => {
+      console.error('Failed to clean old matches:', error);
+    });
+  }, 5000); // 5 second delay
 }
 
 root.render(
