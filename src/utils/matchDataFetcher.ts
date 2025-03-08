@@ -61,6 +61,7 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     });
 
     // If in offline mode and we have a court ID, try to get matches from cache
+    // Only use cached data in offline mode, never when online
     if (isOffline() && courtId) {
       console.log('Offline mode - trying to get matches from cache first');
       try {

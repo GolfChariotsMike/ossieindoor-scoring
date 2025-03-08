@@ -32,34 +32,37 @@ const CourtFixtures = () => {
     queryFn: async () => {
       console.log('Fetching matches in CourtFixtures...');
       
-      // First try to get court matches from IndexedDB
-      try {
-        console.log('Getting matches from local IndexedDB...');
-        const localMatches = await getCourtMatches(courtId || '', formattedDate);
-        console.log('Local matches retrieved:', localMatches);
-        
-        if (localMatches.length > 0) {
-          return localMatches;
-        } else if (isOffline()) {
-          // If we're offline and have no cached matches, that's a problem
-          toast({
-            title: "No matches available offline",
-            description: "No matches found in local storage. Please reconnect to the internet and try again.",
-            variant: "destructive",
-          });
+      // Only use cached matches if in offline mode
+      if (isOffline()) {
+        try {
+          console.log('Getting matches from local IndexedDB (offline mode)...');
+          const localMatches = await getCourtMatches(courtId || '', formattedDate);
+          console.log('Local matches retrieved:', localMatches);
+          
+          if (localMatches.length > 0) {
+            return localMatches;
+          } else {
+            // If we're offline and have no cached matches, that's a problem
+            toast({
+              title: "No matches available offline",
+              description: "No matches found in local storage. Please reconnect to the internet and try again.",
+              variant: "destructive",
+            });
+            return [];
+          }
+        } catch (error) {
+          console.error('Error fetching local matches:', error);
           return [];
         }
-      } catch (error) {
-        console.error('Error fetching local matches:', error);
-        // Continue to normal fetch if there was an error with IndexedDB
       }
       
-      // If not in cache or error occurred, try normal fetch
+      // When online, always fetch fresh data
       try {
+        console.log('Fetching fresh match data from remote source...');
         const fetchedMatches = await fetchMatchData(undefined, parsedDate);
         console.log('Fetched matches from remote:', Array.isArray(fetchedMatches) ? fetchedMatches.length : 'not an array');
         
-        // Explicitly cache all matches for offline usage
+        // Cache matches for offline usage
         if (Array.isArray(fetchedMatches) && fetchedMatches.length > 0) {
           try {
             // Prepare match data for caching
@@ -86,8 +89,10 @@ const CourtFixtures = () => {
     },
     // Don't retry in offline mode as it will keep failing
     retry: isOffline() ? false : 3,
-    // Consider data fresh for longer in offline mode
-    staleTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60 * 5, // 1 hour vs 5 minutes
+    // Consider data fresh for only a short time to promote frequent refetching
+    staleTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60, // 1 hour in offline mode, 1 minute when online
+    // Disable caching in query cache when online to ensure fresh data
+    cacheTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60,
   });
 
   // Try to refetch if we initially have no matches

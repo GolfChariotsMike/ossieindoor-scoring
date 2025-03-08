@@ -709,6 +709,7 @@ export type Database = {
       team_shared_players: {
         Row: {
           created_at: string | null
+          day_context: string | null
           id: string
           notes: string | null
           team_original_ids: string[] | null
@@ -717,6 +718,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          day_context?: string | null
           id?: string
           notes?: string | null
           team_original_ids?: string[] | null
@@ -725,6 +727,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          day_context?: string | null
           id?: string
           notes?: string | null
           team_original_ids?: string[] | null

@@ -1,3 +1,4 @@
+
 import { XMLParser } from 'fast-xml-parser';
 import { XMLFixture, XMLWeek, LeagueResponse } from '@/types/xml';
 
@@ -24,7 +25,7 @@ export const parseXMLResponse = (text: string): XMLFixture[] => {
     
   const allFixtures = weeks.flatMap(week => {
     console.log('Processing week:', week?.Date);
-    const fixtures = Array.isArray(week?.Fixture) ? week.Fixture : [week?.Fixture];
+    const fixtures = Array.isArray(week?.Fixture) ? week.Fixture : (week?.Fixture ? [week.Fixture] : []);
     return fixtures.filter(Boolean);
   });
 
