@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
@@ -50,12 +51,24 @@ const processPendingScores = async (forceProcess = false) => {
           continue;
         }
 
-        // Check if a record already exists for this match
-        const { data: existingData, error: checkError } = await supabase
-          .from('match_data_v2')
-          .select()
-          .eq('match_id', score.matchId)
-          .maybeSingle();
+        // Check if this is a local match ID (starts with "local-")
+        const isLocalMatchId = score.matchId.startsWith('local-');
+        
+        // Only try to check for existing match data if it's not a local ID
+        let existingData = null;
+        let checkError = null;
+        
+        if (!isLocalMatchId) {
+          // Check if a record already exists for this match
+          const result = await supabase
+            .from('match_data_v2')
+            .select()
+            .eq('match_id', score.matchId)
+            .maybeSingle();
+          
+          existingData = result.data;
+          checkError = result.error;
+        }
 
         if (checkError) {
           console.error('Error checking existing match data:', checkError);
@@ -116,32 +129,70 @@ const processPendingScores = async (forceProcess = false) => {
           const homeMatchPoints = homeBonusPoints + (homeSetsWon * 2);
           const awayMatchPoints = awayBonusPoints + (awaySetsWon * 2);
           
-          // Get match details
-          const { data: matchData, error: matchError } = await supabase
-            .from('matches_v2')
-            .select('*')
-            .eq('id', score.matchId)
-            .single();
+          // For local matches, parse team names from the matchId
+          let homeTeamName = "Home Team";
+          let awayTeamName = "Away Team";
+          let courtNumber = 0;
+          let division = "Unknown";
+          
+          if (isLocalMatchId) {
+            try {
+              // Parse local match ID format: local-MMDDHHMMCCC_HOMETEAM_AWAYTEAM-timestamp
+              const parts = score.matchId.split('_');
+              if (parts.length >= 3) {
+                // Extract court number from first part (format: local-MMDDHHMMCCC)
+                const firstPart = parts[0]; // e.g., local-06031845007
+                courtNumber = parseInt(firstPart.slice(-3)) || 0;
+                
+                // Extract team names
+                homeTeamName = parts[1].replace(/([A-Z])/g, ' $1').trim();
+                
+                // The last part might contain a timestamp, remove it
+                let awayPart = parts[2];
+                if (awayPart.includes('-')) {
+                  awayPart = awayPart.split('-')[0];
+                }
+                awayTeamName = awayPart.replace(/([A-Z])/g, ' $1').trim();
+                
+                division = "Local Match";
+              }
+            } catch (error) {
+              console.error('Error parsing local match ID:', error);
+            }
+          } else {
+            // Get match details from server for non-local matches
+            try {
+              const { data: matchData, error: matchError } = await supabase
+                .from('matches_v2')
+                .select('*')
+                .eq('id', score.matchId)
+                .single();
 
-          if (matchError) {
-            console.error('Error fetching match:', matchError);
-            throw matchError;
-          }
+              if (matchError) {
+                console.error('Error fetching match:', matchError);
+                throw matchError;
+              }
 
-          if (!matchData) {
-            console.error('No match found with ID:', score.matchId);
-            throw new Error('Match not found');
+              if (matchData) {
+                homeTeamName = matchData.home_team_name;
+                awayTeamName = matchData.away_team_name;
+                courtNumber = matchData.court_number;
+                division = matchData.division || "Unknown";
+              }
+            } catch (error) {
+              console.error('Error fetching match details:', error);
+            }
           }
 
           // Use upsert with match_id as the constraint
           const { error: upsertError } = await supabase
             .from('match_data_v2')
-            .upsert({
-              match_id: score.matchId,
-              court_number: matchData.court_number,
-              division: matchData.division,
-              home_team_name: matchData.home_team_name,
-              away_team_name: matchData.away_team_name,
+            .insert({
+              match_id: isLocalMatchId ? null : score.matchId, // Only use real UUIDs for match_id
+              court_number: courtNumber,
+              division: division,
+              home_team_name: homeTeamName,
+              away_team_name: awayTeamName,
               set1_home_score: score.homeScores[0] || 0,
               set1_away_score: score.awayScores[0] || 0,
               set2_home_score: score.homeScores[1] || 0,
@@ -156,7 +207,7 @@ const processPendingScores = async (forceProcess = false) => {
               away_bonus_points: awayBonusPoints,
               home_total_match_points: homeMatchPoints,
               away_total_match_points: awayMatchPoints,
-              match_date: matchData.start_time,
+              match_date: new Date().toISOString(),
               has_final_score: true
             });
 

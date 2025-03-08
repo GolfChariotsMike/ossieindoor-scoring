@@ -4,6 +4,7 @@ import { initDB, closeDB as closeDBInstance } from './initDB';
 let connectionPromise: Promise<IDBDatabase> | null = null;
 let connectionRetries = 0;
 const MAX_CONNECTION_RETRIES = 3;
+const CONNECTION_RETRY_DELAYS = [1000, 2000, 5000]; // Increasing backoff
 
 // Flag to track if a connection is being closed intentionally
 let isClosingConnection = false;
@@ -35,8 +36,9 @@ export const getConnection = async (): Promise<IDBDatabase> => {
             throw error; // Give up after max retries
           }
           
-          // Wait a bit longer between each retry
-          await new Promise(r => setTimeout(r, connectionRetries * 1000));
+          // Use backoff array for retry delays
+          const delay = getRetryDelay(connectionRetries - 1, CONNECTION_RETRY_DELAYS);
+          await new Promise(r => setTimeout(r, delay));
         }
       }
       

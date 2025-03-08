@@ -5,6 +5,7 @@ let dbInstance: IDBDatabase | null = null;
 let isClosingDb = false;
 let dbConnectionPromise: Promise<IDBDatabase> | null = null;
 let connectionTimeout: number | null = null;
+const CONNECTION_TIMEOUT_MS = 60000; // 60 seconds
 
 export const initDB = async (): Promise<IDBDatabase> => {
   // Clear any pending connection timeout
@@ -26,6 +27,10 @@ export const initDB = async (): Promise<IDBDatabase> => {
       if (objectStoreNames.length > 0) {
         const testTransaction = dbInstance.transaction(objectStoreNames[0], 'readonly');
         testTransaction.abort(); // Just testing if it works, no need to complete
+        
+        // Schedule connection timeout to avoid keeping the connection open indefinitely
+        scheduleConnectionTimeout();
+        
         return dbInstance;
       } else {
         console.warn('DB instance has no stores, creating new connection');
@@ -58,12 +63,19 @@ export const initDB = async (): Promise<IDBDatabase> => {
         const db = await new Promise<IDBDatabase>((resolve, reject) => {
           const request = indexedDB.open(DB_NAME, DB_VERSION);
 
+          // Add timeout to prevent hanging connections
+          const requestTimeout = setTimeout(() => {
+            reject(new Error('IndexedDB connection request timed out'));
+          }, 10000); // 10 second timeout for initial connection
+
           request.onerror = () => {
+            clearTimeout(requestTimeout);
             console.error("Error opening IndexedDB:", request.error);
             reject(request.error);
           };
 
           request.onsuccess = () => {
+            clearTimeout(requestTimeout);
             console.log('Successfully opened IndexedDB');
             dbInstance = request.result;
 
@@ -88,10 +100,19 @@ export const initDB = async (): Promise<IDBDatabase> => {
               console.log('IndexedDB version changed, connection closed');
             };
 
+            // Handle error events
+            dbInstance.onerror = (event) => {
+              console.error('IndexedDB error:', event);
+            };
+
+            // Schedule connection timeout
+            scheduleConnectionTimeout();
+            
             resolve(request.result);
           };
 
           request.onupgradeneeded = (event) => {
+            clearTimeout(requestTimeout);
             const db = (event.target as IDBOpenDBRequest).result;
             
             // Create or update stores based on schema
@@ -115,17 +136,13 @@ export const initDB = async (): Promise<IDBDatabase> => {
 
             console.log('IndexedDB upgrade completed. Current stores:', Array.from(db.objectStoreNames));
           };
+          
+          request.onblocked = (event) => {
+            clearTimeout(requestTimeout);
+            console.warn('IndexedDB upgrade blocked. Close all other tabs/windows with this app open');
+            reject(new Error('IndexedDB upgrade blocked'));
+          };
         });
-
-        // Schedule connection timeout to avoid keeping the connection open indefinitely
-        // This helps prevent the "database connection is closing" errors during app initialization
-        connectionTimeout = window.setTimeout(() => {
-          if (dbInstance && !isClosingDb) {
-            console.log('Automatically closing idle IndexedDB connection after timeout');
-            closeDB();
-          }
-          connectionTimeout = null;
-        }, 60000); // Close after 60 seconds of inactivity
 
         // Clear the shared promise to allow future connection attempts if needed
         dbConnectionPromise = null;
@@ -146,6 +163,21 @@ export const initDB = async (): Promise<IDBDatabase> => {
   })();
 
   return dbConnectionPromise;
+};
+
+// Schedule connection timeout to avoid keeping connections open indefinitely
+const scheduleConnectionTimeout = () => {
+  if (connectionTimeout !== null) {
+    clearTimeout(connectionTimeout);
+  }
+  
+  connectionTimeout = window.setTimeout(() => {
+    if (dbInstance && !isClosingDb) {
+      console.log('Automatically closing idle IndexedDB connection after timeout');
+      closeDB();
+    }
+    connectionTimeout = null;
+  }, CONNECTION_TIMEOUT_MS);
 };
 
 // Cleanup function to close database connection
