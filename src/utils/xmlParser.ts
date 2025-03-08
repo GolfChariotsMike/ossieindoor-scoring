@@ -31,19 +31,16 @@ export const parseXMLResponse = (text: string): XMLFixture[] => {
     }
 
     // Extract all weeks and their fixtures
-    // We're ensuring Week is always an array in the parser options, but TypeScript doesn't know this
-    // So we need to explicitly ensure it's treated as an array
-    const weeks = Array.isArray(result.League.Week) ? result.League.Week : [result.League.Week];
+    const weeks = result.League.Week;
     console.log(`Found ${weeks.length} weeks in XML`);
       
-    // Now we can safely use array methods on weeks
     const allFixtures = weeks.flatMap(week => {
       if (!week) return [];
       
       console.log('Processing week:', week?.Date);
       
       // Ensure we always have an array of fixtures
-      const fixtures = Array.isArray(week.Fixture) ? week.Fixture : (week.Fixture ? [week.Fixture] : []);
+      const fixtures = week.Fixture || [];
       return fixtures.filter(fixture => fixture && fixture.DateTime);
     });
 
