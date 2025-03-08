@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -92,7 +91,7 @@ const CourtFixtures = () => {
     // Consider data fresh for only a short time to promote frequent refetching
     staleTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60, // 1 hour in offline mode, 1 minute when online
     // Disable caching in query cache when online to ensure fresh data
-    cacheTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60,
+    gcTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60,
   });
 
   // Try to refetch if we initially have no matches

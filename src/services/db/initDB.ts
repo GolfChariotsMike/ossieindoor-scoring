@@ -1,19 +1,25 @@
-
 import { DB_NAME, DB_VERSION } from './dbConfig';
 import { dbSchema } from './schema';
 
 let dbInstance: IDBDatabase | null = null;
 let isClosingDb = false;
 let dbConnectionPromise: Promise<IDBDatabase> | null = null;
+let connectionTimeout: number | null = null;
 
 export const initDB = async (): Promise<IDBDatabase> => {
+  // Clear any pending connection timeout
+  if (connectionTimeout !== null) {
+    clearTimeout(connectionTimeout);
+    connectionTimeout = null;
+  }
+  
   // If there's an existing promise for a connection being established, return it
   if (dbConnectionPromise) {
     return dbConnectionPromise;
   }
   
   // If we have an existing connection that appears valid, test it first
-  if (dbInstance && dbInstance.transaction && !isClosingDb) {
+  if (dbInstance && !isClosingDb) {
     try {
       // Test if the connection is actually working with a small transaction
       const objectStoreNames = Array.from(dbInstance.objectStoreNames);
@@ -28,12 +34,15 @@ export const initDB = async (): Promise<IDBDatabase> => {
     } catch (error) {
       console.warn('Existing DB instance failed connectivity test, creating new connection:', error);
       try {
-        isClosingDb = true;
-        dbInstance.close();
+        // Only attempt to close if not already closing
+        if (dbInstance && !isClosingDb) {
+          isClosingDb = true;
+          dbInstance.close();
+          isClosingDb = false;
+        }
       } catch (e) {
         console.warn('Error while closing previous connection:', e);
       } finally {
-        isClosingDb = false;
         dbInstance = null;
       }
     }
@@ -108,6 +117,16 @@ export const initDB = async (): Promise<IDBDatabase> => {
           };
         });
 
+        // Schedule connection timeout to avoid keeping the connection open indefinitely
+        // This helps prevent the "database connection is closing" errors during app initialization
+        connectionTimeout = window.setTimeout(() => {
+          if (dbInstance && !isClosingDb) {
+            console.log('Automatically closing idle IndexedDB connection after timeout');
+            closeDB();
+          }
+          connectionTimeout = null;
+        }, 60000); // Close after 60 seconds of inactivity
+
         // Clear the shared promise to allow future connection attempts if needed
         dbConnectionPromise = null;
         return db;
@@ -141,6 +160,13 @@ export const closeDB = () => {
       dbInstance = null;
       dbConnectionPromise = null;
       isClosingDb = false;
+      
+      // Clear any pending timeout
+      if (connectionTimeout !== null) {
+        clearTimeout(connectionTimeout);
+        connectionTimeout = null;
+      }
+      
       console.log('IndexedDB connection manually closed');
     }
   }

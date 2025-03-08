@@ -1,6 +1,6 @@
 
 import { createRoot } from 'react-dom/client';
-import { StrictMode } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import './index.css';
@@ -25,6 +25,24 @@ const queryClient = new QueryClient({
 });
 
 const root = createRoot(document.getElementById('root')!);
+
+// Component to handle database cleanup after app mounts
+const DatabaseCleanup = () => {
+  useEffect(() => {
+    // Only run cleanup if online and after a delay to avoid startup issues
+    if (!isOffline()) {
+      const cleanupTimer = setTimeout(() => {
+        cleanOldMatches().catch(error => {
+          console.error('Failed to clean old matches:', error);
+        });
+      }, 10000); // 10 second delay
+      
+      return () => clearTimeout(cleanupTimer);
+    }
+  }, []);
+  
+  return null;
+};
 
 // Global error handler for uncaught errors
 window.onerror = async (message, source, lineno, colno, error) => {
@@ -93,21 +111,11 @@ window.addEventListener('unhandledrejection', async (event) => {
   }
 });
 
-// Clean old matches when the app starts, but only if we're not in offline mode
-// and do it after a small delay to avoid database connection issues during app startup
-if (!isOffline()) {
-  // Delay the cleanup to allow the app to initialize first
-  setTimeout(() => {
-    cleanOldMatches().catch(error => {
-      console.error('Failed to clean old matches:', error);
-    });
-  }, 5000); // 5 second delay
-}
-
 root.render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
+      <DatabaseCleanup />
     </QueryClientProvider>
   </StrictMode>
 );

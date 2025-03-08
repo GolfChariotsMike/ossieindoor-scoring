@@ -1,5 +1,5 @@
 
-import { initDB } from './initDB';
+import { initDB, closeDB as closeDBInstance } from './initDB';
 
 let connectionPromise: Promise<IDBDatabase> | null = null;
 let connectionRetries = 0;
@@ -36,7 +36,7 @@ export const getConnection = async (): Promise<IDBDatabase> => {
           }
           
           // Wait a bit longer between each retry
-          await new Promise(r => setTimeout(r, connectionRetries * 500));
+          await new Promise(r => setTimeout(r, connectionRetries * 1000));
         }
       }
       
@@ -57,11 +57,11 @@ export const getRetryDelay = (retryCount: number, backoffArray: number[]): numbe
   return backoffArray[Math.min(retryCount, backoffArray.length - 1)];
 };
 
-// New function to safely close the connection
-export const closeConnection = () => {
-  // Don't need to do anything as the actual connection
-  // is managed by initDB.ts and will be closed there
-  console.log('Connection close requested - deferring to initDB module');
+// Function to safely close the connection
+export const closeDB = () => {
+  // Forward to the initDB module's closeDB function
+  closeDBInstance();
+  connectionPromise = null;
 };
 
 // Function to reset the connection if it's in a problematic state
@@ -72,7 +72,6 @@ export const resetConnection = async (): Promise<IDBDatabase> => {
   
   // Close the existing connection through initDB
   try {
-    const { closeDB } = await import('./initDB');
     closeDB();
   } catch (e) {
     console.log('Error while closing connection during reset:', e);
