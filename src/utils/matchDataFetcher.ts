@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 import { format, parse } from "date-fns";
 import { Match, Fixture } from "@/types/volleyball";
@@ -16,7 +15,7 @@ const fetchFromUrl = async (url: string, date: string) => {
     console.log('Fetching from URL:', url, 'with date:', date);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // Increased from 10s to 30s
     
     try {
       const response = await fetch(`${url}&Date=${date}`, { 

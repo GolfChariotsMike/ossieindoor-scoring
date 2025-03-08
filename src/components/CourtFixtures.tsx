@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ const CourtFixtures = () => {
   const { courtId, date } = useParams();
   const navigate = useNavigate();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
   
   const parsedDate = date ? parse(date, 'yyyy-MM-dd', new Date()) : new Date();
   const formattedDate = format(parsedDate, 'dd/MM/yyyy');
@@ -32,6 +34,7 @@ const CourtFixtures = () => {
     queryKey: ["matches", date, courtId],
     queryFn: async () => {
       console.log('Fetching matches in CourtFixtures...');
+      setLoadingError(null);
       try {
         console.log('Fetching fresh data from server first...');
         const fetchedMatches = await fetchMatchData(undefined, parsedDate);
@@ -58,12 +61,14 @@ const CourtFixtures = () => {
         return fetchedMatches;
       } catch (error) {
         console.error('Error fetching matches:', error);
+        setLoadingError(error.message || 'Failed to load fixtures');
         return [];
       }
     },
     // Enable cache invalidation to force fresh data
     staleTime: isOffline() ? 1000 * 60 * 60 : 0, // 0 means always refetch when not offline
     gcTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60 * 5, // 1 hour vs 5 minutes
+    retry: isOffline() ? 0 : 2, // Don't retry in offline mode, but retry twice when online
   });
 
   const handleRefresh = async () => {
@@ -77,6 +82,7 @@ const CourtFixtures = () => {
     }
     
     setIsRefreshing(true);
+    setLoadingError(null);
     try {
       await refetch();
       toast({
@@ -86,6 +92,7 @@ const CourtFixtures = () => {
       });
     } catch (error) {
       console.error('Error refreshing data:', error);
+      setLoadingError(error.message || 'Failed to refresh fixtures');
       toast({
         title: "Refresh Failed",
         description: "Could not load the latest fixtures",
@@ -184,6 +191,14 @@ const CourtFixtures = () => {
           </div>
         )}
 
+        {loadingError && (
+          <div className="bg-red-600 text-volleyball-cream p-4 mb-6 rounded-lg">
+            <p className="text-xl font-medium">Error loading fixtures</p>
+            <p>{loadingError}</p>
+            <p className="mt-2">Please try refreshing the page or checking your internet connection.</p>
+          </div>
+        )}
+
         <div className="space-y-6">
           {courtFixtures.length > 0 ? (
             courtFixtures.map((fixture: Fixture, index: number) => (
@@ -215,7 +230,9 @@ const CourtFixtures = () => {
             ))
           ) : (
             <div className="text-volleyball-cream text-center p-6 bg-volleyball-black/80 rounded-lg text-2xl">
-              No fixtures available for this court
+              {loadingError 
+                ? "Failed to load fixtures. Please try refreshing."
+                : "No fixtures available for this court"}
             </div>
           )}
         </div>
