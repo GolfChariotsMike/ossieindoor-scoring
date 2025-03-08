@@ -7,6 +7,7 @@ export interface PendingScore {
   retryCount: number;
   status: 'pending' | 'processing' | 'failed';
   lastError?: string;
+  fixtureStartTime?: string; // Added to store fixture start time
 }
 
 export interface DbIndexDefinition {
