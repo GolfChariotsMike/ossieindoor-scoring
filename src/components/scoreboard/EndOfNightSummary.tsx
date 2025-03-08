@@ -9,6 +9,7 @@ import { fetchMatchSummary } from "./matchSummary/FetchMatchesLogic";
 import { SummaryTable } from "./matchSummary/SummaryTable";
 import { processPendingScores } from "@/utils/matchDatabase";
 import { useState } from "react";
+import { disableForcedOfflineMode, enableForcedOfflineMode, isOffline } from "@/utils/offlineMode";
 
 interface EndOfNightSummaryProps {
   courtId: string;
@@ -36,7 +37,17 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
 
   const handleSaveAllScores = async () => {
     setIsSaving(true);
+    
+    // Store the original offline state
+    const wasOffline = isOffline();
+    
     try {
+      // Temporarily disable offline mode for this operation
+      if (wasOffline) {
+        console.log('Temporarily disabling offline mode to upload scores');
+        disableForcedOfflineMode();
+      }
+      
       const count = await processPendingScores(true);
       
       if (count > 0) {
@@ -62,6 +73,12 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         variant: "destructive",
       });
     } finally {
+      // Restore offline mode if it was enabled before
+      if (wasOffline) {
+        console.log('Restoring offline mode after upload attempt');
+        enableForcedOfflineMode();
+      }
+      
       setIsSaving(false);
     }
   };
