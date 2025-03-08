@@ -8,8 +8,8 @@ import { ArrowLeft, Save } from "lucide-react";
 import { fetchMatchSummary } from "./matchSummary/FetchMatchesLogic";
 import { SummaryTable } from "./matchSummary/SummaryTable";
 import { processPendingScores } from "@/utils/matchDatabase";
-import { useState } from "react";
-import { disableForcedOfflineMode, enableForcedOfflineMode, isOffline } from "@/utils/offlineMode";
+import { useState, useEffect } from "react";
+import { disableForcedOfflineMode, enableForcedOfflineMode, isOffline, getOfflineStatus } from "@/utils/offlineMode";
 
 interface EndOfNightSummaryProps {
   courtId: string;
@@ -19,6 +19,38 @@ interface EndOfNightSummaryProps {
 export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
+  const [previousOfflineState, setPreviousOfflineState] = useState<boolean | null>(null);
+
+  // Force online mode when component mounts
+  useEffect(() => {
+    // Store the original offline state before forcing online mode
+    const wasOffline = isOffline();
+    setPreviousOfflineState(wasOffline);
+    
+    // Always ensure we're in online mode when viewing the summary
+    if (wasOffline) {
+      console.log('End of Night Summary: Temporarily disabling offline mode');
+      disableForcedOfflineMode();
+      toast({
+        title: "Online Mode Activated",
+        description: "Temporarily switched to online mode for end of night summary.",
+        duration: 3000,
+      });
+    }
+    
+    // Restore previous offline state when component unmounts
+    return () => {
+      if (previousOfflineState) {
+        console.log('End of Night Summary: Restoring previous offline mode state');
+        enableForcedOfflineMode();
+        toast({
+          title: "Offline Mode Restored",
+          description: "Returning to previous connection mode.",
+          duration: 3000,
+        });
+      }
+    };
+  }, []);
 
   const { data: matches, isLoading, refetch } = useQuery({
     queryKey: ["matches-summary", courtId],
@@ -38,16 +70,8 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
   const handleSaveAllScores = async () => {
     setIsSaving(true);
     
-    // Store the original offline state
-    const wasOffline = isOffline();
-    
     try {
-      // Temporarily disable offline mode for this operation
-      if (wasOffline) {
-        console.log('Temporarily disabling offline mode to upload scores');
-        disableForcedOfflineMode();
-      }
-      
+      // No need to toggle offline mode here anymore since we're already in online mode
       const count = await processPendingScores(true);
       
       if (count > 0) {
@@ -73,12 +97,6 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         variant: "destructive",
       });
     } finally {
-      // Restore offline mode if it was enabled before
-      if (wasOffline) {
-        console.log('Restoring offline mode after upload attempt');
-        enableForcedOfflineMode();
-      }
-      
       setIsSaving(false);
     }
   };
