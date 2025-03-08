@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -64,7 +63,7 @@ const CourtFixtures = () => {
     },
     // Enable cache invalidation to force fresh data
     staleTime: isOffline() ? 1000 * 60 * 60 : 0, // 0 means always refetch when not offline
-    cacheTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60 * 5, // 1 hour vs 5 minutes
+    gcTime: isOffline() ? 1000 * 60 * 60 : 1000 * 60 * 5, // 1 hour vs 5 minutes
   });
 
   const handleRefresh = async () => {
@@ -97,7 +96,6 @@ const CourtFixtures = () => {
     }
   };
 
-  // Force a refetch when component mounts to ensure fresh data
   useEffect(() => {
     if (!isOffline()) {
       refetch();
