@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useTimer } from "./timer/useTimer";
 import { Fixture } from "@/types/volleyball";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
+import { saveMatchScores } from "@/utils/matchDatabase";
 
 interface TimerProps {
   initialMinutes: number;
@@ -25,6 +26,11 @@ interface TimerProps {
   isBreak: boolean;
   isMatchComplete: boolean;
   fixture?: Fixture;
+  currentSetScores?: {
+    home: number[];
+    away: number[];
+  };
+  matchId?: string;
 }
 
 export const Timer = ({ 
@@ -33,12 +39,15 @@ export const Timer = ({
   onSwitchTeams,
   isBreak,
   isMatchComplete,
-  fixture
+  fixture,
+  currentSetScores,
+  matchId
 }: TimerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
   const longPressDelay = 5000; // 5 seconds
+  const previousBreakState = useRef(isBreak);
 
   const {
     timeLeft,
@@ -50,12 +59,29 @@ export const Timer = ({
     initialMinutes,
     onComplete: () => {
       console.log('Timer complete or skipped with fixture:', fixture);
+      
+      // Save scores when transitioning FROM break TO set (not when entering break)
+      if (isBreak && currentSetScores && matchId) {
+        console.log('Break ending - saving current set scores:', currentSetScores);
+        try {
+          saveMatchScores(
+            matchId,
+            currentSetScores.home,
+            currentSetScores.away,
+            false // Don't immediately submit to Supabase
+          );
+        } catch (error) {
+          console.error('Error saving match scores after break:', error);
+        }
+      }
+      
       // Notify user of phase change
       toast({
         title: isBreak ? "Set starting" : "Break starting",
         description: isBreak ? "Set timer has started" : "Break timer has started",
         duration: 3000,
       });
+      
       onComplete();
     },
     onSwitchTeams,
@@ -63,6 +89,11 @@ export const Timer = ({
     isMatchComplete,
     fixture
   });
+
+  // Track previous break state to prevent duplicate save operations
+  useEffect(() => {
+    previousBreakState.current = isBreak;
+  }, [isBreak]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;

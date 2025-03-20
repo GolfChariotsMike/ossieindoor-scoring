@@ -7,7 +7,6 @@ import { BackButton } from "./BackButton";
 import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
 import { ScoreboardLayout } from "./ScoreboardLayout";
 import { format } from "date-fns";
-import { saveMatchScores } from "@/utils/matchDatabase";
 
 const StandaloneScoreboard = () => {
   const navigate = useNavigate();
@@ -79,17 +78,8 @@ const StandaloneScoreboard = () => {
       setSetScores(newSetScores);
       setIsBreak(true);
       
-      // Save match scores after each set
-      try {
-        saveMatchScores(
-          matchCode,
-          newSetScores.home,
-          newSetScores.away,
-          false // Don't immediately submit to Supabase
-        );
-      } catch (error) {
-        console.error('Error saving match scores:', error);
-      }
+      // Note: Score saving logic has been moved to the Timer component
+      // when transitioning from break to set
       
       if (newSetScores.home.length >= 3) {
         setIsMatchComplete(true);
@@ -138,6 +128,7 @@ const StandaloneScoreboard = () => {
           onTimerComplete={() => handleTimerComplete()}
           onSwitchTeams={handleSwitchTeams}
           onScoreUpdate={handleScore}
+          matchId={matchCode}
         />
 
         <ExitConfirmationDialog
