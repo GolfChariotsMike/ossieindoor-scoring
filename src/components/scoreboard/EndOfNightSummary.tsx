@@ -71,7 +71,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
     setIsSaving(true);
     
     try {
-      // Process pending scores - this function uploads to Supabase and removes processed scores
+      // No need to toggle offline mode here anymore since we're already in online mode
       const count = await processPendingScores(true);
       
       if (count > 0) {
@@ -80,12 +80,8 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
           description: `Successfully uploaded ${count} match scores to the server.`,
           variant: "default",
         });
-        
-        // After saving, wait a moment for the server to process before refetching
-        // This ensures we don't show scores that have already been saved
-        setTimeout(async () => {
-          await refetch();
-        }, 500);
+        // Refetch matches to update the display
+        await refetch();
       } else {
         toast({
           title: "No Scores to Save",
@@ -133,7 +129,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         {matches && matches.length > 0 ? (
           <SummaryTable matches={matches} />
         ) : (
-          <div className="text-center py-8 text-muted-foreground">No pending scores to upload.</div>
+          <div className="text-center py-8 text-muted-foreground">No matches recorded today.</div>
         )}
       </div>
     </div>

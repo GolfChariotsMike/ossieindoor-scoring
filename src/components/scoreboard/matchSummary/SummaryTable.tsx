@@ -8,7 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 
 type Match = {
   id: string;
@@ -22,7 +21,6 @@ type Match = {
   set2_away_score: number;
   set3_home_score: number;
   set3_away_score: number;
-  is_pending?: boolean;
   [key: string]: any;
 };
 
@@ -54,9 +52,6 @@ export const SummaryTable = ({ matches }: SummaryTableProps) => {
               <TableCell className="text-center">{match.set2_home_score} - {match.set2_away_score}</TableCell>
               <TableCell className="text-center">{match.set3_home_score} - {match.set3_away_score}</TableCell>
               <TableCell className="font-medium">{match.away_team_name}</TableCell>
-              <TableCell className="text-right">
-                {match.is_pending && <Badge variant="outline" className="bg-amber-100">Pending</Badge>}
-              </TableCell>
             </TableRow>
           ))}
         </TableBody>

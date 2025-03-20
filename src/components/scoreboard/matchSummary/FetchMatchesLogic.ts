@@ -34,7 +34,6 @@ export interface SummaryMatch {
   home_result: string;
   away_result: string;
   fixture_start_time: string | null;
-  is_pending: boolean; // New flag to indicate pending scores
   [key: string]: any;
 }
 
@@ -57,53 +56,69 @@ export const fetchMatchSummary: QueryFunction<SummaryMatch[], [string, string]> 
       dayEnd: dayEnd.toISOString(),
     });
 
-    // Always get pending scores from IndexedDB regardless of online/offline status
     const pendingScores = await getPendingScores();
-    console.log("Found pending scores:", pendingScores);
+    console.log("Found pending scores:", pendingScores.length);
 
-    // Transform pending scores into match objects
-    const pendingMatches = await Promise.all(
-      pendingScores.map(async (score) => {
-        const homeTeamName = await getTeamName(score.matchId, true);
-        const awayTeamName = await getTeamName(score.matchId, false);
+    if (isOffline()) {
+      console.log("Offline mode - showing only locally stored data");
 
-        return {
-          id: score.id, // Use the pending score ID, not the match ID
-          match_id: score.matchId,
-          match_date: score.timestamp,
-          court_number: parseInt(courtId),
-          division: "Local",
-          home_team_name: homeTeamName,
-          away_team_name: awayTeamName,
-          set1_home_score: score.homeScores[0] || 0,
-          set1_away_score: score.awayScores[0] || 0,
-          set2_home_score: score.homeScores[1] || 0,
-          set2_away_score: score.awayScores[1] || 0,
-          set3_home_score: score.homeScores[2] || 0,
-          set3_away_score: score.awayScores[2] || 0,
-          is_active: true,
-          has_final_score: false,
-          home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
-          away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
-          home_bonus_points: 0,
-          away_bonus_points: 0,
-          home_total_match_points: 0,
-          away_total_match_points: 0,
-          points_percentage: 0,
-          created_at: score.timestamp,
-          updated_at: score.timestamp,
-          home_result: "",
-          away_result: "",
-          fixture_start_time: score.fixtureStartTime || null,
-          is_pending: true // Mark as pending
-        };
-      })
-    );
+      // Improved team name extraction for local matches
+      const localMatches = await Promise.all(
+        pendingScores.map(async (score) => {
+          const homeTeamName = await getTeamName(score.matchId, true);
+          const awayTeamName = await getTeamName(score.matchId, false);
 
-    console.log("Transformed pending matches:", pendingMatches);
-    
-    // Only show pending scores, no need to fetch from Supabase as per requirements
-    return pendingMatches;
+          return {
+            id: score.matchId,
+            match_id: score.matchId,
+            match_date: score.timestamp,
+            court_number: parseInt(courtId),
+            division: "Local",
+            home_team_name: homeTeamName,
+            away_team_name: awayTeamName,
+            set1_home_score: score.homeScores[0] || 0,
+            set1_away_score: score.awayScores[0] || 0,
+            set2_home_score: score.homeScores[1] || 0,
+            set2_away_score: score.awayScores[1] || 0,
+            set3_home_score: score.homeScores[2] || 0,
+            set3_away_score: score.awayScores[2] || 0,
+            is_active: true,
+            has_final_score: false,
+            home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
+            away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
+            home_bonus_points: 0,
+            away_bonus_points: 0,
+            home_total_match_points: 0,
+            away_total_match_points: 0,
+            points_percentage: 0,
+            created_at: score.timestamp,
+            updated_at: score.timestamp,
+            home_result: "",
+            away_result: "",
+            fixture_start_time: null,
+          };
+        })
+      );
+
+      return localMatches;
+    }
+
+    const { data: existingMatches, error } = await supabase
+      .from("match_data_v2")
+      .select("*")
+      .eq("court_number", parseInt(courtId))
+      .eq("is_active", true)
+      .gte("match_date", dayStart.toISOString())
+      .lte("match_date", dayEnd.toISOString())
+      .order("match_date", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching matches:", error);
+      throw error;
+    }
+
+    console.log("Total matches to display:", existingMatches.length);
+    return existingMatches || [];
   } catch (error) {
     console.error("Error in match summary query:", error);
     throw error;
