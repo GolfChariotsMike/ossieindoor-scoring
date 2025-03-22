@@ -1,11 +1,13 @@
+
 import { getPendingScores } from "@/services/indexedDB";
 import { getAllCourtMatches } from "@/services/indexedDB";
 import { transformToMatch } from "@/services/matchService";
 import { isOffline } from "@/utils/offlineMode";
+import { PendingScore, MatchSummary } from "@/services/db/types";
 
 // Group pending scores by match ID for easier processing
-const groupPendingScoresByMatch = (pendingScores) => {
-  const scoresByMatch = {};
+const groupPendingScoresByMatch = (pendingScores: PendingScore[]): PendingScore[] => {
+  const scoresByMatch: Record<string, PendingScore> = {};
   
   pendingScores.forEach(score => {
     if (!scoresByMatch[score.matchId]) {
@@ -16,7 +18,7 @@ const groupPendingScoresByMatch = (pendingScores) => {
   return Object.values(scoresByMatch);
 };
 
-export const fetchMatchSummary = async (courtId?: string, pendingOnly = false) => {
+export const fetchMatchSummary = async (courtId?: string, pendingOnly = false): Promise<MatchSummary[]> => {
   try {
     // If we only want pending scores, get them from IndexedDB
     if (pendingOnly) {
@@ -84,6 +86,7 @@ export const fetchMatchSummary = async (courtId?: string, pendingOnly = false) =
     
     return matches.map(match => ({
       id: match.id,
+      matchId: match.id, // Add matchId for consistency
       homeTeam: match.homeTeam.name,
       awayTeam: match.awayTeam.name,
       homeScores: match.setScores?.home || [0, 0, 0],

@@ -25,3 +25,16 @@ export interface DbStoreDefinition {
 export interface DBSchema {
   [key: string]: DbStoreDefinition;
 }
+
+export interface MatchSummary {
+  id: string;
+  matchId: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScores: number[];
+  awayScores: number[];
+  court: number;
+  timestamp: string;
+  status?: 'pending' | 'processing' | 'failed';
+  pendingUpload: boolean;
+}

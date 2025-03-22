@@ -8,24 +8,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-type Match = {
-  id: string;
-  match_id: string;
-  match_date: string;
-  home_team_name: string;
-  away_team_name: string;
-  set1_home_score: number;
-  set1_away_score: number;
-  set2_home_score: number;
-  set2_away_score: number;
-  set3_home_score: number;
-  set3_away_score: number;
-  [key: string]: any;
-};
+import { MatchSummary } from "@/services/db/types";
 
 interface SummaryTableProps {
-  matches: Match[];
+  matches: MatchSummary[];
 }
 
 export const SummaryTable = ({ matches }: SummaryTableProps) => {
@@ -46,12 +32,19 @@ export const SummaryTable = ({ matches }: SummaryTableProps) => {
         <TableBody>
           {matches.map((match) => (
             <TableRow key={match.id}>
-              <TableCell>{format(new Date(match.match_date), "HH:mm")}</TableCell>
-              <TableCell className="font-medium">{match.home_team_name}</TableCell>
-              <TableCell className="text-center">{match.set1_home_score} - {match.set1_away_score}</TableCell>
-              <TableCell className="text-center">{match.set2_home_score} - {match.set2_away_score}</TableCell>
-              <TableCell className="text-center">{match.set3_home_score} - {match.set3_away_score}</TableCell>
-              <TableCell className="font-medium">{match.away_team_name}</TableCell>
+              <TableCell>{format(new Date(match.timestamp), "HH:mm")}</TableCell>
+              <TableCell className="font-medium">{match.homeTeam}</TableCell>
+              <TableCell className="text-center">
+                {match.homeScores[0] || 0} - {match.awayScores[0] || 0}
+              </TableCell>
+              <TableCell className="text-center">
+                {match.homeScores[1] || 0} - {match.awayScores[1] || 0}
+              </TableCell>
+              <TableCell className="text-center">
+                {match.homeScores[2] || 0} - {match.awayScores[2] || 0}
+              </TableCell>
+              <TableCell className="font-medium">{match.awayTeam}</TableCell>
+              <TableCell className="text-right">{match.status || 'Pending'}</TableCell>
             </TableRow>
           ))}
         </TableBody>

@@ -10,6 +10,7 @@ import { SummaryTable } from "./matchSummary/SummaryTable";
 import { processPendingScores } from "@/utils/matchDatabase";
 import { useState } from "react";
 import { disableForcedOfflineMode, enableForcedOfflineMode, isOffline } from "@/utils/offlineMode";
+import { MatchSummary } from "@/services/db/types";
 
 interface EndOfNightSummaryProps {
   courtId: string;
