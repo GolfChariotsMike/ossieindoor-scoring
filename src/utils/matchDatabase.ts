@@ -12,7 +12,6 @@ interface PendingScore {
   timestamp: string;
   retryCount: number;
   status: 'pending' | 'processing' | 'failed';
-  fixtureStartTime?: string; // Added to store fixture start time
 }
 
 const MAX_RETRIES = 5;
@@ -91,9 +90,7 @@ const processPendingScores = async (forceProcess = false) => {
               set2_away_score: score.awayScores[1] || 0,
               set3_home_score: score.homeScores[2] || 0,
               set3_away_score: score.awayScores[2] || 0,
-              has_final_score: true,
-              // Use the fixture start time if it exists in the score data
-              fixture_start_time: score.fixtureStartTime || existingData.fixture_start_time
+              has_final_score: true
             })
             .eq('id', existingData.id);
 
@@ -137,7 +134,6 @@ const processPendingScores = async (forceProcess = false) => {
           let awayTeamName = "Away Team";
           let courtNumber = 0;
           let division = "Unknown";
-          let fixtureStartTime = score.fixtureStartTime || new Date().toISOString();
           
           if (isLocalMatchId) {
             try {
@@ -159,18 +155,6 @@ const processPendingScores = async (forceProcess = false) => {
                 awayTeamName = awayPart.replace(/([A-Z])/g, ' $1').trim();
                 
                 division = "Local Match";
-                
-                // Try to extract fixture start time from the match ID
-                if (firstPart.length >= 8) {
-                  const month = firstPart.substring(4, 6);
-                  const day = firstPart.substring(6, 8);
-                  const hour = firstPart.substring(8, 10);
-                  const minute = firstPart.substring(10, 12);
-                  // Use current year since it's not in the ID
-                  const year = new Date().getFullYear();
-                  // Create an ISO string date for the fixture start time
-                  fixtureStartTime = new Date(year, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute)).toISOString();
-                }
               }
             } catch (error) {
               console.error('Error parsing local match ID:', error);
@@ -194,8 +178,6 @@ const processPendingScores = async (forceProcess = false) => {
                 awayTeamName = matchData.away_team_name;
                 courtNumber = matchData.court_number;
                 division = matchData.division || "Unknown";
-                // Use the fixture start time from the match data or the score data
-                fixtureStartTime = matchData.fixture_start_time || score.fixtureStartTime || matchData.start_time;
               }
             } catch (error) {
               console.error('Error fetching match details:', error);
@@ -226,7 +208,6 @@ const processPendingScores = async (forceProcess = false) => {
               home_total_match_points: homeMatchPoints,
               away_total_match_points: awayMatchPoints,
               match_date: new Date().toISOString(),
-              fixture_start_time: fixtureStartTime, // Use the extracted fixture start time
               has_final_score: true
             });
 
@@ -277,16 +258,14 @@ export const saveMatchScores = async (
   matchId: string, 
   homeScores: number[], 
   awayScores: number[],
-  submitToSupabase = false,
-  fixtureStartTime?: string // Added parameter to pass fixture start time
+  submitToSupabase = false
 ) => {
   console.log('Starting saveMatchScores with:', {
     matchId,
     homeScores,
     awayScores,
     timestamp: new Date().toISOString(),
-    submitToSupabase,
-    fixtureStartTime
+    submitToSupabase
   });
 
   if (!matchId || !homeScores.length || !awayScores.length) {
@@ -307,8 +286,7 @@ export const saveMatchScores = async (
       homeScores,
       awayScores,
       timestamp: new Date().toISOString(),
-      retryCount: 0,
-      fixtureStartTime // Save the fixture start time
+      retryCount: 0
     };
     await savePendingScore(pendingScore);
 
