@@ -81,8 +81,8 @@ export const fetchMatchSummary = async (courtId?: string, pendingOnly = false): 
     
     // The original logic for fetching all matches (keeping for reference)
     const matches = courtId 
-      ? await getAllCourtMatches(parseInt(courtId))
-      : await getAllCourtMatches();
+      ? await getAllCourtMatches(courtId) // Fix: Pass courtId as string
+      : await getAllCourtMatches(); // Fix: This function works without arguments
     
     return matches.map(match => ({
       id: match.id,
