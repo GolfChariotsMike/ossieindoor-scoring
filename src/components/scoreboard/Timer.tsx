@@ -1,4 +1,3 @@
-
 import { TimerDisplay } from "./TimerDisplay";
 import { TimerControls } from "./TimerControls";
 import { Button } from "@/components/ui/button";
@@ -38,7 +37,7 @@ export const Timer = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
-  const longPressDelay = 5000; // 5 seconds
+  const longPressDelay = 3000; // Changed from 5000 to 3000 (3 seconds)
 
   const {
     timeLeft,
