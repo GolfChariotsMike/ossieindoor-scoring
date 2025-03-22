@@ -232,8 +232,9 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
   return [];
 };
 
-export const getAllCourtMatches = async (courtNumber: string): Promise<CourtMatch[]> => {
-  return getCourtMatches(courtNumber);
+export const getAllCourtMatches = async (courtNumber?: string): Promise<CourtMatch[]> => {
+  // If courtNumber is provided, filter by court, otherwise return all matches
+  return courtNumber ? getCourtMatches(courtNumber) : getCourtMatches('all');
 };
 
 export const cleanOldMatches = async (): Promise<void> => {
