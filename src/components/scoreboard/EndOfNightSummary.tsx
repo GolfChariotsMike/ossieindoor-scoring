@@ -22,7 +22,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
 
   const { data: matches, isLoading, refetch } = useQuery({
     queryKey: ["matches-summary", courtId],
-    queryFn: fetchMatchSummary,
+    queryFn: () => fetchMatchSummary(courtId, true), // Pass true to only fetch pending scores
     meta: {
       onError: (error: Error) => {
         console.error("Error loading matches:", error);
@@ -111,7 +111,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         {matches && matches.length > 0 ? (
           <SummaryTable matches={matches} />
         ) : (
-          <div className="text-center py-8 text-muted-foreground">No matches recorded today.</div>
+          <div className="text-center py-8 text-muted-foreground">No pending scores to upload.</div>
         )}
       </div>
     </div>
