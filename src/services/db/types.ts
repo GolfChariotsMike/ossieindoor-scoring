@@ -1,4 +1,3 @@
-
 export interface PendingScore {
   id: string;
   matchId: string;
@@ -35,6 +34,7 @@ export interface MatchSummary {
   awayScores: number[];
   court: number;
   timestamp: string;
-  status?: 'pending' | 'processing' | 'failed';
-  pendingUpload: boolean;
+  fixtureTime?: string;  // Added to store the formatted fixture time for display
+  status?: 'pending' | 'processing' | 'failed'; // Added for showing status in UI
+  pendingUpload?: boolean;
 }
