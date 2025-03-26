@@ -89,6 +89,7 @@ export const MatchResultsTable = () => {
 
   // Group matches by date
   const groupedMatches = matches?.reduce((groups, match) => {
+    // Use fixture_start_time as the primary date source, fall back to match_date if not available
     const date = formatDate(match.fixture_start_time || match.match_date);
     if (!groups[date]) {
       groups[date] = [];
@@ -107,6 +108,7 @@ export const MatchResultsTable = () => {
   // Sort matches within each date group by time and court
   sortedDates.forEach(date => {
     groupedMatches![date].sort((a, b) => {
+      // Prefer fixture_start_time for sorting, fall back to match_date
       const timeA = a.fixture_start_time ? new Date(a.fixture_start_time) : new Date(a.match_date);
       const timeB = b.fixture_start_time ? new Date(b.fixture_start_time) : new Date(b.match_date);
       const timeCompare = timeA.getTime() - timeB.getTime();
