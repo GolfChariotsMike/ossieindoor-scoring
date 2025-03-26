@@ -1,12 +1,46 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MatchSummary } from "@/services/db/types";
+import { getTeamName } from "./TeamNameUtils";
+import { useEffect, useState } from "react";
 
 interface SummaryTableProps {
   matches: MatchSummary[];
 }
 
 export const SummaryTable = ({ matches }: SummaryTableProps) => {
+  const [matchesWithTeamNames, setMatchesWithTeamNames] = useState<MatchSummary[]>(matches);
+
+  // Load team names when matches change
+  useEffect(() => {
+    const loadTeamNames = async () => {
+      try {
+        const updatedMatches = await Promise.all(
+          matches.map(async (match) => {
+            // Only try to fetch team names if they're not already set properly
+            if (match.homeTeam === "Home Team" || match.awayTeam === "Away Team" || !match.homeTeam || !match.awayTeam) {
+              const homeTeamName = await getTeamName(match.matchId, true);
+              const awayTeamName = await getTeamName(match.matchId, false);
+              
+              return {
+                ...match,
+                homeTeam: homeTeamName || match.homeTeam || "Home Team",
+                awayTeam: awayTeamName || match.awayTeam || "Away Team"
+              };
+            }
+            return match;
+          })
+        );
+        
+        setMatchesWithTeamNames(updatedMatches);
+      } catch (error) {
+        console.error("Error loading team names:", error);
+      }
+    };
+
+    loadTeamNames();
+  }, [matches]);
+
   return (
     <Table className="border rounded-md">
       <TableHeader>
@@ -21,7 +55,7 @@ export const SummaryTable = ({ matches }: SummaryTableProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {matches.map((match) => (
+        {matchesWithTeamNames.map((match) => (
           <TableRow key={match.id}>
             <TableCell className="font-mono">
               {match.fixtureTime || ""}
