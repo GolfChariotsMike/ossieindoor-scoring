@@ -1,4 +1,5 @@
-import { AdminDashboard } from "@/components/admin/AdminDashboard";
+
+import { AdminRoute } from "@/components/admin/AdminRoute";
 import { Toaster } from "@/components/ui/toaster";
 import CourtSelection from "@/components/CourtSelection";
 import CourtFixtures from "@/components/CourtFixtures";
@@ -11,7 +12,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<CourtSelection />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<AdminRoute />} />
           <Route path="/court/:courtId/:date" element={<CourtFixtures />} />
           <Route path="/scoreboard/:courtId" element={<Scoreboard />} />
         </Routes>
