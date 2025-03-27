@@ -1,3 +1,4 @@
+
 import { DB_NAME, DB_VERSION } from './dbConfig';
 import { dbSchema, checkStoreIndexes } from './schema';
 
@@ -114,8 +115,11 @@ export const initDB = async (): Promise<IDBDatabase> => {
                 objectStore = db.createObjectStore(store.name, { keyPath: store.keyPath });
                 console.log(`Created ${store.name} store`);
               } else {
-                objectStore = event.target?.transaction?.objectStore(store.name);
-                console.log(`Using existing ${store.name} store`);
+                const transaction = (event.target as IDBOpenDBRequest).transaction;
+                if (transaction) {
+                  objectStore = transaction.objectStore(store.name);
+                  console.log(`Using existing ${store.name} store`);
+                }
               }
               
               if (objectStore) {
@@ -194,18 +198,21 @@ const validateIndexes = async (db: IDBDatabase): Promise<void> => {
         
         Object.values(dbSchema).forEach(store => {
           if (db.objectStoreNames.contains(store.name)) {
-            const objectStore = event.target?.transaction?.objectStore(store.name);
-            if (objectStore) {
-              store.indexes.forEach(index => {
-                if (!objectStore.indexNames.contains(index.name)) {
-                  try {
-                    objectStore.createIndex(index.name, index.keyPath, index.options || {});
-                    console.log(`Added missing index ${index.name} to ${store.name}`);
-                  } catch (error) {
-                    console.error(`Error creating index ${index.name}:`, error);
+            const transaction = (event.target as IDBOpenDBRequest).transaction;
+            if (transaction) {
+              const objectStore = transaction.objectStore(store.name);
+              if (objectStore) {
+                store.indexes.forEach(index => {
+                  if (!objectStore.indexNames.contains(index.name)) {
+                    try {
+                      objectStore.createIndex(index.name, index.keyPath, index.options || {});
+                      console.log(`Added missing index ${index.name} to ${store.name}`);
+                    } catch (error) {
+                      console.error(`Error creating index ${index.name}:`, error);
+                    }
                   }
-                }
-              });
+                });
+              }
             }
           }
         });
