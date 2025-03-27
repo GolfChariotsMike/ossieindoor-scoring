@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { BackButton } from "./BackButton";
 import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
 import { ScoreboardLayout } from "./ScoreboardLayout";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { saveMatchScores } from "@/utils/matchDatabase";
 
 const StandaloneScoreboard = () => {
@@ -27,6 +27,9 @@ const StandaloneScoreboard = () => {
   const awayTeamName = "AWAY TEAM";
   const matchCode = `${courtNumber}-${formattedDate}-${homeTeamName.replace(/\s+/g, '')}-${awayTeamName.replace(/\s+/g, '')}`;
 
+  // Create a properly formatted fixture time (in the same format as expected from fixtures)
+  const fixtureDateTime = format(new Date(startTime), 'dd/MM/yyyy HH:mm');
+
   const genericMatch = {
     id: matchCode,
     court: courtNumber,
@@ -34,7 +37,7 @@ const StandaloneScoreboard = () => {
     homeTeam: { id: "home", name: homeTeamName },
     awayTeam: { id: "away", name: awayTeamName },
     PlayingAreaName: `Court ${courtNumber}`,
-    DateTime: format(new Date(startTime), 'dd/MM/yyyy HH:mm'),
+    DateTime: fixtureDateTime, // Use the formatted date here
     DivisionName: "Practice",
     HomeTeam: homeTeamName,
     AwayTeam: awayTeamName,
@@ -81,7 +84,8 @@ const StandaloneScoreboard = () => {
       
       // Save match scores after each set
       try {
-        const fixtureTime = format(new Date(startTime), 'HH:mm');
+        // Use the formatted fixture time from genericMatch
+        const fixtureTime = genericMatch.DateTime;
         console.log('StandaloneScoreboard saving set scores with fixture time:', {
           matchCode,
           fixtureTime,
@@ -90,13 +94,16 @@ const StandaloneScoreboard = () => {
           awayTeam: awayTeamName
         });
         
+        // Pass both the display fixture time and the full ISO date
         saveMatchScores(
           matchCode,
           newSetScores.home,
           newSetScores.away,
           false, // Don't immediately submit to Supabase
-          fixtureTime, // Pass formatted fixture time 
-          startTime  // Pass full ISO date string
+          fixtureTime, // Pass formatted fixture time (dd/MM/yyyy HH:mm)
+          startTime,  // Pass full ISO date string
+          homeTeamName,
+          awayTeamName
         );
       } catch (error) {
         console.error('Error saving match scores:', error);
