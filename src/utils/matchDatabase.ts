@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
 import { isOffline } from "@/utils/offlineMode";
+import { MatchSummary } from "@/services/db/types";
 
 interface PendingScore {
   id: string;
@@ -18,7 +19,7 @@ const MAX_RETRIES = 5;
 
 let isProcessing = false;
 
-const processPendingScores = async (forceProcess = false) => {
+const processPendingScores = async (forceProcess = false, matchSummaries?: MatchSummary[]) => {
   if (isProcessing && !forceProcess) {
     console.log('Already processing pending scores, skipping...');
     return 0;
@@ -37,6 +38,17 @@ const processPendingScores = async (forceProcess = false) => {
       console.log('In offline mode, pending scores will be processed later');
       isProcessing = false;
       return 0;
+    }
+
+    // Create a lookup map for fixture start times from match summaries if provided
+    const fixtureStartTimes = new Map<string, string>();
+    if (matchSummaries && matchSummaries.length > 0) {
+      matchSummaries.forEach(match => {
+        if (match.matchId && match.fixture_start_time) {
+          fixtureStartTimes.set(match.matchId, match.fixture_start_time);
+        }
+      });
+      console.log(`Created lookup map with ${fixtureStartTimes.size} fixture start times`);
     }
 
     for (const score of pendingScores) {
@@ -77,6 +89,10 @@ const processPendingScores = async (forceProcess = false) => {
           continue;
         }
 
+        // Look up the fixture start time if available in our map
+        const fixtureStartTime = fixtureStartTimes.get(score.matchId);
+        console.log(`Fixture start time for ${score.matchId}: ${fixtureStartTime || 'not found'}`);
+
         if (existingData) {
           console.log('Updating existing match data:', existingData.id);
           const { error: updateError } = await supabase
@@ -90,7 +106,9 @@ const processPendingScores = async (forceProcess = false) => {
               set2_away_score: score.awayScores[1] || 0,
               set3_home_score: score.homeScores[2] || 0,
               set3_away_score: score.awayScores[2] || 0,
-              has_final_score: true
+              has_final_score: true,
+              // Update the fixture_start_time if we have it from match summaries
+              ...(fixtureStartTime ? { fixture_start_time: fixtureStartTime } : {})
             })
             .eq('id', existingData.id);
 
@@ -178,6 +196,11 @@ const processPendingScores = async (forceProcess = false) => {
                 awayTeamName = matchData.away_team_name;
                 courtNumber = matchData.court_number;
                 division = matchData.division || "Unknown";
+                // If we don't have a fixture start time from the match summaries,
+                // use the one from matches_v2 if available
+                if (!fixtureStartTime && matchData.fixture_start_time) {
+                  console.log(`Using fixture start time from matches_v2: ${matchData.fixture_start_time}`);
+                }
               }
             } catch (error) {
               console.error('Error fetching match details:', error);
@@ -207,7 +230,8 @@ const processPendingScores = async (forceProcess = false) => {
               away_bonus_points: awayBonusPoints,
               home_total_match_points: homeMatchPoints,
               away_total_match_points: awayMatchPoints,
-              match_date: new Date().toISOString(),
+              match_date: fixtureStartTime || new Date().toISOString(),
+              fixture_start_time: fixtureStartTime || null,
               has_final_score: true
             });
 

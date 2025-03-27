@@ -49,7 +49,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         disableForcedOfflineMode();
       }
       
-      const count = await processPendingScores(true);
+      const count = await processPendingScores(true, matches);
       
       if (count > 0) {
         toast({
