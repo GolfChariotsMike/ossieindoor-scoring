@@ -1,4 +1,3 @@
-
 export interface PendingScore {
   id: string;
   matchId: string;
@@ -8,10 +7,10 @@ export interface PendingScore {
   retryCount: number;
   status: 'pending' | 'processing' | 'failed';
   lastError?: string;
-  fixtureTime?: string;  // Add fixture time field
-  fixture_start_time?: string; // Add original fixture start time
-  homeTeam?: string; // Add home team name
-  awayTeam?: string; // Add away team name
+  fixtureTime?: string;
+  fixture_start_time?: string;
+  homeTeam?: string;
+  awayTeam?: string;
 }
 
 export interface DbIndexDefinition {
@@ -39,8 +38,8 @@ export interface MatchSummary {
   awayScores: number[];
   court: number;
   timestamp: string;
-  fixtureTime?: string;  // Added to store the formatted fixture time for display
-  status?: 'pending' | 'processing' | 'failed'; // Added for showing status in UI
+  fixtureTime?: string;
+  status?: 'pending' | 'processing' | 'failed';
   pendingUpload?: boolean;
-  fixture_start_time?: string; // Added to store the original fixture start time
+  fixture_start_time?: string;
 }

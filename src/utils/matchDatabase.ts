@@ -2,17 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
 import { isOffline } from "@/utils/offlineMode";
-import { MatchSummary } from "@/services/db/types";
-
-interface PendingScore {
-  id: string;
-  matchId: string;
-  homeScores: number[];
-  awayScores: number[];
-  timestamp: string;
-  retryCount: number;
-  status: 'pending' | 'processing' | 'failed';
-}
+import { MatchSummary, PendingScore } from "@/services/db/types";
 
 const MAX_RETRIES = 5;
 
@@ -294,7 +284,7 @@ export const saveMatchScores = async (
   }
 
   try {
-    const pendingScore: Omit<PendingScore, 'status'> = {
+    const pendingScore = {
       id: `${matchId}-${Date.now()}`,
       matchId,
       homeScores,
@@ -306,6 +296,7 @@ export const saveMatchScores = async (
       homeTeam,
       awayTeam
     };
+    
     await savePendingScore(pendingScore);
 
     if (!submitToSupabase) {
