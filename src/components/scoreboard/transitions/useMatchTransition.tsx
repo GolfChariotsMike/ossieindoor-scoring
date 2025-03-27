@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Fixture } from "@/types/volleyball";
 import { toast } from "@/hooks/use-toast";
@@ -48,7 +49,15 @@ export const useMatchTransition = ({
 
       // Only save scores locally now, not to Supabase
       setTimeout(() => {
-        gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away)
+        console.log('Saving match with fixture data:', {
+          matchId: match.id,
+          fixture: fixture ? {
+            DateTime: fixture.DateTime,
+            fixture_start_time: fixture.fixture_start_time || fixture.DateTime
+          } : 'No fixture data'
+        });
+        
+        gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away, fixture)
           .catch(error => {
             console.error('Error saving match scores locally:', error);
             toast({

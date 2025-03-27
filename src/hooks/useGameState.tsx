@@ -1,5 +1,6 @@
+
 import { useState, useCallback } from 'react';
-import { Score, Match } from '@/types/volleyball';
+import { Score, Match, Fixture } from '@/types/volleyball';
 import { useScoring } from './useScoring';
 import { saveMatchScores } from '@/utils/matchDatabase';
 import { enableForcedOfflineMode, isOffline } from '@/utils/offlineMode';
@@ -110,21 +111,38 @@ export const useGameState = () => {
   }, []);
 
   // Save scores locally without submitting to Supabase
-  const saveScoresLocally = useCallback(async (matchId: string, homeScores: number[], awayScores: number[]) => {
+  const saveScoresLocally = useCallback(async (matchId: string, homeScores: number[], awayScores: number[], fixtureData?: Fixture) => {
     try {
       console.log('Saving scores locally only:', {
         matchId,
         homeScores, 
         awayScores,
-        isTeamsSwitched
+        isTeamsSwitched,
+        fixtureTime: fixtureData?.DateTime,
+        fixture_start_time: fixtureData?.fixture_start_time || fixtureData?.DateTime
       });
 
       // Adjust scores based on whether teams are switched
       const finalHomeScores = isTeamsSwitched ? awayScores : homeScores;
       const finalAwayScores = isTeamsSwitched ? homeScores : awayScores;
       
+      // Extract fixture data if provided
+      const fixtureTime = fixtureData?.DateTime;
+      const fixture_start_time = fixtureData?.fixture_start_time || fixtureData?.DateTime;
+      const homeTeam = fixtureData?.HomeTeam;
+      const awayTeam = fixtureData?.AwayTeam;
+      
       // Save to IndexedDB but don't submit to Supabase yet
-      return await saveMatchScores(matchId, finalHomeScores, finalAwayScores, false);
+      return await saveMatchScores(
+        matchId, 
+        finalHomeScores, 
+        finalAwayScores, 
+        false, 
+        fixtureTime, 
+        fixture_start_time,
+        homeTeam,
+        awayTeam
+      );
     } catch (error) {
       console.error('Error in saveScoresLocally:', error);
       throw error;

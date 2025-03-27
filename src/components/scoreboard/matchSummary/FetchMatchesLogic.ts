@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { getPendingScores } from "@/services/indexedDB";
 import { format, parseISO } from "date-fns";
@@ -13,7 +14,9 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
       id: score.id,
       matchId: score.matchId,
       fixtureTime: score.fixtureTime,
-      fixture_start_time: score.fixture_start_time
+      fixture_start_time: score.fixture_start_time,
+      homeTeam: score.homeTeam,
+      awayTeam: score.awayTeam
     })));
 
     let pendingSummaries: MatchSummary[] = [];

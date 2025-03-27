@@ -44,9 +44,13 @@ export const ScoreboardLayout = ({
     AwayTeamScore: '0'
   };
 
-  console.log('ScoreboardLayout - Match data:', match);
-  console.log('ScoreboardLayout - Current scores:', currentScore);
-  console.log('ScoreboardLayout - Set scores:', setScores);
+  console.log('ScoreboardLayout - Creating fixture data from match:', {
+    id: match.id,
+    DateTime: match.startTime,
+    PlayingAreaName: `Court ${match.court}`,
+    HomeTeam: match.homeTeam.name,
+    AwayTeam: match.awayTeam.name
+  });
 
   return (
     <div className="flex flex-col justify-between h-full">
