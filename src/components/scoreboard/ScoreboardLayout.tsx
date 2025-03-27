@@ -3,6 +3,7 @@ import { Timer } from "./Timer";
 import { TeamScore } from "./TeamScore";
 import { SetScoresDisplay } from "./SetScoresDisplay";
 import { Match, Score, SetScores, Fixture } from "@/types/volleyball";
+import { parseISO, format, parse } from "date-fns";
 
 interface ScoreboardLayoutProps {
   isBreak: boolean;
@@ -43,6 +44,30 @@ export const ScoreboardLayout = ({
     return dateStr;
   };
 
+  // Convert dd/MM/yyyy HH:mm format to ISO date string for database
+  const convertToISODate = (dateStr?: string) => {
+    if (!dateStr) return undefined;
+    
+    // If it contains a date in format dd/MM/yyyy HH:mm
+    if (/\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/.test(dateStr)) {
+      try {
+        // Parse the date using date-fns
+        const parsedDate = parse(dateStr, 'dd/MM/yyyy HH:mm', new Date());
+        return parsedDate.toISOString();
+      } catch (error) {
+        console.error('Error parsing fixture date:', dateStr, error);
+        return undefined;
+      }
+    }
+    
+    // If it's already an ISO string, return as is
+    if (/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dateStr)) {
+      return dateStr;
+    }
+    
+    return undefined;
+  };
+
   // Transform Match type to Fixture type
   const fixtureData: Fixture = {
     Id: match.id,
@@ -56,7 +81,7 @@ export const ScoreboardLayout = ({
     HomeTeamScore: '0',
     AwayTeamScore: '0',
     // Store both formats - full date string and time-only
-    fixture_start_time: match.startTime,
+    fixture_start_time: convertToISODate(match.startTime),
     // Extract time-only for display
     fixtureTime: formatFixtureTime(match.startTime)
   };
@@ -66,7 +91,9 @@ export const ScoreboardLayout = ({
     DateTime: match.startTime,
     PlayingAreaName: `Court ${match.court}`,
     HomeTeam: match.homeTeam.name,
-    AwayTeam: match.awayTeam.name
+    AwayTeam: match.awayTeam.name,
+    fixtureTime: fixtureData.fixtureTime,
+    fixture_start_time: fixtureData.fixture_start_time
   });
 
   return (

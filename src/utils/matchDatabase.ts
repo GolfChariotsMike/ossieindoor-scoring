@@ -1,8 +1,10 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
 import { isOffline } from "@/utils/offlineMode";
 import { MatchSummary, PendingScore } from "@/services/db/types";
+import { parseISO, isValid } from "date-fns";
 
 const MAX_RETRIES = 5;
 
@@ -78,7 +80,37 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
           continue;
         }
 
-        const fixtureStartTime = fixtureStartTimes.get(score.matchId) || score.fixture_start_time;
+        // Get the fixture start time from different sources and ensure it's in ISO format
+        let fixtureStartTime = fixtureStartTimes.get(score.matchId) || score.fixture_start_time;
+        
+        // Convert non-ISO format strings (like "25/03/2025 20:15") to ISO format
+        if (fixtureStartTime && !fixtureStartTime.includes('T') && /\d{2}\/\d{2}\/\d{4}/.test(fixtureStartTime)) {
+          try {
+            // Try to parse the date using date-fns
+            const parts = fixtureStartTime.split(' ');
+            const datePart = parts[0]; // dd/MM/yyyy
+            const timePart = parts.length > 1 ? parts[1] : '00:00'; // HH:mm or default to midnight
+            
+            const dateParts = datePart.split('/');
+            if (dateParts.length === 3) {
+              // Create an ISO string manually to avoid parsing issues
+              const isoString = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timePart}:00`;
+              const parsed = new Date(isoString);
+              
+              if (isValid(parsed)) {
+                fixtureStartTime = parsed.toISOString();
+                console.log(`Converted fixture time "${datePart} ${timePart}" to ISO: ${fixtureStartTime}`);
+              } else {
+                console.error(`Failed to parse fixture time: ${fixtureStartTime}`);
+                fixtureStartTime = new Date().toISOString(); // Fallback to now
+              }
+            }
+          } catch (error) {
+            console.error('Error converting fixture time to ISO:', fixtureStartTime, error);
+            fixtureStartTime = new Date().toISOString(); // Fallback to now
+          }
+        }
+        
         console.log(`Fixture start time for ${score.matchId}: ${fixtureStartTime || 'not found'}`);
 
         if (existingData) {
@@ -177,6 +209,7 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
                 division = matchData.division || "Unknown";
                 if (!fixtureStartTime && matchData.fixture_start_time) {
                   console.log(`Using fixture start time from matches_v2: ${matchData.fixture_start_time}`);
+                  fixtureStartTime = matchData.fixture_start_time;
                 }
               }
             } catch (error) {
@@ -291,6 +324,32 @@ export const saveMatchScores = async (
   }
 
   try {
+    // If we have a fixture time in dd/MM/yyyy HH:mm format, convert it to ISO string
+    let isoFixtureStartTime = fixture_start_time;
+    
+    if (fixtureTime && !fixture_start_time && /\d{2}\/\d{2}\/\d{4}/.test(fixtureTime)) {
+      try {
+        // Try to parse the date using date-fns
+        const parts = fixtureTime.split(' ');
+        const datePart = parts[0]; // dd/MM/yyyy
+        const timePart = parts.length > 1 ? parts[1] : '00:00'; // HH:mm or default to midnight
+        
+        const dateParts = datePart.split('/');
+        if (dateParts.length === 3) {
+          // Create an ISO string manually to avoid parsing issues
+          const isoString = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timePart}:00`;
+          const parsed = new Date(isoString);
+          
+          if (isValid(parsed)) {
+            isoFixtureStartTime = parsed.toISOString();
+            console.log(`Converted fixture time "${fixtureTime}" to ISO: ${isoFixtureStartTime}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error converting fixture time to ISO:', fixtureTime, error);
+      }
+    }
+
     const pendingScore = {
       id: `${matchId}-${Date.now()}`,
       matchId,
@@ -298,8 +357,8 @@ export const saveMatchScores = async (
       awayScores,
       timestamp: new Date().toISOString(),
       retryCount: 0,
-      fixtureTime,
-      fixture_start_time,
+      fixtureTime,  // Keep the original display format for UI
+      fixture_start_time: isoFixtureStartTime, // Use converted ISO format for database
       homeTeam,
       awayTeam
     };
