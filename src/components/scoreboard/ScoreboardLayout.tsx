@@ -30,6 +30,19 @@ export const ScoreboardLayout = ({
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
+  // Format time part only if it's in a date string format
+  const formatFixtureTime = (dateStr?: string) => {
+    if (!dateStr) return undefined;
+    
+    // If it contains a date in format dd/MM/yyyy HH:mm
+    if (/\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/.test(dateStr)) {
+      // Extract just the time part
+      return dateStr.split(' ')[1];
+    }
+    
+    return dateStr;
+  };
+
   // Transform Match type to Fixture type
   const fixtureData: Fixture = {
     Id: match.id,
@@ -41,7 +54,11 @@ export const ScoreboardLayout = ({
     HomeTeamId: match.homeTeam.id,
     AwayTeamId: match.awayTeam.id,
     HomeTeamScore: '0',
-    AwayTeamScore: '0'
+    AwayTeamScore: '0',
+    // Store both formats - full date string and time-only
+    fixture_start_time: match.startTime,
+    // Extract time-only for display
+    fixtureTime: formatFixtureTime(match.startTime)
   };
 
   console.log('ScoreboardLayout - Creating fixture data from match:', {

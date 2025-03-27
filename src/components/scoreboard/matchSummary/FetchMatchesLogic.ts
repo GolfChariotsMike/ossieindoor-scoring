@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { getPendingScores } from "@/services/indexedDB";
 import { format, parseISO } from "date-fns";
@@ -22,6 +21,19 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
     let pendingSummaries: MatchSummary[] = [];
     const matchMetadata = new Map<string, { fixtureTime?: string, fixture_start_time?: string }>();
 
+    // Extract time-only from date strings
+    const extractTimeOnly = (dateString?: string): string | undefined => {
+      if (!dateString) return undefined;
+      
+      // If it contains date and time in format dd/MM/yyyy HH:mm
+      if (/\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/.test(dateString)) {
+        // Extract just the time part
+        return dateString.split(' ')[1];
+      }
+      
+      return dateString;
+    };
+
     // Get match metadata from matches_v2 table
     if (!isOffline()) {
       try {
@@ -43,7 +55,7 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
             } else if (matchesData) {
               console.log(`Found metadata for ${matchesData.length} matches`);
               matchesData.forEach(match => {
-                // Format the fixture time for display
+                // Format the fixture time for display - extract only time
                 const fixtureTime = match.fixture_start_time ? 
                   format(parseISO(match.fixture_start_time), 'HH:mm') : 
                   (match.start_time ? format(parseISO(match.start_time), 'HH:mm') : undefined);
@@ -85,6 +97,11 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
         let awayTeam = 'Away Team';
         let fixtureTime = score.fixtureTime;
         let fixture_start_time = score.fixture_start_time;
+        
+        // Process fixture time to extract only the time part if it contains a date
+        if (fixtureTime) {
+          fixtureTime = extractTimeOnly(fixtureTime);
+        }
         
         // If score already has team names, use those first
         if (score.homeTeam && score.awayTeam) {
@@ -226,7 +243,7 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
         match.set3_away_score || 0
       ].filter(score => score > 0);
 
-      // Format the fixture time for display purposes
+      // Format the fixture time for display - extract only the time part
       const fixtureTime = match.fixture_start_time ? 
         format(parseISO(match.fixture_start_time), 'HH:mm') : 
         (match.match_date ? format(parseISO(match.match_date), 'HH:mm') : undefined);
