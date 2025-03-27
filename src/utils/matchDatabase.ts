@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
@@ -90,7 +89,7 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
         }
 
         // Look up the fixture start time if available in our map
-        const fixtureStartTime = fixtureStartTimes.get(score.matchId);
+        const fixtureStartTime = fixtureStartTimes.get(score.matchId) || score.fixture_start_time;
         console.log(`Fixture start time for ${score.matchId}: ${fixtureStartTime || 'not found'}`);
 
         if (existingData) {
@@ -107,7 +106,7 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
               set3_home_score: score.homeScores[2] || 0,
               set3_away_score: score.awayScores[2] || 0,
               has_final_score: true,
-              // Update the fixture_start_time if we have it from match summaries
+              // Update the fixture_start_time if we have it from match summaries or from the score
               ...(fixtureStartTime ? { fixture_start_time: fixtureStartTime } : {})
             })
             .eq('id', existingData.id);
@@ -117,6 +116,7 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
           }
         } else {
           console.log('Saving new match data for match:', score.matchId);
+          
           // Calculate all the required values on the client
           // Calculate total points
           const homePointsFor = score.homeScores.reduce((acc, s) => acc + s, 0);
@@ -148,8 +148,8 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
           const awayMatchPoints = awayBonusPoints + (awaySetsWon * 2);
           
           // For local matches, parse team names from the matchId
-          let homeTeamName = "Home Team";
-          let awayTeamName = "Away Team";
+          let homeTeamName = score.homeTeam || "Home Team";
+          let awayTeamName = score.awayTeam || "Away Team";
           let courtNumber = 0;
           let division = "Unknown";
           
@@ -162,15 +162,19 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
                 const firstPart = parts[0]; // e.g., local-06031845007
                 courtNumber = parseInt(firstPart.slice(-3)) || 0;
                 
-                // Extract team names
-                homeTeamName = parts[1].replace(/([A-Z])/g, ' $1').trim();
-                
-                // The last part might contain a timestamp, remove it
-                let awayPart = parts[2];
-                if (awayPart.includes('-')) {
-                  awayPart = awayPart.split('-')[0];
+                // Extract team names if not already set in the score
+                if (!score.homeTeam) {
+                  homeTeamName = parts[1].replace(/([A-Z])/g, ' $1').trim();
                 }
-                awayTeamName = awayPart.replace(/([A-Z])/g, ' $1').trim();
+                
+                if (!score.awayTeam) {
+                  // The last part might contain a timestamp, remove it
+                  let awayPart = parts[2];
+                  if (awayPart.includes('-')) {
+                    awayPart = awayPart.split('-')[0];
+                  }
+                  awayTeamName = awayPart.replace(/([A-Z])/g, ' $1').trim();
+                }
                 
                 division = "Local Match";
               }
@@ -192,11 +196,11 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
               }
 
               if (matchData) {
-                homeTeamName = matchData.home_team_name;
-                awayTeamName = matchData.away_team_name;
+                homeTeamName = score.homeTeam || matchData.home_team_name;
+                awayTeamName = score.awayTeam || matchData.away_team_name;
                 courtNumber = matchData.court_number;
                 division = matchData.division || "Unknown";
-                // If we don't have a fixture start time from the match summaries,
+                // If we don't have a fixture start time from the score or match summaries,
                 // use the one from matches_v2 if available
                 if (!fixtureStartTime && matchData.fixture_start_time) {
                   console.log(`Using fixture start time from matches_v2: ${matchData.fixture_start_time}`);
@@ -222,14 +226,18 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
               set2_away_score: score.awayScores[1] || 0,
               set3_home_score: score.homeScores[2] || 0,
               set3_away_score: score.awayScores[2] || 0,
-              home_total_points: homePointsFor,
-              away_total_points: awayPointsFor,
-              home_result: getResult(true),
-              away_result: getResult(false),
-              home_bonus_points: homeBonusPoints,
-              away_bonus_points: awayBonusPoints,
-              home_total_match_points: homeMatchPoints,
-              away_total_match_points: awayMatchPoints,
+              home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
+              away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
+              home_result: score.homeScores.reduce((acc, s, index) => acc + (s > score.awayScores[index] ? 1 : 0), 0) > 
+                           score.awayScores.reduce((acc, s, index) => acc + (s > score.homeScores[index] ? 1 : 0), 0) ? 'W' : 'L',
+              away_result: score.awayScores.reduce((acc, s, index) => acc + (s > score.homeScores[index] ? 1 : 0), 0) > 
+                           score.homeScores.reduce((acc, s, index) => acc + (s > score.awayScores[index] ? 1 : 0), 0) ? 'W' : 'L',
+              home_bonus_points: score.homeScores.reduce((total, setScore) => total + Math.floor(setScore / 10), 0),
+              away_bonus_points: score.awayScores.reduce((total, setScore) => total + Math.floor(setScore / 10), 0),
+              home_total_match_points: score.homeScores.reduce((total, setScore) => total + Math.floor(setScore / 10), 0) + 
+                                      (score.homeScores.reduce((acc, s, index) => acc + (s > score.awayScores[index] ? 1 : 0), 0) * 2),
+              away_total_match_points: score.awayScores.reduce((total, setScore) => total + Math.floor(setScore / 10), 0) + 
+                                      (score.awayScores.reduce((acc, s, index) => acc + (s > score.homeScores[index] ? 1 : 0), 0) * 2),
               match_date: fixtureStartTime || new Date().toISOString(),
               fixture_start_time: fixtureStartTime || null,
               has_final_score: true
@@ -282,12 +290,20 @@ export const saveMatchScores = async (
   matchId: string, 
   homeScores: number[], 
   awayScores: number[],
-  submitToSupabase = false
+  submitToSupabase = false,
+  fixtureTime?: string,
+  fixture_start_time?: string,
+  homeTeam?: string,
+  awayTeam?: string
 ) => {
   console.log('Starting saveMatchScores with:', {
     matchId,
     homeScores,
     awayScores,
+    fixtureTime,
+    fixture_start_time,
+    homeTeam,
+    awayTeam,
     timestamp: new Date().toISOString(),
     submitToSupabase
   });
@@ -310,7 +326,11 @@ export const saveMatchScores = async (
       homeScores,
       awayScores,
       timestamp: new Date().toISOString(),
-      retryCount: 0
+      retryCount: 0,
+      fixtureTime,
+      fixture_start_time,
+      homeTeam,
+      awayTeam
     };
     await savePendingScore(pendingScore);
 

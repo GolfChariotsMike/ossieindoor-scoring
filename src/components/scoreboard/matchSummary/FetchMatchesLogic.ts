@@ -75,9 +75,16 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
       .map(score => {
         let homeTeam = 'Home Team';
         let awayTeam = 'Away Team';
+        let fixtureTime = score.fixtureTime;
+        let fixture_start_time = score.fixture_start_time;
         
-        // Try to extract team names from local match IDs
-        if (score.matchId.startsWith('local-')) {
+        // If score already has team names, use those first
+        if (score.homeTeam && score.awayTeam) {
+          homeTeam = score.homeTeam;
+          awayTeam = score.awayTeam;
+        } 
+        // Try to extract team names from local match IDs if not already set
+        else if (score.matchId.startsWith('local-')) {
           try {
             const parts = score.matchId.split('_');
             if (parts.length >= 3) {
@@ -94,7 +101,17 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
               const firstPart = parts[0]; // e.g., local-06031845007
               const courtNum = parseInt(firstPart.slice(-3));
               
+              // Get metadata for this match if available
               const metadata = matchMetadata.get(score.matchId);
+              
+              // Only use metadata if we don't already have fixture times from the score
+              if (!fixtureTime && metadata?.fixtureTime) {
+                fixtureTime = metadata.fixtureTime;
+              }
+              
+              if (!fixture_start_time && metadata?.fixture_start_time) {
+                fixture_start_time = metadata.fixture_start_time;
+              }
               
               return {
                 id: score.id,
@@ -105,8 +122,8 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
                 awayScores: score.awayScores,
                 court: courtNum || parseInt(courtId),
                 timestamp: score.timestamp,
-                fixtureTime: score.fixtureTime || metadata?.fixtureTime,
-                fixture_start_time: score.fixture_start_time || metadata?.fixture_start_time,
+                fixtureTime,
+                fixture_start_time,
                 status: score.status,
                 pendingUpload: true
               };
@@ -119,18 +136,27 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
         // Get metadata for this match if available
         const metadata = matchMetadata.get(score.matchId);
         
+        // Only use metadata if we don't already have fixture times from the score
+        if (!fixtureTime && metadata?.fixtureTime) {
+          fixtureTime = metadata.fixtureTime;
+        }
+        
+        if (!fixture_start_time && metadata?.fixture_start_time) {
+          fixture_start_time = metadata.fixture_start_time;
+        }
+        
         // Default summary when we can't parse the local ID or for non-local matches
         return {
           id: score.id,
           matchId: score.matchId,
-          homeTeam: score.homeTeam || homeTeam,
-          awayTeam: score.awayTeam || awayTeam,
+          homeTeam,
+          awayTeam,
           homeScores: score.homeScores,
           awayScores: score.awayScores,
           court: parseInt(courtId),
           timestamp: score.timestamp,
-          fixtureTime: score.fixtureTime || metadata?.fixtureTime,
-          fixture_start_time: score.fixture_start_time || metadata?.fixture_start_time,
+          fixtureTime,
+          fixture_start_time,
           status: score.status,
           pendingUpload: true
         };

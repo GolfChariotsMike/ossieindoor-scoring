@@ -33,7 +33,9 @@ export const SummaryTable = ({ matches }: SummaryTableProps) => {
             matches.map((match) => (
               <TableRow key={match.id}>
                 <TableCell className="font-medium">
-                  {match.fixtureTime || (match.fixture_start_time ? format(parseISO(match.fixture_start_time), 'HH:mm') : (match.timestamp ? format(parseISO(match.timestamp), 'HH:mm') : 'Unknown'))}
+                  {match.fixtureTime || 
+                   (match.fixture_start_time ? format(parseISO(match.fixture_start_time), 'HH:mm') : 
+                   (match.timestamp ? format(parseISO(match.timestamp), 'HH:mm') : 'Unknown'))}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1">
