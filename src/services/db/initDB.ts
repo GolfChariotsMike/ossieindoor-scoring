@@ -8,6 +8,23 @@ let dbConnectionPromise: Promise<IDBDatabase> | null = null;
 let connectionTimeout: number | null = null;
 const CONNECTION_TIMEOUT_MS = 60000; // 60 seconds
 
+// Function to get the current version of the database
+const getCurrentDBVersion = async (): Promise<number> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME);
+    
+    request.onsuccess = () => {
+      const version = request.result.version;
+      request.result.close();
+      resolve(version);
+    };
+    
+    request.onerror = () => {
+      reject(request.error);
+    };
+  });
+};
+
 export const initDB = async (): Promise<IDBDatabase> => {
   if (connectionTimeout !== null) {
     clearTimeout(connectionTimeout);
@@ -54,8 +71,20 @@ export const initDB = async (): Promise<IDBDatabase> => {
   dbConnectionPromise = (async () => {
     while (retries < maxInitRetries) {
       try {
+        // Get the current database version if it exists
+        let versionToUse = DB_VERSION;
+        try {
+          const currentVersion = await getCurrentDBVersion();
+          console.log(`Current IndexedDB version: ${currentVersion}, config version: ${DB_VERSION}`);
+          
+          // Always use the higher version to avoid VersionError
+          versionToUse = Math.max(currentVersion, DB_VERSION);
+        } catch (error) {
+          console.log('Unable to determine current DB version, using configured version:', DB_VERSION);
+        }
+        
         const db = await new Promise<IDBDatabase>((resolve, reject) => {
-          const request = indexedDB.open(DB_NAME, DB_VERSION);
+          const request = indexedDB.open(DB_NAME, versionToUse);
 
           const requestTimeout = setTimeout(() => {
             reject(new Error('IndexedDB connection request timed out'));
@@ -69,7 +98,7 @@ export const initDB = async (): Promise<IDBDatabase> => {
 
           request.onsuccess = () => {
             clearTimeout(requestTimeout);
-            console.log('Successfully opened IndexedDB');
+            console.log('Successfully opened IndexedDB with version:', request.result.version);
             dbInstance = request.result;
 
             validateIndexes(dbInstance).catch(err => {
