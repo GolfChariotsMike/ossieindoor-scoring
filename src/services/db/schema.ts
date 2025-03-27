@@ -26,3 +26,22 @@ export const dbSchema: DBSchema = {
     ]
   }
 };
+
+// Helper function to check if a store has all required indexes
+export const checkStoreIndexes = async (db: IDBDatabase, storeName: string, requiredIndexes: string[]): Promise<boolean> => {
+  if (!db.objectStoreNames.contains(storeName)) {
+    console.log(`Store ${storeName} doesn't exist yet`);
+    return false;
+  }
+  
+  try {
+    const transaction = db.transaction([storeName], 'readonly');
+    const store = transaction.objectStore(storeName);
+    
+    // Check if all required indexes exist
+    return requiredIndexes.every(indexName => store.indexNames.contains(indexName));
+  } catch (error) {
+    console.error(`Error checking indexes for store ${storeName}:`, error);
+    return false;
+  }
+};

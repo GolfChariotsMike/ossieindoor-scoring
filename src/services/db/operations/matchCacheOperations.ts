@@ -13,9 +13,51 @@ export const findCachedMatch = async (matchCode: string): Promise<any | null> =>
       try {
         const transaction = db.transaction([STORES.COURT_MATCHES], 'readonly');
         const store = transaction.objectStore(STORES.COURT_MATCHES);
-        const index = store.index('matchCode');
-        const request = index.get(matchCode);
         
+        // First try to use the index, but fall back to scanning if it fails
+        let request;
+        
+        try {
+          // Check if index exists before using it
+          if (store.indexNames.contains('matchCode')) {
+            const index = store.index('matchCode');
+            request = index.get(matchCode);
+          } else {
+            throw new Error('matchCode index not found');
+          }
+        } catch (indexError) {
+          console.warn('Error using matchCode index, falling back to cursor scan:', indexError);
+          
+          // Fall back to a cursor if the index doesn't exist or fails
+          request = store.openCursor();
+          
+          request.onsuccess = (event) => {
+            const cursor = (event.target as IDBRequest).result;
+            if (cursor) {
+              if (cursor.value.matchCode === matchCode) {
+                console.log('Found match by cursor scan:', cursor.value);
+                resolve(cursor.value);
+                return;
+              }
+              cursor.continue();
+            } else {
+              // End of cursor scan, no match found
+              console.log('No cached match found for code (by scan):', matchCode);
+              resolve(null);
+            }
+            return;
+          };
+          
+          request.onerror = () => {
+            console.error('Error in cursor scan:', request.error);
+            reject(request.error);
+          };
+          
+          // Return early since we've handled this case
+          return;
+        }
+        
+        // Normal index request handlers (only reached if index exists)
         request.onsuccess = () => {
           if (request.result) {
             console.log('Found cached match:', request.result);

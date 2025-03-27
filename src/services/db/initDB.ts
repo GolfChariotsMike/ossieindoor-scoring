@@ -1,5 +1,5 @@
 import { DB_NAME, DB_VERSION } from './dbConfig';
-import { dbSchema } from './schema';
+import { dbSchema, checkStoreIndexes } from './schema';
 
 let dbInstance: IDBDatabase | null = null;
 let isClosingDb = false;
@@ -8,27 +8,22 @@ let connectionTimeout: number | null = null;
 const CONNECTION_TIMEOUT_MS = 60000; // 60 seconds
 
 export const initDB = async (): Promise<IDBDatabase> => {
-  // Clear any pending connection timeout
   if (connectionTimeout !== null) {
     clearTimeout(connectionTimeout);
     connectionTimeout = null;
   }
   
-  // If there's an existing promise for a connection being established, return it
   if (dbConnectionPromise) {
     return dbConnectionPromise;
   }
   
-  // If we have an existing connection that appears valid, test it first
   if (dbInstance && !isClosingDb) {
     try {
-      // Test if the connection is actually working with a small transaction
       const objectStoreNames = Array.from(dbInstance.objectStoreNames);
       if (objectStoreNames.length > 0) {
         const testTransaction = dbInstance.transaction(objectStoreNames[0], 'readonly');
-        testTransaction.abort(); // Just testing if it works, no need to complete
+        testTransaction.abort();
         
-        // Schedule connection timeout to avoid keeping the connection open indefinitely
         scheduleConnectionTimeout();
         
         return dbInstance;
@@ -39,7 +34,6 @@ export const initDB = async (): Promise<IDBDatabase> => {
     } catch (error) {
       console.warn('Existing DB instance failed connectivity test, creating new connection:', error);
       try {
-        // Only attempt to close if not already closing
         if (dbInstance && !isClosingDb) {
           isClosingDb = true;
           dbInstance.close();
@@ -56,17 +50,15 @@ export const initDB = async (): Promise<IDBDatabase> => {
   let retries = 0;
   const maxInitRetries = 3;
 
-  // Create a new connection promise that will be shared by concurrent callers
   dbConnectionPromise = (async () => {
     while (retries < maxInitRetries) {
       try {
         const db = await new Promise<IDBDatabase>((resolve, reject) => {
           const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-          // Add timeout to prevent hanging connections
           const requestTimeout = setTimeout(() => {
             reject(new Error('IndexedDB connection request timed out'));
-          }, 10000); // 10 second timeout for initial connection
+          }, 10000);
 
           request.onerror = () => {
             clearTimeout(requestTimeout);
@@ -79,7 +71,10 @@ export const initDB = async (): Promise<IDBDatabase> => {
             console.log('Successfully opened IndexedDB');
             dbInstance = request.result;
 
-            // Handle connection closing
+            validateIndexes(dbInstance).catch(err => {
+              console.warn('Error validating indexes:', err);
+            });
+
             dbInstance.onclose = () => {
               if (!isClosingDb) {
                 console.log('IndexedDB connection closed unexpectedly');
@@ -90,7 +85,6 @@ export const initDB = async (): Promise<IDBDatabase> => {
               dbConnectionPromise = null;
             };
 
-            // Handle version change
             dbInstance.onversionchange = () => {
               isClosingDb = true;
               dbInstance?.close();
@@ -100,12 +94,10 @@ export const initDB = async (): Promise<IDBDatabase> => {
               console.log('IndexedDB version changed, connection closed');
             };
 
-            // Handle error events
             dbInstance.onerror = (event) => {
               console.error('IndexedDB error:', event);
             };
 
-            // Schedule connection timeout
             scheduleConnectionTimeout();
             
             resolve(request.result);
@@ -115,22 +107,24 @@ export const initDB = async (): Promise<IDBDatabase> => {
             clearTimeout(requestTimeout);
             const db = (event.target as IDBOpenDBRequest).result;
             
-            // Create or update stores based on schema
             Object.values(dbSchema).forEach(store => {
-              try {
-                // If store exists, we don't recreate it
-                if (!db.objectStoreNames.contains(store.name)) {
-                  const objectStore = db.createObjectStore(store.name, { keyPath: store.keyPath });
-                  
-                  // Create indexes
-                  store.indexes.forEach(index => {
+              let objectStore;
+              
+              if (!db.objectStoreNames.contains(store.name)) {
+                objectStore = db.createObjectStore(store.name, { keyPath: store.keyPath });
+                console.log(`Created ${store.name} store`);
+              } else {
+                objectStore = event.target?.transaction?.objectStore(store.name);
+                console.log(`Using existing ${store.name} store`);
+              }
+              
+              if (objectStore) {
+                store.indexes.forEach(index => {
+                  if (!objectStore.indexNames.contains(index.name)) {
                     objectStore.createIndex(index.name, index.keyPath, index.options || {});
-                  });
-                  
-                  console.log(`Created ${store.name} store with indexes`);
-                }
-              } catch (error) {
-                console.error(`Error creating/updating store ${store.name}:`, error);
+                    console.log(`Created index ${index.name} on ${store.name}`);
+                  }
+                });
               }
             });
 
@@ -144,7 +138,6 @@ export const initDB = async (): Promise<IDBDatabase> => {
           };
         });
 
-        // Clear the shared promise to allow future connection attempts if needed
         dbConnectionPromise = null;
         return db;
       } catch (error) {
@@ -165,7 +158,75 @@ export const initDB = async (): Promise<IDBDatabase> => {
   return dbConnectionPromise;
 };
 
-// Schedule connection timeout to avoid keeping connections open indefinitely
+const validateIndexes = async (db: IDBDatabase): Promise<void> => {
+  console.log('Validating database indexes...');
+  let needsUpgrade = false;
+  
+  for (const [storeName, storeSchema] of Object.entries(dbSchema)) {
+    if (!db.objectStoreNames.contains(storeName)) {
+      console.log(`Store ${storeName} is missing, will be created on next upgrade`);
+      needsUpgrade = true;
+      continue;
+    }
+    
+    const requiredIndexNames = storeSchema.indexes.map(idx => idx.name);
+    const hasAllIndexes = await checkStoreIndexes(db, storeName, requiredIndexNames);
+    
+    if (!hasAllIndexes) {
+      console.log(`Store ${storeName} is missing required indexes, will upgrade`);
+      needsUpgrade = true;
+    }
+  }
+  
+  if (needsUpgrade) {
+    console.log('Database needs index upgrade, will close and reopen with higher version');
+    const currentVersion = db.version;
+    
+    db.close();
+    dbInstance = null;
+    
+    const upgradePromise = new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, currentVersion + 1);
+      
+      request.onupgradeneeded = (event) => {
+        console.log('Performing index upgrade...');
+        const db = request.result;
+        
+        Object.values(dbSchema).forEach(store => {
+          if (db.objectStoreNames.contains(store.name)) {
+            const objectStore = event.target?.transaction?.objectStore(store.name);
+            if (objectStore) {
+              store.indexes.forEach(index => {
+                if (!objectStore.indexNames.contains(index.name)) {
+                  try {
+                    objectStore.createIndex(index.name, index.keyPath, index.options || {});
+                    console.log(`Added missing index ${index.name} to ${store.name}`);
+                  } catch (error) {
+                    console.error(`Error creating index ${index.name}:`, error);
+                  }
+                }
+              });
+            }
+          }
+        });
+      };
+      
+      request.onsuccess = () => {
+        console.log('Index upgrade completed successfully');
+        request.result.close();
+        resolve();
+      };
+      
+      request.onerror = () => {
+        console.error('Error during index upgrade:', request.error);
+        reject(request.error);
+      };
+    });
+    
+    await upgradePromise;
+  }
+};
+
 const scheduleConnectionTimeout = () => {
   if (connectionTimeout !== null) {
     clearTimeout(connectionTimeout);
@@ -180,7 +241,6 @@ const scheduleConnectionTimeout = () => {
   }, CONNECTION_TIMEOUT_MS);
 };
 
-// Cleanup function to close database connection
 export const closeDB = () => {
   if (dbInstance) {
     try {
@@ -193,7 +253,6 @@ export const closeDB = () => {
       dbConnectionPromise = null;
       isClosingDb = false;
       
-      // Clear any pending timeout
       if (connectionTimeout !== null) {
         clearTimeout(connectionTimeout);
         connectionTimeout = null;
@@ -204,7 +263,6 @@ export const closeDB = () => {
   }
 };
 
-// Function to check if stores exist
 export const checkStores = async (): Promise<boolean> => {
   const db = await initDB();
   const storeNames = Array.from(db.objectStoreNames);

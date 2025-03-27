@@ -17,29 +17,57 @@ export const SummaryTable = ({ matches }: SummaryTableProps) => {
       try {
         const updatedMatches = await Promise.all(
           matches.map(async (match) => {
-            // Only try to fetch team names if they're not already set properly
-            if (match.homeTeam === "Home Team" || match.awayTeam === "Away Team" || !match.homeTeam || !match.awayTeam) {
-              const homeTeamName = await getTeamName(match.matchId, true);
-              const awayTeamName = await getTeamName(match.matchId, false);
-              
+            try {
+              // Only try to fetch team names if they're not already set properly
+              if (match.homeTeam === "Home Team" || match.awayTeam === "Away Team" || !match.homeTeam || !match.awayTeam) {
+                const homeTeamName = await getTeamName(match.matchId, true);
+                const awayTeamName = await getTeamName(match.matchId, false);
+                
+                return {
+                  ...match,
+                  homeTeam: homeTeamName || match.homeTeam || "Home Team",
+                  awayTeam: awayTeamName || match.awayTeam || "Away Team",
+                  fixtureTime: match.fixtureTime || formatFixtureTime(match.fixture_start_time)
+                };
+              }
               return {
                 ...match,
-                homeTeam: homeTeamName || match.homeTeam || "Home Team",
-                awayTeam: awayTeamName || match.awayTeam || "Away Team"
+                fixtureTime: match.fixtureTime || formatFixtureTime(match.fixture_start_time)
               };
+            } catch (err) {
+              console.error(`Error processing match ${match.id}:`, err);
+              return match;
             }
-            return match;
           })
         );
         
         setMatchesWithTeamNames(updatedMatches);
       } catch (error) {
         console.error("Error loading team names:", error);
+        // Fall back to original matches if there's an error
+        setMatchesWithTeamNames(matches);
       }
     };
 
     loadTeamNames();
   }, [matches]);
+
+  // Helper to format fixture time
+  const formatFixtureTime = (isoString?: string) => {
+    if (!isoString) return "";
+    
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString('en-AU', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    } catch (e) {
+      console.error("Error formatting time:", e);
+      return "";
+    }
+  };
 
   return (
     <Table className="border rounded-md">
@@ -58,7 +86,7 @@ export const SummaryTable = ({ matches }: SummaryTableProps) => {
         {matchesWithTeamNames.map((match) => (
           <TableRow key={match.id}>
             <TableCell className="font-mono">
-              {match.fixtureTime || ""}
+              {match.fixtureTime || formatFixtureTime(match.fixture_start_time) || ""}
             </TableCell>
             <TableCell className="font-medium">{match.homeTeam}</TableCell>
             <TableCell className="text-center">
