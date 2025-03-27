@@ -1,4 +1,3 @@
-
 export interface PendingScore {
   id: string;
   matchId: string;

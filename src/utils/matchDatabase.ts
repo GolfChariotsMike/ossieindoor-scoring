@@ -31,15 +31,12 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
 
     let processedCount = 0;
     
-    // If we're in forced offline mode and not explicitly forcing processing,
-    // don't try to send scores to Supabase
     if (isOffline() && !forceProcess) {
       console.log('In offline mode, pending scores will be processed later');
       isProcessing = false;
       return 0;
     }
 
-    // Create a lookup map for fixture start times from match summaries if provided
     const fixtureStartTimes = new Map<string, string>();
     if (matchSummaries && matchSummaries.length > 0) {
       matchSummaries.forEach(match => {
@@ -55,22 +52,18 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
         console.log('Processing score:', score.id);
         await updatePendingScoreStatus(score.id, 'processing');
         
-        // Check if we have network connectivity
         if (isOffline()) {
           console.log('No network connection or offline mode enabled, will retry later');
           await updatePendingScoreStatus(score.id, 'pending');
           continue;
         }
 
-        // Check if this is a local match ID (starts with "local-")
         const isLocalMatchId = score.matchId.startsWith('local-');
         
-        // Only try to check for existing match data if it's not a local ID
         let existingData = null;
         let checkError = null;
         
         if (!isLocalMatchId) {
-          // Check if a record already exists for this match
           const result = await supabase
             .from('match_data_v2')
             .select()
@@ -88,7 +81,6 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
           continue;
         }
 
-        // Look up the fixture start time if available in our map
         const fixtureStartTime = fixtureStartTimes.get(score.matchId) || score.fixture_start_time;
         console.log(`Fixture start time for ${score.matchId}: ${fixtureStartTime || 'not found'}`);
 
@@ -106,7 +98,6 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
               set3_home_score: score.homeScores[2] || 0,
               set3_away_score: score.awayScores[2] || 0,
               has_final_score: true,
-              // Update the fixture_start_time if we have it from match summaries or from the score
               ...(fixtureStartTime ? { fixture_start_time: fixtureStartTime } : {})
             })
             .eq('id', existingData.id);
@@ -117,18 +108,14 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
         } else {
           console.log('Saving new match data for match:', score.matchId);
           
-          // Calculate all the required values on the client
-          // Calculate total points
           const homePointsFor = score.homeScores.reduce((acc, s) => acc + s, 0);
           const awayPointsFor = score.awayScores.reduce((acc, s) => acc + s, 0);
 
-          // Calculate sets won
           const homeSetsWon = score.homeScores.reduce((acc, s, index) => 
             acc + (s > score.awayScores[index] ? 1 : 0), 0);
           const awaySetsWon = score.homeScores.reduce((acc, s, index) => 
             acc + (s < score.awayScores[index] ? 1 : 0), 0);
 
-          // Determine match result
           const getResult = (isHomeTeam: boolean) => {
             const teamSetsWon = isHomeTeam ? homeSetsWon : awaySetsWon;
             const opponentSetsWon = isHomeTeam ? awaySetsWon : homeSetsWon;
@@ -137,17 +124,14 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
             return 'D';
           };
 
-          // Calculate bonus points per set (1 point per 10 points in each set)
           const homeBonusPoints = score.homeScores.reduce((total, setScore) => 
             total + Math.floor(setScore / 10), 0);
           const awayBonusPoints = score.awayScores.reduce((total, setScore) => 
             total + Math.floor(setScore / 10), 0);
 
-          // Calculate total match points (bonus points + set points)
           const homeMatchPoints = homeBonusPoints + (homeSetsWon * 2);
           const awayMatchPoints = awayBonusPoints + (awaySetsWon * 2);
           
-          // For local matches, parse team names from the matchId
           let homeTeamName = score.homeTeam || "Home Team";
           let awayTeamName = score.awayTeam || "Away Team";
           let courtNumber = 0;
@@ -155,20 +139,15 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
           
           if (isLocalMatchId) {
             try {
-              // Parse local match ID format: local-MMDDHHMMCCC_HOMETEAM_AWAYTEAM-timestamp
               const parts = score.matchId.split('_');
               if (parts.length >= 3) {
-                // Extract court number from first part (format: local-MMDDHHMMCCC)
-                const firstPart = parts[0]; // e.g., local-06031845007
-                courtNumber = parseInt(firstPart.slice(-3)) || 0;
+                courtNumber = parseInt(parts[0].slice(-3)) || 0;
                 
-                // Extract team names if not already set in the score
                 if (!score.homeTeam) {
                   homeTeamName = parts[1].replace(/([A-Z])/g, ' $1').trim();
                 }
                 
                 if (!score.awayTeam) {
-                  // The last part might contain a timestamp, remove it
                   let awayPart = parts[2];
                   if (awayPart.includes('-')) {
                     awayPart = awayPart.split('-')[0];
@@ -182,7 +161,6 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
               console.error('Error parsing local match ID:', error);
             }
           } else {
-            // Get match details from server for non-local matches
             try {
               const { data: matchData, error: matchError } = await supabase
                 .from('matches_v2')
@@ -200,8 +178,6 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
                 awayTeamName = score.awayTeam || matchData.away_team_name;
                 courtNumber = matchData.court_number;
                 division = matchData.division || "Unknown";
-                // If we don't have a fixture start time from the score or match summaries,
-                // use the one from matches_v2 if available
                 if (!fixtureStartTime && matchData.fixture_start_time) {
                   console.log(`Using fixture start time from matches_v2: ${matchData.fixture_start_time}`);
                 }
@@ -211,11 +187,10 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
             }
           }
 
-          // Use upsert with match_id as the constraint
           const { error: upsertError } = await supabase
             .from('match_data_v2')
             .insert({
-              match_id: isLocalMatchId ? null : score.matchId, // Only use real UUIDs for match_id
+              match_id: isLocalMatchId ? null : score.matchId,
               court_number: courtNumber,
               division: division,
               home_team_name: homeTeamName,
@@ -319,7 +294,6 @@ export const saveMatchScores = async (
   }
 
   try {
-    // Always save to IndexedDB as backup
     const pendingScore: Omit<PendingScore, 'status'> = {
       id: `${matchId}-${Date.now()}`,
       matchId,
@@ -334,13 +308,11 @@ export const saveMatchScores = async (
     };
     await savePendingScore(pendingScore);
 
-    // If not submitting to Supabase, just return after saving locally
     if (!submitToSupabase) {
       console.log('Scores saved locally only - will be uploaded at end of night');
       return;
     }
 
-    // We'll only reach this point if submitToSupabase is true (end of night summary)
     if (isOffline()) {
       toast({
         title: "You're offline",
@@ -350,13 +322,10 @@ export const saveMatchScores = async (
       return;
     }
 
-    // Since we're in the end-of-night process, let processPendingScores handle the upload
-    // This avoids duplicating code and ensures consistent processing
     return await processPendingScores(true);
   } catch (error) {
     console.error('Error saving match scores:', error);
     
-    // Only try to log errors to Supabase if we're online and explicitly submitting
     if (!isOffline() && submitToSupabase) {
       try {
         await supabase.from('crash_logs').insert({
