@@ -1,4 +1,3 @@
-
 import { PendingScore } from '../types';
 import { STORES } from '../dbConfig';
 import { getConnection } from '../connection';
