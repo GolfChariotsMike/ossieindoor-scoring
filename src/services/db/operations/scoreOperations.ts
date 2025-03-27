@@ -33,10 +33,19 @@ export const savePendingScore = async (score: Omit<PendingScore, 'status'>): Pro
 
         const store = transaction.objectStore(STORES.PENDING_SCORES);
 
+        // Ensure all fields from the original score are preserved
         const scoreWithStatus: PendingScore = {
           ...score,
           status: 'pending'
         };
+
+        // Log the fixture information to verify it's present
+        console.log('Saving pending score to IndexedDB with fixture info:', {
+          fixtureTime: scoreWithStatus.fixtureTime,
+          fixture_start_time: scoreWithStatus.fixture_start_time,
+          homeTeam: scoreWithStatus.homeTeam,
+          awayTeam: scoreWithStatus.awayTeam
+        });
 
         const request = store.put(scoreWithStatus);
 

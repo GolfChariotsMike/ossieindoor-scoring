@@ -1,255 +1,131 @@
 
-import { supabase } from "@/integrations/supabase/client";
+// Add console logging to the matchSummary fetcher to track fixture time data
 import { getPendingScores } from "@/services/indexedDB";
-import { format, parseISO } from "date-fns";
+import { getCourtMatches } from "@/services/indexedDB";
 import { MatchSummary } from "@/services/db/types";
-import { isOffline } from "@/utils/offlineMode";
+import { format, parseISO } from "date-fns";
 
 export const fetchMatchSummary = async (courtId: string, pendingOnly = false): Promise<MatchSummary[]> => {
   try {
-    // Get pending scores first
+    console.log(`Fetching match summary for court ${courtId}, pendingOnly=${pendingOnly}`);
+    
+    // Get pending scores
     const pendingScores = await getPendingScores();
     console.log(`Found ${pendingScores.length} pending scores`);
-
-    let pendingSummaries: MatchSummary[] = [];
-    const matchMetadata = new Map<string, { fixtureTime?: string, fixture_start_time?: string }>();
-
-    // Get match metadata from matches_v2 table
-    if (!isOffline()) {
-      try {
-        // Collect all unique match IDs from pending scores
-        const matchIds = [...new Set(pendingScores.map(score => score.matchId))];
-        
-        // Only query if there are match IDs to look up
-        if (matchIds.length > 0) {
-          const nonLocalMatchIds = matchIds.filter(id => !id.startsWith('local-'));
-          
-          if (nonLocalMatchIds.length > 0) {
-            const { data: matchesData, error } = await supabase
-              .from('matches_v2')
-              .select('id, fixture_start_time, start_time')
-              .in('id', nonLocalMatchIds);
-              
-            if (error) {
-              console.error('Error fetching match metadata:', error);
-            } else if (matchesData) {
-              console.log(`Found metadata for ${matchesData.length} matches`);
-              matchesData.forEach(match => {
-                // Format the fixture time for display
-                const fixtureTime = match.fixture_start_time ? 
-                  format(parseISO(match.fixture_start_time), 'HH:mm') : 
-                  (match.start_time ? format(parseISO(match.start_time), 'HH:mm') : undefined);
-                  
-                matchMetadata.set(match.id, {
-                  fixtureTime,
-                  fixture_start_time: match.fixture_start_time || match.start_time
-                });
-              });
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching match metadata:', error);
-      }
-    }
-
-    // Process pending scores into summaries
-    pendingSummaries = pendingScores
-      .filter(score => {
-        // Filter by court if courtId is provided
-        if (courtId && !isNaN(parseInt(courtId))) {
-          // Local match IDs contain court number in format: local-MMDDHHMMCCC_HOMETEAM_AWAYTEAM
-          if (score.matchId.startsWith('local-')) {
-            const parts = score.matchId.split('_');
-            if (parts.length >= 1) {
-              const firstPart = parts[0]; // e.g., local-06031845007
-              const matchCourtId = firstPart.slice(-3);
-              return matchCourtId === courtId.padStart(3, '0');
-            }
-          }
-          // For non-local matches, we'll have to check metadata or just include everything
-          return true;
-        }
-        return true;
-      })
-      .map(score => {
-        let homeTeam = 'Home Team';
-        let awayTeam = 'Away Team';
-        let fixtureTime = score.fixtureTime;
-        let fixture_start_time = score.fixture_start_time;
-        
-        // If score already has team names, use those first
-        if (score.homeTeam && score.awayTeam) {
-          homeTeam = score.homeTeam;
-          awayTeam = score.awayTeam;
-        } 
-        // Try to extract team names from local match IDs if not already set
-        else if (score.matchId.startsWith('local-')) {
-          try {
-            const parts = score.matchId.split('_');
-            if (parts.length >= 3) {
-              // Extract better formatted team names
-              homeTeam = parts[1].replace(/([A-Z])/g, ' $1').trim();
-              
-              let awayPart = parts[2];
-              if (awayPart.includes('-')) {
-                awayPart = awayPart.split('-')[0];
-              }
-              awayTeam = awayPart.replace(/([A-Z])/g, ' $1').trim();
-              
-              // Extract court number
-              const firstPart = parts[0]; // e.g., local-06031845007
-              const courtNum = parseInt(firstPart.slice(-3));
-              
-              // Get metadata for this match if available
-              const metadata = matchMetadata.get(score.matchId);
-              
-              // Only use metadata if we don't already have fixture times from the score
-              if (!fixtureTime && metadata?.fixtureTime) {
-                fixtureTime = metadata.fixtureTime;
-              }
-              
-              if (!fixture_start_time && metadata?.fixture_start_time) {
-                fixture_start_time = metadata.fixture_start_time;
-              }
-              
-              return {
-                id: score.id,
-                matchId: score.matchId,
-                homeTeam,
-                awayTeam,
-                homeScores: score.homeScores,
-                awayScores: score.awayScores,
-                court: courtNum || parseInt(courtId),
-                timestamp: score.timestamp,
-                fixtureTime,
-                fixture_start_time,
-                status: score.status,
-                pendingUpload: true
-              };
-            }
-          } catch (error) {
-            console.error('Error parsing local match ID:', error);
-          }
-        }
-        
-        // Get metadata for this match if available
-        const metadata = matchMetadata.get(score.matchId);
-        
-        // Only use metadata if we don't already have fixture times from the score
-        if (!fixtureTime && metadata?.fixtureTime) {
-          fixtureTime = metadata.fixtureTime;
-        }
-        
-        if (!fixture_start_time && metadata?.fixture_start_time) {
-          fixture_start_time = metadata.fixture_start_time;
-        }
-        
-        // Default summary when we can't parse the local ID or for non-local matches
-        return {
-          id: score.id,
-          matchId: score.matchId,
-          homeTeam,
-          awayTeam,
-          homeScores: score.homeScores,
-          awayScores: score.awayScores,
-          court: parseInt(courtId),
-          timestamp: score.timestamp,
-          fixtureTime,
-          fixture_start_time,
-          status: score.status,
-          pendingUpload: true
-        };
+    
+    // Convert pending scores to match summaries
+    const summaries: MatchSummary[] = pendingScores.map(score => {
+      console.log(`Processing pending score with fixture info:`, {
+        id: score.id,
+        matchId: score.matchId,
+        fixtureTime: score.fixtureTime,
+        fixture_start_time: score.fixture_start_time
       });
-
-    // If we only want pending scores, return them now
-    if (pendingOnly) {
-      console.log(`Returning ${pendingSummaries.length} pending match summaries`);
-      return pendingSummaries;
-    }
-
-    // If there's no network connection, just return the pending scores
-    if (isOffline()) {
-      console.log('Offline mode - returning only pending scores');
-      return pendingSummaries;
-    }
-
-    // Fetch matches from Supabase with scores
-    let query = supabase
-      .from('match_data_v2')
-      .select(`
-        id,
-        match_id,
-        court_number,
-        set1_home_score,
-        set1_away_score,
-        set2_home_score,
-        set2_away_score,
-        set3_home_score,
-        set3_away_score,
-        home_team_name,
-        away_team_name,
-        match_date,
-        fixture_start_time
-      `);
-
-    // Filter by court if courtId is provided
-    if (courtId && !isNaN(parseInt(courtId))) {
-      query = query.eq('court_number', parseInt(courtId));
-    }
-
-    const { data, error } = await query.order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching match data:', error);
-      return pendingSummaries;
-    }
-
-    const serverSummaries: MatchSummary[] = data.map(match => {
-      const homeScores = [
-        match.set1_home_score || 0,
-        match.set2_home_score || 0,
-        match.set3_home_score || 0
-      ].filter(score => score > 0);
       
-      const awayScores = [
-        match.set1_away_score || 0,
-        match.set2_away_score || 0,
-        match.set3_away_score || 0
-      ].filter(score => score > 0);
-
-      // Format the fixture time for display purposes
-      const fixtureTime = match.fixture_start_time ? 
-        format(parseISO(match.fixture_start_time), 'HH:mm') : 
-        (match.match_date ? format(parseISO(match.match_date), 'HH:mm') : undefined);
-
+      // Extract court number from matchId if possible
+      let court = 0;
+      if (score.matchId.includes('-')) {
+        const parts = score.matchId.split('-');
+        if (parts.length > 0) {
+          court = parseInt(parts[0]) || 0;
+        }
+      }
+      
       return {
-        id: match.id,
-        matchId: match.match_id || 'unknown',
-        homeTeam: match.home_team_name,
-        awayTeam: match.away_team_name,
-        homeScores,
-        awayScores,
-        court: match.court_number,
-        timestamp: match.match_date || new Date().toISOString(),
-        fixtureTime,
-        fixture_start_time: match.fixture_start_time || match.match_date,
-        pendingUpload: false
+        id: score.id,
+        matchId: score.matchId,
+        homeTeam: score.homeTeam || "Home Team",
+        awayTeam: score.awayTeam || "Away Team",
+        homeScores: score.homeScores,
+        awayScores: score.awayScores,
+        court: court,
+        timestamp: score.timestamp,
+        status: score.status,
+        pendingUpload: true,
+        fixtureTime: score.fixtureTime,
+        fixture_start_time: score.fixture_start_time
       };
     });
-
-    // Combine both, making sure we don't show matches that exist in both lists twice
-    // We'll prioritize pending scores over server scores
-    const pendingMatchIds = new Set(pendingSummaries.map(summary => summary.matchId));
-    const combinedSummaries = [
-      ...pendingSummaries,
-      ...serverSummaries.filter(summary => !pendingMatchIds.has(summary.matchId))
-    ];
-
-    console.log(`Returning ${combinedSummaries.length} total match summaries`);
-    return combinedSummaries;
+    
+    // If we're only fetching pending scores, filter by court and return
+    if (pendingOnly) {
+      const filteredSummaries = summaries.filter(summary => {
+        // For local matches, extract court from matchId
+        if (summary.matchId.startsWith('local-')) {
+          const parts = summary.matchId.split('_');
+          if (parts.length > 0) {
+            const extractedCourtNumber = parseInt(parts[0].replace('local-', ''));
+            return extractedCourtNumber.toString() === courtId;
+          }
+          return false;
+        }
+        
+        // Normal filtering by court
+        return summary.court.toString() === courtId;
+      });
+      
+      console.log(`Returning ${filteredSummaries.length} filtered summaries`);
+      
+      // Output fixture time information for debugging
+      filteredSummaries.forEach(summary => {
+        console.log(`Summary fixture info: id=${summary.id}, fixtureTime=${summary.fixtureTime}, fixture_start_time=${summary.fixture_start_time}`);
+      });
+      
+      return filteredSummaries;
+    }
+    
+    // Get court matches from IndexedDB
+    const courtMatches = await getCourtMatches(courtId);
+    console.log(`Found ${courtMatches.length} court matches`);
+    
+    // Convert court matches to match summaries
+    const matchSummaries: MatchSummary[] = courtMatches.map(match => {
+      let homeScores: number[] = [];
+      let awayScores: number[] = [];
+      
+      try {
+        if (match.HomeTeamScore) homeScores = JSON.parse(match.HomeTeamScore);
+        if (match.AwayTeamScore) awayScores = JSON.parse(match.AwayTeamScore);
+      } catch (e) {
+        console.error('Error parsing scores:', e);
+      }
+      
+      // Format the timestamp
+      let timestamp = '';
+      try {
+        timestamp = parseISO(match.DateTime).toISOString();
+      } catch (e) {
+        console.error('Error parsing date:', e);
+        timestamp = new Date().toISOString();
+      }
+      
+      // Format fixture times
+      let fixtureTime = '';
+      try {
+        fixtureTime = match.DateTime ? format(parseISO(match.DateTime), 'dd/MM/yyyy HH:mm') : '';
+      } catch (e) {
+        console.error('Error formatting fixture time:', e);
+      }
+      
+      return {
+        id: match.Id,
+        matchId: match.Id,
+        homeTeam: match.HomeTeam,
+        awayTeam: match.AwayTeam,
+        homeScores,
+        awayScores,
+        court: parseInt(match.PlayingAreaName.replace('Court ', '')) || 0,
+        timestamp,
+        fixtureTime,
+        fixture_start_time: match.DateTime ? parseISO(match.DateTime).toISOString() : undefined
+      };
+    });
+    
+    console.log(`Returning combined ${summaries.length + matchSummaries.length} summaries`);
+    return [...summaries, ...matchSummaries];
+    
   } catch (error) {
-    console.error('Error in fetchMatchSummary:', error);
+    console.error('Error fetching match summary:', error);
     return [];
   }
 };
