@@ -105,8 +105,8 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
                 awayScores: score.awayScores,
                 court: courtNum || parseInt(courtId),
                 timestamp: score.timestamp,
-                fixtureTime: metadata?.fixtureTime,
-                fixture_start_time: metadata?.fixture_start_time,
+                fixtureTime: score.fixtureTime || metadata?.fixtureTime,
+                fixture_start_time: score.fixture_start_time || metadata?.fixture_start_time,
                 status: score.status,
                 pendingUpload: true
               };
@@ -123,14 +123,14 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
         return {
           id: score.id,
           matchId: score.matchId,
-          homeTeam,
-          awayTeam,
+          homeTeam: score.homeTeam || homeTeam,
+          awayTeam: score.awayTeam || awayTeam,
           homeScores: score.homeScores,
           awayScores: score.awayScores,
           court: parseInt(courtId),
           timestamp: score.timestamp,
-          fixtureTime: metadata?.fixtureTime,
-          fixture_start_time: metadata?.fixture_start_time,
+          fixtureTime: score.fixtureTime || metadata?.fixtureTime,
+          fixture_start_time: score.fixture_start_time || metadata?.fixture_start_time,
           status: score.status,
           pendingUpload: true
         };

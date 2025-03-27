@@ -8,6 +8,10 @@ export interface PendingScore {
   retryCount: number;
   status: 'pending' | 'processing' | 'failed';
   lastError?: string;
+  fixtureTime?: string;  // Add fixture time field
+  fixture_start_time?: string; // Add original fixture start time
+  homeTeam?: string; // Add home team name
+  awayTeam?: string; // Add away team name
 }
 
 export interface DbIndexDefinition {
