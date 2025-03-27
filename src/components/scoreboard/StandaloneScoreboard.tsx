@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Score, SetScores } from "@/types/volleyball";
@@ -63,7 +62,6 @@ const StandaloneScoreboard = () => {
         });
       }
     } else {
-      // Only proceed if there are actual scores
       if (currentScore.home === 0 && currentScore.away === 0) {
         return;
       }
@@ -79,10 +77,8 @@ const StandaloneScoreboard = () => {
       setSetScores(newSetScores);
       setIsBreak(true);
       
-      // Format the fixture time for UI display
       const displayFixtureTime = format(new Date(startTime), 'dd/MM/yyyy HH:mm');
       
-      // Save match scores after each set
       try {
         console.log('Saving match scores with fixture info:', {
           fixtureTime: displayFixtureTime,
@@ -93,9 +89,9 @@ const StandaloneScoreboard = () => {
           matchCode,
           newSetScores.home,
           newSetScores.away,
-          false, // Don't immediately submit to Supabase
-          displayFixtureTime, // Pass the formatted date for display
-          startTime, // Pass the ISO date string for storage
+          false,
+          displayFixtureTime,
+          startTime,
           homeTeamName,
           awayTeamName
         );

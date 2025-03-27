@@ -1,7 +1,25 @@
 
-// Inserting a specific section for the processPendingScores function to ensure fixture times are properly handled
+import { supabase } from "@/integrations/supabase/client";
+import { isOffline } from "@/utils/offlineMode";
+import { MatchSummary, PendingScore } from "@/services/db/types";
+import { 
+  savePendingScore, 
+  getPendingScores, 
+  updatePendingScoreStatus, 
+  removePendingScore 
+} from "@/services/db/operations/scoreOperations";
 
-const processPendingScores = async (forceProcess = false, matchSummaries?: MatchSummary[]) => {
+// Define constants
+const MAX_RETRIES = 3;
+let isProcessing = false;
+
+/**
+ * Process pending scores in the database
+ * @param forceProcess Force processing even if already in progress
+ * @param matchSummaries Optional match summary data with fixture times
+ * @returns Number of successfully processed scores
+ */
+export const processPendingScores = async (forceProcess = false, matchSummaries?: MatchSummary[]) => {
   if (isProcessing && !forceProcess) {
     console.log('Already processing pending scores, skipping...');
     return 0;
@@ -246,5 +264,65 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
     throw error;
   } finally {
     isProcessing = false;
+  }
+};
+
+/**
+ * Save match scores to the database
+ * @param matchId Match identifier
+ * @param homeScores Array of home team scores
+ * @param awayScores Array of away team scores
+ * @param submitToSupabase Whether to immediately submit to Supabase
+ * @param fixtureTime Formatted fixture time for display (e.g. "22/01/2023 19:00")
+ * @param fixture_start_time ISO date string of fixture start time
+ * @param homeTeam Home team name
+ * @param awayTeam Away team name
+ * @returns Result of the operation
+ */
+export const saveMatchScores = async (
+  matchId: string,
+  homeScores: number[],
+  awayScores: number[],
+  submitToSupabase = false,
+  fixtureTime?: string,
+  fixture_start_time?: string,
+  homeTeam?: string,
+  awayTeam?: string
+) => {
+  try {
+    console.log('Saving match scores for match:', matchId, {
+      homeScores,
+      awayScores,
+      submitToSupabase,
+      fixtureTime,
+      fixture_start_time,
+      homeTeam,
+      awayTeam
+    });
+
+    const pendingScore: Omit<PendingScore, 'status'> = {
+      id: `${matchId}-${Date.now()}`,
+      matchId,
+      homeScores,
+      awayScores,
+      timestamp: new Date().toISOString(),
+      retryCount: 0,
+      fixtureTime,
+      fixture_start_time,
+      homeTeam,
+      awayTeam
+    };
+
+    await savePendingScore(pendingScore);
+    console.log('Successfully saved pending score');
+
+    if (submitToSupabase && !isOffline()) {
+      return await processPendingScores(true);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving match scores:', error);
+    throw error;
   }
 };
