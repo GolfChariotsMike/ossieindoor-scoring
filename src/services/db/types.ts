@@ -1,3 +1,4 @@
+
 export interface PendingScore {
   id: string;
   matchId: string;
@@ -37,4 +38,5 @@ export interface MatchSummary {
   fixtureTime?: string;  // Added to store the formatted fixture time for display
   status?: 'pending' | 'processing' | 'failed'; // Added for showing status in UI
   pendingUpload?: boolean;
+  fixture_start_time?: string; // Added to store the original fixture start time
 }

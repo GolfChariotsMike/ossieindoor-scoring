@@ -47,6 +47,7 @@ export const createNewMatch = async (
       match_code: code,
       court_number: parseInt(courtId),
       start_time: formattedStartTime,
+      fixture_start_time: formattedStartTime, // Ensure fixture_start_time is saved correctly
       division: fixture?.DivisionName,
       home_team_id: fixture?.HomeTeamId || 'unknown',
       home_team_name: fixture?.HomeTeam || 'Team A',
