@@ -18,6 +18,12 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
     isProcessing = true;
     const pendingScores = await getPendingScores();
     console.log('Processing pending scores:', pendingScores.length);
+    console.log('First few pendingScores with fixture data:', pendingScores.slice(0, 3).map(score => ({
+      id: score.id,
+      matchId: score.matchId,
+      fixtureTime: score.fixtureTime,
+      fixture_start_time: score.fixture_start_time
+    })));
 
     let processedCount = 0;
     
@@ -35,6 +41,7 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
         }
       });
       console.log(`Created lookup map with ${fixtureStartTimes.size} fixture start times`);
+      console.log('Sample fixture start times:', Array.from(fixtureStartTimes.entries()).slice(0, 3));
     }
 
     for (const score of pendingScores) {
@@ -297,7 +304,14 @@ export const saveMatchScores = async (
       awayTeam
     };
     
+    console.log('About to save pending score with fixture data:', {
+      id: pendingScore.id,
+      fixtureTime: pendingScore.fixtureTime,
+      fixture_start_time: pendingScore.fixture_start_time
+    });
+    
     await savePendingScore(pendingScore);
+    console.log('Pending score saved to IndexedDB successfully');
 
     if (!submitToSupabase) {
       console.log('Scores saved locally only - will be uploaded at end of night');

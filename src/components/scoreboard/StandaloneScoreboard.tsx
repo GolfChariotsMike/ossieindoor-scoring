@@ -81,11 +81,22 @@ const StandaloneScoreboard = () => {
       
       // Save match scores after each set
       try {
+        const fixtureTime = format(new Date(startTime), 'HH:mm');
+        console.log('StandaloneScoreboard saving set scores with fixture time:', {
+          matchCode,
+          fixtureTime,
+          startTime,
+          homeTeam: homeTeamName,
+          awayTeam: awayTeamName
+        });
+        
         saveMatchScores(
           matchCode,
           newSetScores.home,
           newSetScores.away,
-          false // Don't immediately submit to Supabase
+          false, // Don't immediately submit to Supabase
+          fixtureTime, // Pass formatted fixture time 
+          startTime  // Pass full ISO date string
         );
       } catch (error) {
         console.error('Error saving match scores:', error);
