@@ -48,13 +48,6 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
         console.log('Temporarily disabling offline mode to upload scores');
         disableForcedOfflineMode();
       }
-
-      console.log('Matches passed to processPendingScores:', matches?.map(m => ({
-        id: m.id,
-        matchId: m.matchId,
-        fixture_start_time: m.fixture_start_time,
-        fixtureTime: m.fixtureTime
-      })));
       
       const count = await processPendingScores(true, matches);
       
