@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { getPendingScores } from "@/services/indexedDB";
 import { format, parseISO } from "date-fns";

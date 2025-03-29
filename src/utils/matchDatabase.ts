@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
@@ -366,7 +365,9 @@ export const saveMatchScores = async (
     console.log('About to save pending score with fixture data:', {
       id: pendingScore.id,
       fixtureTime: pendingScore.fixtureTime,
-      fixture_start_time: pendingScore.fixture_start_time
+      fixture_start_time: pendingScore.fixture_start_time,
+      homeTeam: pendingScore.homeTeam,
+      awayTeam: pendingScore.awayTeam
     });
     
     await savePendingScore(pendingScore);
