@@ -67,30 +67,30 @@ export const SummaryTable = ({ matches }: SummaryTableProps) => {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1">
-                    <span className="font-semibold">{match.homeTeam}</span>
-                    <span className="text-muted-foreground">vs</span>
                     <span className="font-semibold">{match.awayTeam}</span>
+                    <span className="text-muted-foreground">vs</span>
+                    <span className="font-semibold">{match.homeTeam}</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex flex-col">
-                    <span>{match.homeScores[0] || 0}</span>
-                    <span className="text-muted-foreground">-</span>
                     <span>{match.awayScores[0] || 0}</span>
+                    <span className="text-muted-foreground">-</span>
+                    <span>{match.homeScores[0] || 0}</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex flex-col">
-                    <span>{match.homeScores[1] || 0}</span>
-                    <span className="text-muted-foreground">-</span>
                     <span>{match.awayScores[1] || 0}</span>
+                    <span className="text-muted-foreground">-</span>
+                    <span>{match.homeScores[1] || 0}</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex flex-col">
-                    <span>{match.homeScores[2] || 0}</span>
-                    <span className="text-muted-foreground">-</span>
                     <span>{match.awayScores[2] || 0}</span>
+                    <span className="text-muted-foreground">-</span>
+                    <span>{match.homeScores[2] || 0}</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
