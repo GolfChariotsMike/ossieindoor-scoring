@@ -141,12 +141,21 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
                 fixture_start_time = metadata.fixture_start_time;
               }
               
+              // IMPORTANT: Here we ensure we use the correct score arrays for home and away
+              // The scores in the IndexedDB are already correctly associated with the teams
+              console.log(`Processing match ${score.matchId} for end of night summary:`, {
+                homeTeam,
+                awayTeam,
+                homeScores: score.homeScores,
+                awayScores: score.awayScores
+              });
+              
               return {
                 id: score.id,
                 matchId: score.matchId,
                 homeTeam,
                 awayTeam,
-                homeScores: score.homeScores, // Make sure we keep the correct scores orientation
+                homeScores: score.homeScores,
                 awayScores: score.awayScores,
                 court: courtNum || parseInt(courtId),
                 timestamp: score.timestamp,
