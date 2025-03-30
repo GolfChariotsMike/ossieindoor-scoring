@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
@@ -397,7 +398,9 @@ export const saveMatchScores = async (
       return;
     }
 
-    return await processPendingScores(true);
+    // Fix: Changed to void return type to match Promise<void>
+    await processPendingScores(true);
+    return;
   } catch (error) {
     console.error('Error saving match scores:', error);
     
