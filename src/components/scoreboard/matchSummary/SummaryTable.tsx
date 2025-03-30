@@ -1,118 +1,109 @@
 
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MatchSummary } from "@/services/db/types";
-import { format, parseISO } from "date-fns";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format, isValid, parseISO } from "date-fns";
 
 interface SummaryTableProps {
   matches: MatchSummary[];
 }
 
 export const SummaryTable = ({ matches }: SummaryTableProps) => {
-  const formatTimeOnly = (timeString?: string) => {
-    if (!timeString) return 'Unknown';
+  const formatTimeDisplay = (timeString?: string) => {
+    if (!timeString) return "N/A";
     
-    // If it's already in HH:mm format, just return it
-    if (/^\d{1,2}:\d{2}$/.test(timeString)) {
+    // If it's already just a time (e.g., "19:30"), return it
+    if (/^\d{2}:\d{2}$/.test(timeString)) {
       return timeString;
     }
     
-    // Check if it's in dd/MM/yyyy HH:mm format
-    if (/\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/.test(timeString)) {
-      // Extract just the time part
-      const timePart = timeString.split(' ')[1];
-      return timePart;
-    }
-    
-    // Handle ISO format dates (if it's an ISO string, parse and format it)
+    // If it's an ISO date string, format it to time only
     try {
-      if (timeString.includes('T') || timeString.includes('-')) {
-        return format(parseISO(timeString), 'HH:mm');
+      const date = parseISO(timeString);
+      if (isValid(date)) {
+        return format(date, "HH:mm");
       }
-    } catch (e) {
-      console.error('Error parsing time:', timeString, e);
+    } catch (error) {
+      console.error("Error parsing date:", timeString);
     }
     
-    // Return the original if we couldn't parse it
     return timeString;
   };
 
   return (
-    <div className="border rounded-md overflow-hidden">
+    <div className="w-full overflow-auto rounded-md border">
       <Table>
-        <TableHeader className="bg-gray-50">
-          <TableRow>
-            <TableHead className="w-36">Time</TableHead>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead className="w-[180px]">Time</TableHead>
             <TableHead>Teams</TableHead>
-            <TableHead className="w-24 text-center">Set 1</TableHead>
-            <TableHead className="w-24 text-center">Set 2</TableHead>
-            <TableHead className="w-24 text-center">Set 3</TableHead>
-            <TableHead className="w-28 text-center">Status</TableHead>
+            <TableHead className="text-center">Set 1</TableHead>
+            <TableHead className="text-center">Set 2</TableHead>
+            <TableHead className="text-center">Set 3</TableHead>
+            <TableHead className="text-center">Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {matches.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
-                No matches to display
+          {matches.map((match) => (
+            <TableRow key={match.id} className="border-b">
+              <TableCell className="font-medium">
+                {formatTimeDisplay(match.fixtureTime)}
+              </TableCell>
+              <TableCell>
+                <div className="space-y-1">
+                  <div>
+                    <span className="font-semibold">{match.homeTeam}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{match.awayTeam}</span>
+                  </div>
+                </div>
+              </TableCell>
+              {/* Set 1 Scores */}
+              <TableCell className="text-center">
+                <div className="space-y-1">
+                  <div>
+                    <span className="font-semibold">{match.homeScores[0] || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{match.awayScores[0] || 0}</span>
+                  </div>
+                </div>
+              </TableCell>
+              {/* Set 2 Scores */}
+              <TableCell className="text-center">
+                <div className="space-y-1">
+                  <div>
+                    <span className="font-semibold">{match.homeScores[1] || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{match.awayScores[1] || 0}</span>
+                  </div>
+                </div>
+              </TableCell>
+              {/* Set 3 Scores */}
+              <TableCell className="text-center">
+                <div className="space-y-1">
+                  <div>
+                    <span className="font-semibold">{match.homeScores[2] || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">{match.awayScores[2] || 0}</span>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell className="text-center">
+                {match.pendingUpload ? (
+                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                    Pending
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                    Uploaded
+                  </span>
+                )}
               </TableCell>
             </TableRow>
-          ) : (
-            matches.map((match) => (
-              <TableRow key={match.id}>
-                <TableCell className="font-medium">
-                  {formatTimeOnly(match.fixtureTime || 
-                   (match.fixture_start_time ? format(parseISO(match.fixture_start_time), 'HH:mm') : 
-                   (match.timestamp ? format(parseISO(match.timestamp), 'HH:mm') : 'Unknown')))}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1">
-                    <span className="font-semibold">{match.homeTeam}</span>
-                    <span className="text-muted-foreground">vs</span>
-                    <span className="font-semibold">{match.awayTeam}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex flex-col">
-                    <span>{match.homeScores[0] || 0}</span>
-                    <span className="text-muted-foreground">-</span>
-                    <span>{match.awayScores[0] || 0}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex flex-col">
-                    <span>{match.homeScores[1] || 0}</span>
-                    <span className="text-muted-foreground">-</span>
-                    <span>{match.awayScores[1] || 0}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex flex-col">
-                    <span>{match.homeScores[2] || 0}</span>
-                    <span className="text-muted-foreground">-</span>
-                    <span>{match.awayScores[2] || 0}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center">
-                  {match.pendingUpload ? (
-                    <Badge variant="secondary" className={
-                      match.status === 'failed' 
-                        ? "bg-red-100 text-red-800" 
-                        : match.status === 'processing' 
-                          ? "bg-blue-100 text-blue-800" 
-                          : "bg-yellow-100 text-yellow-800"
-                    }>
-                      {match.status === 'failed' ? 'Failed' : match.status === 'processing' ? 'Processing' : 'Pending Upload'}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-green-100 text-green-800">
-                      Saved
-                    </Badge>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>
