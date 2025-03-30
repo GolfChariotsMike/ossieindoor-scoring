@@ -141,22 +141,22 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
                 fixture_start_time = metadata.fixture_start_time;
               }
               
-              // IMPORTANT: Here we ensure we use the correct score arrays for home and away
-              // The scores in the IndexedDB are already correctly associated with the teams
-              console.log(`Processing match ${score.matchId} for end of night summary:`, {
+              // FIX: Swap home and away scores to correct the orientation issue
+              console.log(`Processing match ${score.matchId} for end of night summary (BEFORE FIX):`, {
                 homeTeam,
                 awayTeam,
                 homeScores: score.homeScores,
                 awayScores: score.awayScores
               });
               
+              // Create summary with swapped scores to fix the orientation issue
               return {
                 id: score.id,
                 matchId: score.matchId,
                 homeTeam,
                 awayTeam,
-                homeScores: score.homeScores,
-                awayScores: score.awayScores,
+                homeScores: score.awayScores, // FIXED: Swap these to correct the orientation
+                awayScores: score.homeScores, // FIXED: Swap these to correct the orientation
                 court: courtNum || parseInt(courtId),
                 timestamp: score.timestamp,
                 fixtureTime,
@@ -182,8 +182,8 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
           fixture_start_time = metadata.fixture_start_time;
         }
         
-        // Use logged data to ensure proper orientation
-        console.log(`Processing match ${score.matchId} for end of night summary:`, {
+        // Log with swapped scores
+        console.log(`Processing match ${score.matchId} for end of night summary (BEFORE FIX):`, {
           homeTeam,
           awayTeam,
           homeScores: score.homeScores,
@@ -191,13 +191,14 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
         });
         
         // Default summary when we can't parse the local ID or for non-local matches
+        // FIX: Swap home and away scores here too
         return {
           id: score.id,
           matchId: score.matchId,
           homeTeam,
           awayTeam,
-          homeScores: score.homeScores,
-          awayScores: score.awayScores,
+          homeScores: score.awayScores, // FIXED: Swap scores here
+          awayScores: score.homeScores, // FIXED: Swap scores here
           court: parseInt(courtId),
           timestamp: score.timestamp,
           fixtureTime,

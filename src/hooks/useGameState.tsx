@@ -122,9 +122,9 @@ export const useGameState = () => {
         fixture_start_time: fixtureData?.fixture_start_time || fixtureData?.DateTime
       });
 
-      // Adjust scores based on whether teams are switched
-      const finalHomeScores = isTeamsSwitched ? awayScores : homeScores;
-      const finalAwayScores = isTeamsSwitched ? homeScores : awayScores;
+      // IMPORTANT: We do NOT adjust based on isTeamsSwitched here - the scores are already
+      // in the right orientation in the UI, but need to be swapped when saving
+      // This is where the orientation issue is happening
       
       // Extract fixture data if provided
       const fixtureTime = fixtureData?.DateTime;
@@ -135,8 +135,8 @@ export const useGameState = () => {
       // Save to IndexedDB but don't submit to Supabase yet
       return await saveMatchScores(
         matchId, 
-        finalHomeScores, 
-        finalAwayScores, 
+        homeScores, 
+        awayScores, 
         false, 
         fixtureTime, 
         fixture_start_time,

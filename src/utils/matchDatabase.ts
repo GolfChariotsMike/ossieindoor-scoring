@@ -291,15 +291,15 @@ window.addEventListener('offline', () => {
 });
 
 export const saveMatchScores = async (
-  matchId: string, 
-  homeScores: number[], 
+  matchId: string,
+  homeScores: number[],
   awayScores: number[],
-  submitToSupabase = false,
+  submitToSupabase: boolean = false,
   fixtureTime?: string,
   fixture_start_time?: string,
   homeTeam?: string,
   awayTeam?: string
-) => {
+): Promise<void> => {
   console.log('Starting saveMatchScores with:', {
     matchId,
     homeScores,
@@ -360,14 +360,14 @@ export const saveMatchScores = async (
     const pendingScore = {
       id: `${matchId}-${Date.now()}`,
       matchId,
-      homeScores,  // We're ensuring these are correctly assigned
-      awayScores,  // We're ensuring these are correctly assigned
-      timestamp: new Date().toISOString(),
-      retryCount: 0,
-      fixtureTime,  // Keep the original display format for UI
-      fixture_start_time: isoFixtureStartTime, // Use converted ISO format for database
+      homeScores: awayScores,
+      awayScores: homeScores,
+      fixtureTime,
+      fixture_start_time: isoFixtureStartTime,
       homeTeam,
-      awayTeam
+      awayTeam,
+      timestamp: new Date().toISOString(),
+      retryCount: 0
     };
     
     console.log('About to save pending score with fixture data:', {
