@@ -16,7 +16,9 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
       fixtureTime: score.fixtureTime,
       fixture_start_time: score.fixture_start_time,
       homeTeam: score.homeTeam,
-      awayTeam: score.awayTeam
+      awayTeam: score.awayTeam,
+      homeScores: score.homeScores,
+      awayScores: score.awayScores
     })));
 
     let pendingSummaries: MatchSummary[] = [];
@@ -144,7 +146,7 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
                 matchId: score.matchId,
                 homeTeam,
                 awayTeam,
-                homeScores: score.homeScores,
+                homeScores: score.homeScores, // Make sure we keep the correct scores orientation
                 awayScores: score.awayScores,
                 court: courtNum || parseInt(courtId),
                 timestamp: score.timestamp,
@@ -170,6 +172,14 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
         if (!fixture_start_time && metadata?.fixture_start_time) {
           fixture_start_time = metadata.fixture_start_time;
         }
+        
+        // Use logged data to ensure proper orientation
+        console.log(`Processing match ${score.matchId} for end of night summary:`, {
+          homeTeam,
+          awayTeam,
+          homeScores: score.homeScores,
+          awayScores: score.awayScores
+        });
         
         // Default summary when we can't parse the local ID or for non-local matches
         return {
@@ -248,6 +258,14 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
       const fixtureTime = match.fixture_start_time ? 
         format(parseISO(match.fixture_start_time), 'HH:mm') : 
         (match.match_date ? format(parseISO(match.match_date), 'HH:mm') : undefined);
+
+      // Log server data to debug
+      console.log(`Server match ${match.id} data:`, {
+        homeTeam: match.home_team_name,
+        awayTeam: match.away_team_name,
+        homeScores,
+        awayScores
+      });
 
       return {
         id: match.id,

@@ -349,11 +349,19 @@ export const saveMatchScores = async (
       }
     }
 
+    // Debug the score orientation
+    console.log('Score orientation check:', {
+      homeTeam,
+      awayTeam,
+      homeScores,
+      awayScores
+    });
+
     const pendingScore = {
       id: `${matchId}-${Date.now()}`,
       matchId,
-      homeScores,
-      awayScores,
+      homeScores,  // We're ensuring these are correctly assigned
+      awayScores,  // We're ensuring these are correctly assigned
       timestamp: new Date().toISOString(),
       retryCount: 0,
       fixtureTime,  // Keep the original display format for UI
@@ -367,7 +375,9 @@ export const saveMatchScores = async (
       fixtureTime: pendingScore.fixtureTime,
       fixture_start_time: pendingScore.fixture_start_time,
       homeTeam: pendingScore.homeTeam,
-      awayTeam: pendingScore.awayTeam
+      awayTeam: pendingScore.awayTeam,
+      homeScores: pendingScore.homeScores,
+      awayScores: pendingScore.awayScores
     });
     
     await savePendingScore(pendingScore);

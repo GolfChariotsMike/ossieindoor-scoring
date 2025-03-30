@@ -29,6 +29,16 @@ export const SummaryTable = ({ matches }: SummaryTableProps) => {
     return timeString;
   };
 
+  // For debugging - log the first match to see the structure
+  if (matches.length > 0) {
+    console.log("SummaryTable - First match data:", {
+      homeTeam: matches[0].homeTeam,
+      awayTeam: matches[0].awayTeam,
+      homeScores: matches[0].homeScores,
+      awayScores: matches[0].awayScores
+    });
+  }
+
   return (
     <div className="w-full overflow-auto rounded-md border">
       <Table>
