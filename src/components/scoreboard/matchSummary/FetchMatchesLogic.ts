@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { getPendingScores } from "@/services/indexedDB";
 import { format, parseISO } from "date-fns";
@@ -141,22 +140,22 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
                 fixture_start_time = metadata.fixture_start_time;
               }
               
-              // FIX: Swap home and away scores to correct the orientation issue
-              console.log(`Processing match ${score.matchId} for end of night summary (BEFORE FIX):`, {
+              // FIX: Keep home and away scores in their correct orientation
+              console.log(`Processing match ${score.matchId} for end of night summary:`, {
                 homeTeam,
                 awayTeam,
                 homeScores: score.homeScores,
                 awayScores: score.awayScores
               });
               
-              // Create summary with swapped scores to fix the orientation issue
+              // Create summary without swapping scores
               return {
                 id: score.id,
                 matchId: score.matchId,
                 homeTeam,
                 awayTeam,
-                homeScores: score.awayScores, // FIXED: Swap these to correct the orientation
-                awayScores: score.homeScores, // FIXED: Swap these to correct the orientation
+                homeScores: score.homeScores, // FIXED: Using correct orientation
+                awayScores: score.awayScores, // FIXED: Using correct orientation
                 court: courtNum || parseInt(courtId),
                 timestamp: score.timestamp,
                 fixtureTime,
@@ -182,8 +181,8 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
           fixture_start_time = metadata.fixture_start_time;
         }
         
-        // Log with swapped scores
-        console.log(`Processing match ${score.matchId} for end of night summary (BEFORE FIX):`, {
+        // Log with correct score orientation
+        console.log(`Processing match ${score.matchId} for end of night summary:`, {
           homeTeam,
           awayTeam,
           homeScores: score.homeScores,
@@ -191,14 +190,14 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
         });
         
         // Default summary when we can't parse the local ID or for non-local matches
-        // FIX: Swap home and away scores here too
+        // FIX: Keep scores in correct orientation
         return {
           id: score.id,
           matchId: score.matchId,
           homeTeam,
           awayTeam,
-          homeScores: score.awayScores, // FIXED: Swap scores here
-          awayScores: score.homeScores, // FIXED: Swap scores here
+          homeScores: score.homeScores, // FIXED: Using correct orientation
+          awayScores: score.awayScores, // FIXED: Using correct orientation
           court: parseInt(courtId),
           timestamp: score.timestamp,
           fixtureTime,

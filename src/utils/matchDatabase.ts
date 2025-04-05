@@ -358,11 +358,12 @@ export const saveMatchScores = async (
       awayScores
     });
 
+    // FIX: Store scores correctly without swapping
     const pendingScore = {
       id: `${matchId}-${Date.now()}`,
       matchId,
-      homeScores: awayScores,
-      awayScores: homeScores,
+      homeScores: homeScores, // FIXED: No longer swapping home/away scores
+      awayScores: awayScores, // FIXED: No longer swapping home/away scores
       fixtureTime,
       fixture_start_time: isoFixtureStartTime,
       homeTeam,
