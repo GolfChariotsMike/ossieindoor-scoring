@@ -27,6 +27,22 @@ export const TimerControls = ({
       <Button
         variant="outline"
         size="lg"
+        disabled={isMatchComplete}
+        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+      >
+        <Play className="h-6 w-6" />
+      </Button>
+      <Button
+        variant="outline"
+        size="lg"
+        disabled={isMatchComplete}
+        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+      >
+        <Pause className="h-6 w-6" />
+      </Button>
+      <Button
+        variant="outline"
+        size="lg"
         onClick={handleStartStop}
         disabled={isMatchComplete}
         className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
@@ -46,6 +62,22 @@ export const TimerControls = ({
         variant="outline"
         size="lg"
         onClick={onSwitchTeams}
+        disabled={isMatchComplete}
+        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+      >
+        <ArrowLeftRight className="h-6 w-6" />
+      </Button>
+      <Button
+        variant="outline"
+        size="lg"
+        disabled={isMatchComplete}
+        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+      >
+        <RotateCcw className="h-6 w-6" />
+      </Button>
+      <Button
+        variant="outline"
+        size="lg"
         disabled={isMatchComplete}
         className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
       >
