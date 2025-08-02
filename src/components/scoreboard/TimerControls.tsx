@@ -32,7 +32,7 @@ export const TimerControls = ({
           disabled={isMatchComplete}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
-          ACE
+          <span className="transform rotate-180">ACE</span>
         </Button>
         <Button
           variant="outline"
@@ -40,7 +40,7 @@ export const TimerControls = ({
           disabled={isMatchComplete}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
-          BLOCK
+          <span className="transform rotate-180">BLOCK</span>
         </Button>
       </div>
 
@@ -83,7 +83,7 @@ export const TimerControls = ({
           disabled={isMatchComplete}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
-          ACE
+          <span className="transform rotate-180">ACE</span>
         </Button>
         <Button
           variant="outline"
@@ -91,7 +91,7 @@ export const TimerControls = ({
           disabled={isMatchComplete}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
-          BLOCK
+          <span className="transform rotate-180">BLOCK</span>
         </Button>
       </div>
     </div>
