@@ -23,66 +23,77 @@ export const TimerControls = ({
   };
 
   return (
-    <div className="flex justify-center gap-4 mt-4">
-      <Button
-        variant="outline"
-        size="lg"
-        disabled={isMatchComplete}
-        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-      >
-        <Play className="h-6 w-6" />
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        disabled={isMatchComplete}
-        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-      >
-        <Pause className="h-6 w-6" />
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        onClick={handleStartStop}
-        disabled={isMatchComplete}
-        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-      >
-        {isRunning ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        onClick={onReset}
-        disabled={isMatchComplete}
-        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-      >
-        <RotateCcw className="h-6 w-6" />
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        onClick={onSwitchTeams}
-        disabled={isMatchComplete}
-        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-      >
-        <ArrowLeftRight className="h-6 w-6" />
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        disabled={isMatchComplete}
-        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-      >
-        <RotateCcw className="h-6 w-6" />
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        disabled={isMatchComplete}
-        className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-      >
-        <ArrowLeftRight className="h-6 w-6" />
-      </Button>
+    <div className="flex justify-between items-center mt-4">
+      {/* Left buttons */}
+      <div className="flex gap-4">
+        <Button
+          variant="outline"
+          size="lg"
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+        >
+          <Play className="h-6 w-6" />
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+        >
+          <Pause className="h-6 w-6" />
+        </Button>
+      </div>
+
+      {/* Center buttons */}
+      <div className="flex gap-4">
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={handleStartStop}
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+        >
+          {isRunning ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={onReset}
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+        >
+          <RotateCcw className="h-6 w-6" />
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={onSwitchTeams}
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+        >
+          <ArrowLeftRight className="h-6 w-6" />
+        </Button>
+      </div>
+
+      {/* Right buttons */}
+      <div className="flex gap-4">
+        <Button
+          variant="outline"
+          size="lg"
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+        >
+          <RotateCcw className="h-6 w-6" />
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          disabled={isMatchComplete}
+          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+        >
+          <ArrowLeftRight className="h-6 w-6" />
+        </Button>
+      </div>
     </div>
   );
 };
