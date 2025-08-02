@@ -25,7 +25,7 @@ export const TimerControls = ({
   return (
     <div className="flex justify-between items-center mt-4">
       {/* Left buttons */}
-      <div className="flex gap-6">
+      <div className="flex gap-8">
         <Button
           variant="outline"
           size="lg"
@@ -76,7 +76,7 @@ export const TimerControls = ({
       </div>
 
       {/* Right buttons */}
-      <div className="flex gap-6">
+      <div className="flex gap-8">
         <Button
           variant="outline"
           size="lg"
