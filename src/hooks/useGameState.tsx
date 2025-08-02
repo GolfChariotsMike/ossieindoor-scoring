@@ -114,15 +114,16 @@ export const useGameState = () => {
       console.log('Saving match scores to database:', {
         matchId,
         homeScores,
-        awayScores
+        awayScores,
+        aceBlockStats
       });
       // Always pass false for submitToSupabase parameter - we'll only submit at the end of the night
-      return await saveMatchScores(matchId, homeScores, awayScores, false);
+      return await saveMatchScores(matchId, homeScores, awayScores, false, undefined, undefined, undefined, undefined, aceBlockStats);
     } catch (error) {
       console.error('Error in saveMatchScoresToDatabase:', error);
       throw error;
     }
-  }, []);
+  }, [aceBlockStats]);
 
   // Save scores locally without submitting to Supabase
   const saveScoresLocally = useCallback(async (matchId: string, homeScores: number[], awayScores: number[], fixtureData?: Fixture) => {
