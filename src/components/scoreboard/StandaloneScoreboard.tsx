@@ -13,6 +13,8 @@ const StandaloneScoreboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // FIX: Create startTime only once when component mounts, not on every render
+  const [startTime] = useState(() => new Date().toISOString());
   const [currentScore, setCurrentScore] = useState<Score>({ home: 0, away: 0 });
   const [setScores, setSetScores] = useState<SetScores>({ home: [], away: [] });
   const [isBreak, setIsBreak] = useState(false);
@@ -20,7 +22,7 @@ const StandaloneScoreboard = () => {
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
 
-  const startTime = new Date().toISOString();
+  // These values are now stable since startTime doesn't change
   const courtNumber = 0;
   const formattedDate = format(new Date(startTime), 'yyyyMMdd-HHmm');
   const homeTeamName = "HOME TEAM";

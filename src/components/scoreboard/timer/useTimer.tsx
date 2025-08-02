@@ -86,14 +86,15 @@ export const useTimer = ({
     }, 100);
   };
 
-  // Handle fixture
+  // Handle fixture initialization (only run once when fixture first becomes available)
   useEffect(() => {
-    if (fixture?.Id) {
+    if (fixture?.Id && matchPhase === "not_started") {
+      console.log('Initializing timer for fixture:', fixture.Id);
       setMatchPhase("set1");
       setTimeLeft(initialMinutes * 60);
       setIsRunning(true);
     }
-  }, [fixture?.Id, initialMinutes]);
+  }, [fixture?.Id, initialMinutes, matchPhase]);
 
   // Timer logic
   useEffect(() => {
