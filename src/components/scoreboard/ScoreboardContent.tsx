@@ -86,6 +86,8 @@ export const ScoreboardContent = ({
                 isBreak={gameState.isBreak}
                 isMatchComplete={gameState.isMatchComplete}
                 fixture={fixture}
+                onAceBlock={gameState.handleAceBlock}
+                isTeamsSwitched={gameState.isTeamsSwitched}
               />
 
               <GameScores

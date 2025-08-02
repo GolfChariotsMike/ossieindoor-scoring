@@ -15,6 +15,7 @@ interface ScoreboardLayoutProps {
   onTimerComplete: () => void;
   onSwitchTeams: () => void;
   onScoreUpdate: (team: "home" | "away", increment: boolean) => void;
+  onAceBlock: (team: "home" | "away", type: "ace" | "block") => void;
 }
 
 export const ScoreboardLayout = ({
@@ -27,6 +28,7 @@ export const ScoreboardLayout = ({
   onTimerComplete,
   onSwitchTeams,
   onScoreUpdate,
+  onAceBlock,
 }: ScoreboardLayoutProps) => {
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
@@ -105,6 +107,8 @@ export const ScoreboardLayout = ({
         isBreak={isBreak}
         isMatchComplete={isMatchComplete}
         fixture={fixtureData}
+        onAceBlock={onAceBlock}
+        isTeamsSwitched={isTeamsSwitched}
       />
 
       <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">

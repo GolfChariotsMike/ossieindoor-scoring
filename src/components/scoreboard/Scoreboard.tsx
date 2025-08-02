@@ -129,6 +129,7 @@ const Scoreboard = () => {
           onTimerComplete={handleTimerComplete}
           onSwitchTeams={handleSwitchTeams}
           onScoreUpdate={handleScore}
+          onAceBlock={(team, type) => console.log(`${team} ${type}`)}
         />
 
         <ExitConfirmationDialog

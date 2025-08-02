@@ -24,6 +24,8 @@ interface TimerProps {
   isBreak: boolean;
   isMatchComplete: boolean;
   fixture?: Fixture;
+  onAceBlock: (team: "home" | "away", type: "ace" | "block") => void;
+  isTeamsSwitched: boolean;
 }
 
 export const Timer = ({ 
@@ -32,7 +34,9 @@ export const Timer = ({
   onSwitchTeams,
   isBreak,
   isMatchComplete,
-  fixture
+  fixture,
+  onAceBlock,
+  isTeamsSwitched
 }: TimerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLongPress, setIsLongPress] = useState(false);
@@ -155,6 +159,8 @@ export const Timer = ({
         onStartStop={handleStartStop}
         onReset={handleReset}
         onSwitchTeams={onSwitchTeams}
+        onAceBlock={onAceBlock}
+        isTeamsSwitched={isTeamsSwitched}
       />
     </div>
   );

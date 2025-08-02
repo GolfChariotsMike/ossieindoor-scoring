@@ -11,6 +11,10 @@ export interface PendingScore {
   fixture_start_time?: string;
   homeTeam?: string;
   awayTeam?: string;
+  homeAces?: number;
+  awayAces?: number;
+  homeBlocks?: number;
+  awayBlocks?: number;
 }
 
 export interface DbIndexDefinition {
@@ -42,4 +46,8 @@ export interface MatchSummary {
   status?: 'pending' | 'processing' | 'failed';
   pendingUpload?: boolean;
   fixture_start_time?: string;
+  homeAces?: number;
+  awayAces?: number;
+  homeBlocks?: number;
+  awayBlocks?: number;
 }

@@ -299,7 +299,13 @@ export const saveMatchScores = async (
   fixtureTime?: string,
   fixture_start_time?: string,
   homeTeam?: string,
-  awayTeam?: string
+  awayTeam?: string,
+  aceBlockStats?: {
+    homeAces?: number;
+    awayAces?: number;
+    homeBlocks?: number;
+    awayBlocks?: number;
+  }
 ): Promise<void> => {
   console.log('Starting saveMatchScores with:', {
     matchId,
@@ -369,7 +375,13 @@ export const saveMatchScores = async (
       homeTeam,
       awayTeam,
       timestamp: new Date().toISOString(),
-      retryCount: 0
+      retryCount: 0,
+      ...(aceBlockStats && {
+        homeAces: aceBlockStats.homeAces || 0,
+        awayAces: aceBlockStats.awayAces || 0,
+        homeBlocks: aceBlockStats.homeBlocks || 0,
+        awayBlocks: aceBlockStats.awayBlocks || 0
+      })
     };
     
     console.log('About to save pending score with fixture data:', {

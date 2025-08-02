@@ -9,6 +9,12 @@ export const useGameState = () => {
   const [isBreak, setIsBreak] = useState(false);
   const [hasInitializedPhases, setHasInitializedPhases] = useState(false);
   const [hasEnabledOfflineMode, setHasEnabledOfflineMode] = useState(false);
+  const [aceBlockStats, setAceBlockStats] = useState({
+    homeAces: 0,
+    awayAces: 0,
+    homeBlocks: 0,
+    awayBlocks: 0
+  });
   
   const { 
     currentScore, 
@@ -27,6 +33,14 @@ export const useGameState = () => {
     setScores,
     setScores: _setScores
   } = useScoring();
+
+  // Handle ace/block recording
+  const handleAceBlock = useCallback((team: "home" | "away", type: "ace" | "block") => {
+    setAceBlockStats(prev => ({
+      ...prev,
+      [`${team}${type.charAt(0).toUpperCase() + type.slice(1)}s`]: prev[`${team}${type.charAt(0).toUpperCase() + type.slice(1)}s` as keyof typeof prev] + 1
+    }));
+  }, []);
 
   // Handle score with match data
   const handleScore = useCallback((team: "home" | "away", increment: boolean, match?: Match) => {
@@ -118,6 +132,7 @@ export const useGameState = () => {
         homeScores, 
         awayScores,
         isTeamsSwitched,
+        aceBlockStats,
         fixtureTime: fixtureData?.DateTime,
         fixture_start_time: fixtureData?.fixture_start_time || fixtureData?.DateTime
       });
@@ -141,13 +156,14 @@ export const useGameState = () => {
         fixtureTime, 
         fixture_start_time,
         homeTeam,
-        awayTeam
+        awayTeam,
+        aceBlockStats
       );
     } catch (error) {
       console.error('Error in saveScoresLocally:', error);
       throw error;
     }
-  }, [isTeamsSwitched]);
+  }, [isTeamsSwitched, aceBlockStats]);
 
   // Reset game state for new match
   const resetGameState = useCallback(() => {
@@ -160,6 +176,12 @@ export const useGameState = () => {
     setIsBreak(false);
     setHasInitializedPhases(false);
     setHasEnabledOfflineMode(false);
+    setAceBlockStats({
+      homeAces: 0,
+      awayAces: 0,
+      homeBlocks: 0,
+      awayBlocks: 0
+    });
   }, [setCurrentScore, setSetScores, setIsTeamsSwitched, setHasGameStarted, setFirstSetRecorded, setIsMatchComplete]);
 
   return {
@@ -170,9 +192,11 @@ export const useGameState = () => {
     firstSetRecorded,
     isMatchComplete,
     isBreak,
+    aceBlockStats,
     handleScore,
     handleTimerComplete,
     handleSwitchTeams,
+    handleAceBlock,
     saveMatchScores: saveMatchScoresToDatabase,
     saveScoresLocally,
     resetGameState

@@ -7,6 +7,8 @@ interface TimerControlsProps {
   onStartStop: () => void;
   onReset: () => void;
   onSwitchTeams: () => void;
+  onAceBlock: (team: "home" | "away", type: "ace" | "block") => void;
+  isTeamsSwitched: boolean;
 }
 
 export const TimerControls = ({
@@ -14,6 +16,8 @@ export const TimerControls = ({
   onStartStop,
   onReset,
   onSwitchTeams,
+  onAceBlock,
+  isTeamsSwitched,
 }: TimerControlsProps) => {
   const [isRunning, setIsRunning] = useState(false);
 
@@ -30,6 +34,7 @@ export const TimerControls = ({
           variant="outline"
           size="lg"
           disabled={isMatchComplete}
+          onClick={() => onAceBlock(isTeamsSwitched ? "away" : "home", "ace")}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
           <span className="transform rotate-180">ACE</span>
@@ -38,6 +43,7 @@ export const TimerControls = ({
           variant="outline"
           size="lg"
           disabled={isMatchComplete}
+          onClick={() => onAceBlock(isTeamsSwitched ? "away" : "home", "block")}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
           <span className="transform rotate-180">BLOCK</span>
@@ -81,6 +87,7 @@ export const TimerControls = ({
           variant="outline"
           size="lg"
           disabled={isMatchComplete}
+          onClick={() => onAceBlock(isTeamsSwitched ? "home" : "away", "ace")}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
           <span className="transform rotate-180">ACE</span>
@@ -89,6 +96,7 @@ export const TimerControls = ({
           variant="outline"
           size="lg"
           disabled={isMatchComplete}
+          onClick={() => onAceBlock(isTeamsSwitched ? "home" : "away", "block")}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
         >
           <span className="transform rotate-180">BLOCK</span>
