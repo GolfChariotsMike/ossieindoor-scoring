@@ -21,15 +21,14 @@ interface ResultsScreenProps {
   onStartNextMatch: () => void;
   onEndOfNight?: () => void;
   nextMatchReady?: boolean;
+  resultsDuration: number;
 }
 
-export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch, onEndOfNight, nextMatchReady }: ResultsScreenProps) => {
+export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMatch, onEndOfNight, nextMatchReady, resultsDuration }: ResultsScreenProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [endOfNightDialogOpen, setEndOfNightDialogOpen] = useState(false);
   const [scoresSaved, setScoresSaved] = useState(false);
   const [countdown, setCountdown] = useState<string>("");
-
-  const RESULTS_DISPLAY_DURATION = 50; // 50 seconds - MUST match ScoreboardContainer
 
   const calculateTeamResults = (teamScores: number[], opposingScores: number[], teamName: string) => {
     let setPoints = 0;
@@ -98,13 +97,13 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   };
 
   useEffect(() => {
-    console.log(`Results screen countdown started for ${RESULTS_DISPLAY_DURATION} seconds`);
+    console.log(`Results screen countdown started for ${resultsDuration} seconds`);
     const startTime = Date.now();
-    let timeLeft = RESULTS_DISPLAY_DURATION;
+    let timeLeft = resultsDuration;
 
     const interval = setInterval(() => {
       const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-      timeLeft = Math.max(0, RESULTS_DISPLAY_DURATION - elapsedSeconds);
+      timeLeft = Math.max(0, resultsDuration - elapsedSeconds);
       
       if (timeLeft <= 0) {
         setCountdown("Starting next match...");
@@ -116,7 +115,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [resultsDuration]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">

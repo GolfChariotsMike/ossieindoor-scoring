@@ -1,4 +1,3 @@
-
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { useGameState } from "@/hooks/useGameState";
@@ -14,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { EndOfNightSummary } from "./EndOfNightSummary";
 import { isOffline } from "@/utils/offlineMode";
 import { useMatchTransition } from "./transitions/useMatchTransition";
+import { useTimerSettings } from "@/hooks/useTimerSettings";
 
 const parseFixtureDate = (dateStr: string) => {
   try {
@@ -43,6 +43,7 @@ export const ScoreboardContainer = () => {
   const gameState = useGameState();
   const { data: match, isLoading, error } = useMatchData(courtId!, fixture);
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
+  const { settings } = useTimerSettings();
 
   const queryDate = fixture?.DateTime 
     ? format(parseFixtureDate(fixture.DateTime), 'yyyy-MM-dd') 
@@ -91,7 +92,8 @@ export const ScoreboardContainer = () => {
     match,
     nextMatches,
     refetchMatches,
-    setShowEndOfNightSummary
+    setShowEndOfNightSummary,
+    resultsDuration: settings.results_duration_seconds
   });
 
   // Add a visual indicator when a next match is ready
@@ -179,6 +181,7 @@ export const ScoreboardContainer = () => {
       onConfirmExit={confirmExit}
       fixture={fixture}
       nextMatchReady={isNextMatchReady && preloadedNextMatch ? true : false}
+      resultsDuration={settings.results_duration_seconds}
     />
   );
 };

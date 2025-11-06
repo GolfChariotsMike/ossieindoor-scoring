@@ -1608,6 +1608,7 @@ export type Database = {
           break_duration_seconds: number
           created_at: string | null
           id: string
+          results_duration_seconds: number
           set_duration_minutes: number
           updated_at: string | null
           updated_by: string | null
@@ -1616,6 +1617,7 @@ export type Database = {
           break_duration_seconds?: number
           created_at?: string | null
           id?: string
+          results_duration_seconds?: number
           set_duration_minutes?: number
           updated_at?: string | null
           updated_by?: string | null
@@ -1624,6 +1626,7 @@ export type Database = {
           break_duration_seconds?: number
           created_at?: string | null
           id?: string
+          results_duration_seconds?: number
           set_duration_minutes?: number
           updated_at?: string | null
           updated_by?: string | null

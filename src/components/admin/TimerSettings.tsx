@@ -21,6 +21,7 @@ export const TimerSettings = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useTimerSettings();
   const [setDuration, setSetDuration] = useState<number | "">(14);
   const [breakDuration, setBreakDuration] = useState<number | "">(60);
+  const [resultsDuration, setResultsDuration] = useState<number | "">(50);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -29,15 +30,17 @@ export const TimerSettings = () => {
     if (settings) {
       setSetDuration(settings.set_duration_minutes);
       setBreakDuration(settings.break_duration_seconds);
+      setResultsDuration(settings.results_duration_seconds);
     }
   }, [settings]);
 
   useEffect(() => {
     const changed = 
       (typeof setDuration === "number" && setDuration !== settings.set_duration_minutes) ||
-      (typeof breakDuration === "number" && breakDuration !== settings.break_duration_seconds);
+      (typeof breakDuration === "number" && breakDuration !== settings.break_duration_seconds) ||
+      (typeof resultsDuration === "number" && resultsDuration !== settings.results_duration_seconds);
     setHasChanges(changed);
-  }, [setDuration, breakDuration, settings]);
+  }, [setDuration, breakDuration, resultsDuration, settings]);
 
   const handleSave = () => {
     setShowConfirmDialog(true);
@@ -47,6 +50,7 @@ export const TimerSettings = () => {
     updateSettings({
       setDuration: typeof setDuration === "number" ? setDuration : 14,
       breakDuration: typeof breakDuration === "number" ? breakDuration : 60,
+      resultsDuration: typeof resultsDuration === "number" ? resultsDuration : 50,
     });
     setShowConfirmDialog(false);
   };
@@ -58,16 +62,19 @@ export const TimerSettings = () => {
   const confirmReset = () => {
     setSetDuration(14);
     setBreakDuration(60);
+    setResultsDuration(50);
     updateSettings({
       setDuration: 14,
       breakDuration: 60,
+      resultsDuration: 50,
     });
     setShowResetDialog(false);
   };
 
   const isValid = 
     typeof setDuration === "number" && setDuration >= 5 && setDuration <= 30 &&
-    typeof breakDuration === "number" && breakDuration >= 30 && breakDuration <= 180;
+    typeof breakDuration === "number" && breakDuration >= 30 && breakDuration <= 180 &&
+    typeof resultsDuration === "number" && resultsDuration >= 20 && resultsDuration <= 120;
 
   if (isLoading) {
     return <div className="text-center p-8">Loading settings...</div>;
@@ -122,6 +129,22 @@ export const TimerSettings = () => {
                 Valid range: 30-180 seconds
               </p>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="resultsDuration">Results Display Duration (seconds)</Label>
+              <Input
+                id="resultsDuration"
+                type="number"
+                min={20}
+                max={120}
+                value={resultsDuration}
+                onChange={(e) => setResultsDuration(e.target.value === "" ? "" : parseInt(e.target.value))}
+                className="max-w-[200px]"
+              />
+              <p className="text-sm text-muted-foreground">
+                Valid range: 20-120 seconds. Controls auto-start timer on results screen.
+              </p>
+            </div>
           </div>
 
           <div className="flex gap-2">
@@ -158,6 +181,7 @@ export const TimerSettings = () => {
               <div className="mt-4 space-y-2">
                 <p><strong>Set Duration:</strong> {setDuration} minutes</p>
                 <p><strong>Break Duration:</strong> {breakDuration} seconds</p>
+                <p><strong>Results Duration:</strong> {resultsDuration} seconds</p>
               </div>
               <p className="mt-4 text-sm">
                 These changes will only apply to new matches. Matches in progress will continue with their current timer values.
@@ -180,6 +204,7 @@ export const TimerSettings = () => {
               <div className="mt-4 space-y-2">
                 <p><strong>Set Duration:</strong> 14 minutes</p>
                 <p><strong>Break Duration:</strong> 60 seconds</p>
+                <p><strong>Results Duration:</strong> 50 seconds</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -23,6 +23,7 @@ interface ScoreboardContentProps {
   onConfirmExit: () => void;
   fixture?: Fixture;
   nextMatchReady?: boolean;
+  resultsDuration: number;
 }
 
 export const ScoreboardContent = ({
@@ -36,7 +37,8 @@ export const ScoreboardContent = ({
   onExitConfirmationChange,
   onConfirmExit,
   fixture,
-  nextMatchReady = false
+  nextMatchReady = false,
+  resultsDuration
 }: ScoreboardContentProps) => {
   const navigate = useNavigate();
   const { settings, isLoading: isLoadingSettings } = useTimerSettings();
@@ -78,6 +80,7 @@ export const ScoreboardContent = ({
               onStartNextMatch={onManualNextMatch}
               onEndOfNight={onEndOfNight}
               nextMatchReady={nextMatchReady}
+              resultsDuration={resultsDuration}
             />
           ) : (
             <>

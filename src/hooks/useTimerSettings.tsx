@@ -15,13 +15,15 @@ export const useTimerSettings = () => {
   const updateMutation = useMutation({
     mutationFn: ({ 
       setDuration, 
-      breakDuration, 
+      breakDuration,
+      resultsDuration,
       updatedBy 
     }: { 
       setDuration: number; 
-      breakDuration: number; 
+      breakDuration: number;
+      resultsDuration: number;
       updatedBy?: string;
-    }) => updateTimerSettings(setDuration, breakDuration, updatedBy),
+    }) => updateTimerSettings(setDuration, breakDuration, resultsDuration, updatedBy),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timer-settings'] });
       toast({
@@ -44,6 +46,7 @@ export const useTimerSettings = () => {
       id: 'default',
       set_duration_minutes: 14,
       break_duration_seconds: 60,
+      results_duration_seconds: 50,
       updated_at: new Date().toISOString(),
     },
     isLoading,

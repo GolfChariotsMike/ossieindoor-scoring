@@ -5,9 +5,6 @@ import { toast } from "@/hooks/use-toast";
 import { useGameState } from "@/hooks/useGameState";
 import { useNextMatch } from "../NextMatchLogic";
 
-// Results display duration in seconds
-export const RESULTS_DISPLAY_DURATION = 50;
-
 type GameState = ReturnType<typeof useGameState>;
 
 interface UseMatchTransitionProps {
@@ -18,6 +15,7 @@ interface UseMatchTransitionProps {
   nextMatches: Fixture[];
   refetchMatches: () => Promise<any>;
   setShowEndOfNightSummary: (show: boolean) => void;
+  resultsDuration: number;
 }
 
 export const useMatchTransition = ({
@@ -27,7 +25,8 @@ export const useMatchTransition = ({
   match,
   nextMatches,
   refetchMatches,
-  setShowEndOfNightSummary
+  setShowEndOfNightSummary,
+  resultsDuration
 }: UseMatchTransitionProps) => {
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const [preloadedNextMatch, setPreloadedNextMatch] = useState<Fixture | null>(null);
@@ -145,7 +144,7 @@ export const useMatchTransition = ({
     
     // If less than 15 seconds left on the timer, start transition now
     const timeElapsed = Date.now() - (resultsDisplayStartTime || Date.now());
-    const timeLeft = RESULTS_DISPLAY_DURATION * 1000 - timeElapsed;
+    const timeLeft = resultsDuration * 1000 - timeElapsed;
     
     if (timeLeft < 15000 && timeLeft > 0) {
       console.log(`Less than 15 seconds left (${Math.round(timeLeft/1000)}s), starting transition soon`);
@@ -170,7 +169,7 @@ export const useMatchTransition = ({
         clearTimeout(transitionTimeoutRef.current);
       }
 
-      console.log(`Setting up transition timeout for ${RESULTS_DISPLAY_DURATION} seconds at`, new Date().toISOString());
+      console.log(`Setting up transition timeout for ${resultsDuration} seconds at`, new Date().toISOString());
       hasSetupTransitionTimer.current = true;
       
       transitionTimeoutRef.current = setTimeout(async () => {
@@ -240,7 +239,7 @@ export const useMatchTransition = ({
             });
           }
         }
-      }, RESULTS_DISPLAY_DURATION * 1000);
+      }, resultsDuration * 1000);
 
       return () => {
         if (transitionTimeoutRef.current) {
