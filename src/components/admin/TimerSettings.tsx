@@ -74,7 +74,7 @@ export const TimerSettings = () => {
   const isValid = 
     typeof setDuration === "number" && setDuration >= 5 && setDuration <= 30 &&
     typeof breakDuration === "number" && breakDuration >= 30 && breakDuration <= 180 &&
-    typeof resultsDuration === "number" && resultsDuration >= 20 && resultsDuration <= 120;
+    typeof resultsDuration === "number" && resultsDuration >= 20 && resultsDuration <= 180;
 
   if (isLoading) {
     return <div className="text-center p-8">Loading settings...</div>;
@@ -136,13 +136,13 @@ export const TimerSettings = () => {
                 id="resultsDuration"
                 type="number"
                 min={20}
-                max={120}
+                max={180}
                 value={resultsDuration}
                 onChange={(e) => setResultsDuration(e.target.value === "" ? "" : parseInt(e.target.value))}
                 className="max-w-[200px]"
               />
               <p className="text-sm text-muted-foreground">
-                Valid range: 20-120 seconds. Controls auto-start timer on results screen.
+                Valid range: 20-180 seconds. Controls auto-start timer on results screen.
               </p>
             </div>
           </div>
