@@ -39,9 +39,9 @@ export const ScoreboardContent = ({
   nextMatchReady = false
 }: ScoreboardContentProps) => {
   const navigate = useNavigate();
-  const { settings } = useTimerSettings();
+  const { settings, isLoading: isLoadingSettings } = useTimerSettings();
 
-  if (isLoading || !match) {
+  if (isLoading || isLoadingSettings || !match) {
     return <LoadingSpinner />;
   }
 
