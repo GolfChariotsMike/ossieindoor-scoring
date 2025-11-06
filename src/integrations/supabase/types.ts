@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
   public: {
     Tables: {
       admin_settings: {
@@ -30,6 +35,231 @@ export type Database = {
           setting_name?: string
           setting_value?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bookings: {
+        Row: {
+          booking_date: string
+          booking_type: string | null
+          court_number: string | null
+          created_at: string
+          customer_id: string | null
+          customer_name: string
+          email: string | null
+          end_time: string
+          id: string
+          invoice_sent: boolean | null
+          is_recurring: boolean | null
+          notes: string | null
+          parent_booking_id: string | null
+          payment_type: string | null
+          phone: string | null
+          player_count: number | null
+          quoted_cost: number | null
+          recurrence_count: number | null
+          recurrence_end_date: string | null
+          recurrence_frequency: string | null
+          sms_reminder_sent: boolean | null
+          sms_sent_at: string | null
+          sms_status: string | null
+          staff_assigned: string | null
+          staff_members: string[] | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          booking_date: string
+          booking_type?: string | null
+          court_number?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_name: string
+          email?: string | null
+          end_time: string
+          id?: string
+          invoice_sent?: boolean | null
+          is_recurring?: boolean | null
+          notes?: string | null
+          parent_booking_id?: string | null
+          payment_type?: string | null
+          phone?: string | null
+          player_count?: number | null
+          quoted_cost?: number | null
+          recurrence_count?: number | null
+          recurrence_end_date?: string | null
+          recurrence_frequency?: string | null
+          sms_reminder_sent?: boolean | null
+          sms_sent_at?: string | null
+          sms_status?: string | null
+          staff_assigned?: string | null
+          staff_members?: string[] | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          booking_date?: string
+          booking_type?: string | null
+          court_number?: string | null
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string
+          email?: string | null
+          end_time?: string
+          id?: string
+          invoice_sent?: boolean | null
+          is_recurring?: boolean | null
+          notes?: string | null
+          parent_booking_id?: string | null
+          payment_type?: string | null
+          phone?: string | null
+          player_count?: number | null
+          quoted_cost?: number | null
+          recurrence_count?: number | null
+          recurrence_end_date?: string | null
+          recurrence_frequency?: string | null
+          sms_reminder_sent?: boolean | null
+          sms_sent_at?: string | null
+          sms_status?: string | null
+          staff_assigned?: string | null
+          staff_members?: string[] | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_parent_booking_id_fkey"
+            columns: ["parent_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_flow_entries: {
+        Row: {
+          cash_sales_total: number
+          created_at: string
+          date: string
+          day_of_week: string
+          difference: number
+          duty_report_cost: number
+          duty_report_payments: number
+          eftpos_total: number
+          expected_end_amount: number
+          id: string
+          notes: string | null
+          shift_end_cash: number
+          shift_start_cash: number
+          total_sales: number
+          updated_at: string
+        }
+        Insert: {
+          cash_sales_total?: number
+          created_at?: string
+          date: string
+          day_of_week: string
+          difference?: number
+          duty_report_cost?: number
+          duty_report_payments?: number
+          eftpos_total?: number
+          expected_end_amount?: number
+          id?: string
+          notes?: string | null
+          shift_end_cash?: number
+          shift_start_cash?: number
+          total_sales?: number
+          updated_at?: string
+        }
+        Update: {
+          cash_sales_total?: number
+          created_at?: string
+          date?: string
+          day_of_week?: string
+          difference?: number
+          duty_report_cost?: number
+          duty_report_payments?: number
+          eftpos_total?: number
+          expected_end_amount?: number
+          id?: string
+          notes?: string | null
+          shift_end_cash?: number
+          shift_start_cash?: number
+          total_sales?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cash_flow_records: {
+        Row: {
+          cash_collected: number
+          created_at: string
+          date: string
+          day: string
+          difference: number
+          eftpos_collected: number
+          expected_total: number
+          id: string
+          notes: string | null
+          updated_at: string
+          week: string
+        }
+        Insert: {
+          cash_collected?: number
+          created_at?: string
+          date: string
+          day: string
+          difference?: number
+          eftpos_collected?: number
+          expected_total?: number
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          week: string
+        }
+        Update: {
+          cash_collected?: number
+          created_at?: string
+          date?: string
+          day?: string
+          difference?: number
+          eftpos_collected?: number
+          expected_total?: number
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          week?: string
+        }
+        Relationships: []
+      }
+      clubs: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -132,6 +362,78 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          background_color: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          background_color?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          background_color?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      divider_images: {
+        Row: {
+          created_at: string | null
+          file_path: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_path: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      division_colors: {
+        Row: {
+          color_classes: string
+          created_at: string
+          division_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          color_classes: string
+          created_at?: string
+          division_name: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          color_classes?: string
+          created_at?: string
+          division_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       divisions: {
         Row: {
           created_at: string | null
@@ -159,6 +461,81 @@ export type Database = {
           name?: string
           season?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          booking_card_html: string
+          created_at: string
+          footer_html: string
+          header_html: string
+          id: string
+          styles_css: string
+          subject_template: string
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          booking_card_html: string
+          created_at?: string
+          footer_html: string
+          header_html: string
+          id?: string
+          styles_css: string
+          subject_template: string
+          template_type: string
+          updated_at?: string
+        }
+        Update: {
+          booking_card_html?: string
+          created_at?: string
+          footer_html?: string
+          header_html?: string
+          id?: string
+          styles_css?: string
+          subject_template?: string
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_time: string
+          event_date: string
+          event_name: string
+          event_type: string | null
+          id: string
+          location: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_time: string
+          event_date: string
+          event_name: string
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          event_date?: string
+          event_name?: string
+          event_type?: string | null
+          id?: string
+          location?: string | null
+          start_time?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -259,6 +636,78 @@ export type Database = {
           },
         ]
       }
+      frisat_social_cashflow: {
+        Row: {
+          cash_end: number
+          cash_start: number
+          created_at: string | null
+          date: string
+          difference: number
+          id: string
+          neo_pos_cash: number
+          neo_pos_eftpos: number
+          neo_pos_total: number
+          notes: string | null
+          players: number
+          staff_member: string
+          updated_at: string | null
+        }
+        Insert: {
+          cash_end: number
+          cash_start: number
+          created_at?: string | null
+          date?: string
+          difference: number
+          id?: string
+          neo_pos_cash?: number
+          neo_pos_eftpos?: number
+          neo_pos_total: number
+          notes?: string | null
+          players: number
+          staff_member: string
+          updated_at?: string | null
+        }
+        Update: {
+          cash_end?: number
+          cash_start?: number
+          created_at?: string | null
+          date?: string
+          difference?: number
+          id?: string
+          neo_pos_cash?: number
+          neo_pos_eftpos?: number
+          neo_pos_total?: number
+          notes?: string | null
+          players?: number
+          staff_member?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      league_comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          league_id: string
+          name: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          league_id: string
+          name: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          league_id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       league_notes: {
         Row: {
           created_at: string | null
@@ -291,6 +740,8 @@ export type Database = {
       }
       match_data_v2: {
         Row: {
+          away_aces: number | null
+          away_blocks: number | null
           away_bonus_points: number | null
           away_result: string | null
           away_team_name: string
@@ -301,6 +752,8 @@ export type Database = {
           division: string | null
           fixture_start_time: string | null
           has_final_score: boolean | null
+          home_aces: number | null
+          home_blocks: number | null
           home_bonus_points: number | null
           home_result: string | null
           home_team_name: string
@@ -320,6 +773,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          away_aces?: number | null
+          away_blocks?: number | null
           away_bonus_points?: number | null
           away_result?: string | null
           away_team_name: string
@@ -330,6 +785,8 @@ export type Database = {
           division?: string | null
           fixture_start_time?: string | null
           has_final_score?: boolean | null
+          home_aces?: number | null
+          home_blocks?: number | null
           home_bonus_points?: number | null
           home_result?: string | null
           home_team_name: string
@@ -349,6 +806,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          away_aces?: number | null
+          away_blocks?: number | null
           away_bonus_points?: number | null
           away_result?: string | null
           away_team_name?: string
@@ -359,6 +818,8 @@ export type Database = {
           division?: string | null
           fixture_start_time?: string | null
           has_final_score?: boolean | null
+          home_aces?: number | null
+          home_blocks?: number | null
           home_bonus_points?: number | null
           home_result?: string | null
           home_team_name?: string
@@ -378,13 +839,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "match_data_v2_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: true
-            referencedRelation: "match_progress_view"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "match_data_v2_match_id_fkey"
             columns: ["match_id"]
@@ -432,13 +886,6 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "match_history_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "match_progress_view"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "match_history_match_id_fkey"
             columns: ["match_id"]
@@ -522,13 +969,6 @@ export type Database = {
           set3_home_score?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "match_results_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "match_progress_view"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "match_results_match_id_fkey"
             columns: ["match_id"]
@@ -619,6 +1059,132 @@ export type Database = {
         }
         Relationships: []
       }
+      notice_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      player_pricing: {
+        Row: {
+          created_at: string
+          day_of_week: string
+          four_players: number
+          id: string
+          six_players: number
+          two_players: number
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: string
+          four_players?: number
+          id?: string
+          six_players?: number
+          two_players?: number
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: string
+          four_players?: number
+          id?: string
+          six_players?: number
+          two_players?: number
+        }
+        Relationships: []
+      }
+      shopping_items: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          purchased: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          purchased?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          purchased?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      social_media_counts: {
+        Row: {
+          follower_count: number
+          id: string
+          platform: string
+          updated_at: string | null
+        }
+        Insert: {
+          follower_count?: number
+          id?: string
+          platform: string
+          updated_at?: string | null
+        }
+        Update: {
+          follower_count?: number
+          id?: string
+          platform?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      staff_members: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_clashes: {
         Row: {
           clash_team_id: string | null
@@ -660,6 +1226,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      team_player_counts: {
+        Row: {
+          created_at: string
+          date: string
+          day_of_week: string
+          id: string
+          player_count: number
+          team_id: string
+          updated_at: string
+          week: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          day_of_week: string
+          id?: string
+          player_count?: number
+          team_id: string
+          updated_at?: string
+          week: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          day_of_week?: string
+          id?: string
+          player_count?: number
+          team_id?: string
+          updated_at?: string
+          week?: string
+        }
+        Relationships: []
       }
       team_preference_notes: {
         Row: {
@@ -706,11 +1305,51 @@ export type Database = {
         }
         Relationships: []
       }
+      team_selections: {
+        Row: {
+          created_at: string
+          day_of_week: string
+          id: string
+          is_not_playing: boolean | null
+          is_playing: boolean | null
+          notes: string | null
+          summer25_signup: boolean | null
+          team_id: string
+          team_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: string
+          id?: string
+          is_not_playing?: boolean | null
+          is_playing?: boolean | null
+          notes?: string | null
+          summer25_signup?: boolean | null
+          team_id: string
+          team_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: string
+          id?: string
+          is_not_playing?: boolean | null
+          is_playing?: boolean | null
+          notes?: string | null
+          summer25_signup?: boolean | null
+          team_id?: string
+          team_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_shared_players: {
         Row: {
           created_at: string | null
           day_context: string | null
           id: string
+          is_deleted: boolean | null
           notes: string | null
           team_original_ids: string[] | null
           teams: string[]
@@ -720,6 +1359,7 @@ export type Database = {
           created_at?: string | null
           day_context?: string | null
           id?: string
+          is_deleted?: boolean | null
           notes?: string | null
           team_original_ids?: string[] | null
           teams: string[]
@@ -729,6 +1369,7 @@ export type Database = {
           created_at?: string | null
           day_context?: string | null
           id?: string
+          is_deleted?: boolean | null
           notes?: string | null
           team_original_ids?: string[] | null
           teams?: string[]
@@ -962,6 +1603,33 @@ export type Database = {
           },
         ]
       }
+      timer_settings: {
+        Row: {
+          break_duration_seconds: number
+          created_at: string | null
+          id: string
+          set_duration_minutes: number
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          break_duration_seconds?: number
+          created_at?: string | null
+          id?: string
+          set_duration_minutes?: number
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          break_duration_seconds?: number
+          created_at?: string | null
+          id?: string
+          set_duration_minutes?: number
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       timer_state: {
         Row: {
           court_number: number
@@ -986,6 +1654,66 @@ export type Database = {
           is_running?: boolean | null
           seconds_remaining?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tv_notices: {
+        Row: {
+          background_color: string
+          created_at: string | null
+          display_order: number
+          id: string
+          text: string
+          text_color: string
+          updated_at: string | null
+        }
+        Insert: {
+          background_color?: string
+          created_at?: string | null
+          display_order: number
+          id?: string
+          text: string
+          text_color?: string
+          updated_at?: string | null
+        }
+        Update: {
+          background_color?: string
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          text?: string
+          text_color?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      umpire_assignments: {
+        Row: {
+          court_time_key: string
+          created_at: string
+          day: string
+          id: string
+          umpire_id: string
+          updated_at: string
+          week: string
+        }
+        Insert: {
+          court_time_key: string
+          created_at?: string
+          day: string
+          id?: string
+          umpire_id: string
+          updated_at?: string
+          week: string
+        }
+        Update: {
+          court_time_key?: string
+          created_at?: string
+          day?: string
+          id?: string
+          umpire_id?: string
+          updated_at?: string
+          week?: string
         }
         Relationships: []
       }
@@ -1016,6 +1744,54 @@ export type Database = {
           set3_home_score: number | null
           start_time: string | null
         }
+        Insert: {
+          away_bonus_points?: number | null
+          away_result?: string | null
+          away_team_name?: string | null
+          away_total_match_points?: number | null
+          away_total_points?: number | null
+          court_number?: number | null
+          division?: string | null
+          has_final_score?: boolean | null
+          home_bonus_points?: number | null
+          home_result?: string | null
+          home_team_name?: string | null
+          home_total_match_points?: number | null
+          home_total_points?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          set1_away_score?: number | null
+          set1_home_score?: number | null
+          set2_away_score?: number | null
+          set2_home_score?: number | null
+          set3_away_score?: number | null
+          set3_home_score?: number | null
+          start_time?: string | null
+        }
+        Update: {
+          away_bonus_points?: number | null
+          away_result?: string | null
+          away_team_name?: string | null
+          away_total_match_points?: number | null
+          away_total_points?: number | null
+          court_number?: number | null
+          division?: string | null
+          has_final_score?: boolean | null
+          home_bonus_points?: number | null
+          home_result?: string | null
+          home_team_name?: string | null
+          home_total_match_points?: number | null
+          home_total_points?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          set1_away_score?: number | null
+          set1_home_score?: number | null
+          set2_away_score?: number | null
+          set2_home_score?: number | null
+          set3_away_score?: number | null
+          set3_home_score?: number | null
+          start_time?: string | null
+        }
         Relationships: []
       }
       team_standings: {
@@ -1025,7 +1801,6 @@ export type Database = {
           losses: number | null
           matches_played: number | null
           points_percentage: number | null
-          sets_won: number | null
           team_name: string | null
           total_points: number | null
           total_points_against: number | null
@@ -1036,31 +1811,61 @@ export type Database = {
       }
     }
     Functions: {
+      add_league_comment: {
+        Args: { p_content: string; p_league_id: string; p_name: string }
+        Returns: string
+      }
+      delete_league_comment: { Args: { p_id: string }; Returns: undefined }
+      delete_team_shared_player: {
+        Args: { entry_id: string }
+        Returns: boolean
+      }
+      get_league_comments: {
+        Args: { p_league_id: string }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          league_id: string
+          name: string
+        }[]
+      }
       handle_match_data_update: {
         Args: {
           p_match_id: string
-          p_set1_home_score: number
           p_set1_away_score: number
-          p_set2_home_score: number
+          p_set1_home_score: number
           p_set2_away_score: number
-          p_set3_home_score: number
+          p_set2_home_score: number
           p_set3_away_score: number
+          p_set3_home_score: number
         }
         Returns: undefined
       }
-      refresh_team_statistics_safe: {
-        Args: Record<PropertyKey, never>
+      refresh_team_statistics_safe: { Args: never; Returns: undefined }
+      update_league_comment: {
+        Args: { p_content: string; p_id: string; p_name: string }
         Returns: undefined
       }
       update_match_scores: {
         Args: {
           p_match_id: string
-          p_set1_home_score: number
           p_set1_away_score: number
-          p_set2_home_score: number
+          p_set1_home_score: number
           p_set2_away_score: number
-          p_set3_home_score: number
+          p_set2_home_score: number
           p_set3_away_score: number
+          p_set3_home_score: number
+        }
+        Returns: undefined
+      }
+      update_player_pricing: {
+        Args: {
+          p_day_of_week: string
+          p_four_players: number
+          p_id: string
+          p_six_players: number
+          p_two_players: number
         }
         Returns: undefined
       }
@@ -1075,27 +1880,33 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -1103,20 +1914,24 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -1124,20 +1939,24 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -1145,29 +1964,44 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
-    | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      time_preference_type: ["good", "bad"],
+      time_slot_type: ["1", "2", "3", "4", "5", "6", "7", "8"],
+    },
+  },
+} as const

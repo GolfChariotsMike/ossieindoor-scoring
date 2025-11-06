@@ -1,6 +1,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MatchResultsTable } from "./MatchResultsTable";
+import { TimerSettings } from "./TimerSettings";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Database } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -56,10 +57,15 @@ export const AdminDashboard = () => {
       <Tabs defaultValue="results" className="space-y-4">
         <TabsList>
           <TabsTrigger value="results">Match Results</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="results">
           <MatchResultsTable />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <TimerSettings />
         </TabsContent>
       </Tabs>
     </div>

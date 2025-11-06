@@ -9,6 +9,7 @@ import { ResultsScreen } from "./ResultsScreen";
 import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTimerSettings } from "@/hooks/useTimerSettings";
 
 interface ScoreboardContentProps {
   match: Match | undefined;
@@ -38,6 +39,7 @@ export const ScoreboardContent = ({
   nextMatchReady = false
 }: ScoreboardContentProps) => {
   const navigate = useNavigate();
+  const { settings } = useTimerSettings();
 
   if (isLoading || !match) {
     return <LoadingSpinner />;
@@ -80,7 +82,8 @@ export const ScoreboardContent = ({
           ) : (
             <>
               <Timer
-                initialMinutes={14}
+                initialMinutes={settings.set_duration_minutes}
+                breakDurationSeconds={settings.break_duration_seconds}
                 onComplete={gameState.handleTimerComplete}
                 onSwitchTeams={gameState.handleSwitchTeams}
                 isBreak={gameState.isBreak}

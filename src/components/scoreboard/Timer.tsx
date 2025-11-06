@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast";
 
 interface TimerProps {
   initialMinutes: number;
+  breakDurationSeconds?: number;
   onComplete: () => void;
   onSwitchTeams: () => void;
   isBreak: boolean;
@@ -30,6 +31,7 @@ interface TimerProps {
 
 export const Timer = ({ 
   initialMinutes = 14,
+  breakDurationSeconds = 60,
   onComplete, 
   onSwitchTeams,
   isBreak,
@@ -51,6 +53,7 @@ export const Timer = ({
     progressToNextPhase
   } = useTimer({
     initialMinutes,
+    breakDurationSeconds,
     onComplete: () => {
       console.log('Timer complete or skipped with fixture:', fixture);
       // Notify user of phase change

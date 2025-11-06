@@ -4,6 +4,7 @@ import { TeamScore } from "./TeamScore";
 import { SetScoresDisplay } from "./SetScoresDisplay";
 import { Match, Score, SetScores, Fixture } from "@/types/volleyball";
 import { parseISO, format, parse } from "date-fns";
+import { useTimerSettings } from "@/hooks/useTimerSettings";
 
 interface ScoreboardLayoutProps {
   isBreak: boolean;
@@ -30,6 +31,7 @@ export const ScoreboardLayout = ({
   onScoreUpdate,
   onAceBlock,
 }: ScoreboardLayoutProps) => {
+  const { settings } = useTimerSettings();
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
   const awayTeam = isTeamsSwitched ? match.homeTeam : match.awayTeam;
 
@@ -101,7 +103,8 @@ export const ScoreboardLayout = ({
   return (
     <div className="flex flex-col justify-between h-full">
       <Timer
-        initialMinutes={14}
+        initialMinutes={settings.set_duration_minutes}
+        breakDurationSeconds={settings.break_duration_seconds}
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}

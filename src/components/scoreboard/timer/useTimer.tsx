@@ -4,6 +4,7 @@ import { MatchPhase } from "./types";
 
 interface UseTimerProps {
   initialMinutes: number;
+  breakDurationSeconds?: number;
   onComplete: () => void;
   onSwitchTeams: () => void;
   isBreak: boolean;
@@ -13,6 +14,7 @@ interface UseTimerProps {
 
 export const useTimer = ({ 
   initialMinutes, 
+  breakDurationSeconds = 60,
   onComplete, 
   onSwitchTeams,
   isBreak,
@@ -58,7 +60,7 @@ export const useTimer = ({
         // Set appropriate time for different phases
         let phaseTime;
         if (nextPhase.includes('break')) {
-          phaseTime = 60; // 60 seconds for all breaks
+          phaseTime = breakDurationSeconds; // Use configurable break duration
           console.log(`Setting break time to ${phaseTime} seconds for phase ${nextPhase}`);
         } else {
           phaseTime = initialMinutes * 60; // Regular set time
