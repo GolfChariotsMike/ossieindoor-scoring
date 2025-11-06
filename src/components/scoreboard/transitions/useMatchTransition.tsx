@@ -1,9 +1,11 @@
 
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Fixture } from "@/types/volleyball";
 import { toast } from "@/hooks/use-toast";
 import { useGameState } from "@/hooks/useGameState";
 import { useNextMatch } from "../NextMatchLogic";
+import { processPendingScores } from "@/utils/matchDatabase";
 
 type GameState = ReturnType<typeof useGameState>;
 
@@ -28,6 +30,7 @@ export const useMatchTransition = ({
   setShowEndOfNightSummary,
   resultsDuration
 }: UseMatchTransitionProps) => {
+  const navigate = useNavigate();
   const [resultsDisplayStartTime, setResultsDisplayStartTime] = useState<number | null>(null);
   const [preloadedNextMatch, setPreloadedNextMatch] = useState<Fixture | null>(null);
   const [isNextMatchReady, setIsNextMatchReady] = useState<boolean>(false);
@@ -40,6 +43,48 @@ export const useMatchTransition = ({
   const hasSetupTransitionTimer = useRef<boolean>(false);
   
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
+
+  const handleEndOfNight = async () => {
+    console.log('No next match found, auto-saving pending scores');
+    
+    try {
+      toast({
+        title: "Uploading Scores",
+        description: "Saving all pending match scores...",
+      });
+
+      const count = await processPendingScores(true);
+      
+      if (count > 0) {
+        toast({
+          title: "Scores Saved",
+          description: `Successfully uploaded ${count} match score${count > 1 ? 's' : ''}.`,
+        });
+      } else {
+        toast({
+          title: "All Scores Current",
+          description: "No pending scores needed to be uploaded.",
+        });
+      }
+      
+      // Navigate back to court selection
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    } catch (error) {
+      console.error("Error uploading scores:", error);
+      toast({
+        title: "Error Saving Scores",
+        description: "Failed to upload scores. Please check your connection.",
+        variant: "destructive",
+      });
+      
+      // Still navigate back after error
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+    }
+  };
 
   useEffect(() => {
     if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
@@ -200,8 +245,8 @@ export const useMatchTransition = ({
                 console.log('Found next match after refetching:', nextMatch.Id);
                 handleStartNextMatch(nextMatch);
               } else {
-                console.log('No next match found after refetching, showing end of night summary');
-                setShowEndOfNightSummary(true);
+                console.log('No next match found after refetching, auto-saving and returning to court selection');
+                handleEndOfNight();
               }
               
               return;
@@ -213,7 +258,7 @@ export const useMatchTransition = ({
               console.log('Found next match, transitioning to:', nextMatch.Id);
               handleStartNextMatch(nextMatch);
             } else {
-              console.log('No next match found, showing end of night summary');
+              console.log('No next match found, auto-saving and returning to court selection');
               const courtMatches = nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`);
               console.log(`Court ${courtId} matches:`, courtMatches.map(m => ({
                 id: m.Id,
@@ -221,7 +266,7 @@ export const useMatchTransition = ({
                 teams: `${m.HomeTeam} vs ${m.AwayTeam}`
               })));
               
-              setShowEndOfNightSummary(true);
+              handleEndOfNight();
             }
           }
         } catch (error) {
