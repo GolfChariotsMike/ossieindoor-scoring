@@ -45,8 +45,8 @@ export const useTimerSettings = () => {
     settings: settings || {
       id: 'default',
       set_duration_minutes: 14,
-      break_duration_seconds: 60,
-      results_duration_seconds: 50,
+      break_duration_minutes: 1,
+      results_duration_minutes: 0.83,
       updated_at: new Date().toISOString(),
     },
     isLoading,

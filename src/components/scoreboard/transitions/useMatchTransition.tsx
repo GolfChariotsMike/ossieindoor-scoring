@@ -144,7 +144,7 @@ export const useMatchTransition = ({
     
     // If less than 15 seconds left on the timer, start transition now
     const timeElapsed = Date.now() - (resultsDisplayStartTime || Date.now());
-    const timeLeft = resultsDuration * 1000 - timeElapsed;
+    const timeLeft = resultsDuration * 60 * 1000 - timeElapsed;
     
     if (timeLeft < 15000 && timeLeft > 0) {
       console.log(`Less than 15 seconds left (${Math.round(timeLeft/1000)}s), starting transition soon`);
@@ -169,7 +169,7 @@ export const useMatchTransition = ({
         clearTimeout(transitionTimeoutRef.current);
       }
 
-      console.log(`Setting up transition timeout for ${resultsDuration} seconds at`, new Date().toISOString());
+      console.log(`Setting up transition timeout for ${resultsDuration} minutes at`, new Date().toISOString());
       hasSetupTransitionTimer.current = true;
       
       transitionTimeoutRef.current = setTimeout(async () => {
@@ -239,7 +239,7 @@ export const useMatchTransition = ({
             });
           }
         }
-      }, resultsDuration * 1000);
+      }, resultsDuration * 60 * 1000);
 
       return () => {
         if (transitionTimeoutRef.current) {

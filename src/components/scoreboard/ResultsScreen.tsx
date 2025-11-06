@@ -97,13 +97,15 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   };
 
   useEffect(() => {
-    console.log(`Results screen countdown started for ${resultsDuration} seconds`);
+    // Convert minutes to seconds for countdown
+    const resultsDurationSeconds = Math.ceil(resultsDuration * 60);
+    console.log(`Results screen countdown started for ${resultsDuration} minutes (${resultsDurationSeconds} seconds)`);
     const startTime = Date.now();
-    let timeLeft = resultsDuration;
+    let timeLeft = resultsDurationSeconds;
 
     const interval = setInterval(() => {
       const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-      timeLeft = Math.max(0, resultsDuration - elapsedSeconds);
+      timeLeft = Math.max(0, resultsDurationSeconds - elapsedSeconds);
       
       if (timeLeft <= 0) {
         setCountdown("Starting next match...");

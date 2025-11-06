@@ -1605,28 +1605,28 @@ export type Database = {
       }
       timer_settings: {
         Row: {
-          break_duration_seconds: number
+          break_duration_minutes: number
           created_at: string | null
           id: string
-          results_duration_seconds: number
+          results_duration_minutes: number
           set_duration_minutes: number
           updated_at: string | null
           updated_by: string | null
         }
         Insert: {
-          break_duration_seconds?: number
+          break_duration_minutes?: number
           created_at?: string | null
           id?: string
-          results_duration_seconds?: number
+          results_duration_minutes?: number
           set_duration_minutes?: number
           updated_at?: string | null
           updated_by?: string | null
         }
         Update: {
-          break_duration_seconds?: number
+          break_duration_minutes?: number
           created_at?: string | null
           id?: string
-          results_duration_seconds?: number
+          results_duration_minutes?: number
           set_duration_minutes?: number
           updated_at?: string | null
           updated_by?: string | null

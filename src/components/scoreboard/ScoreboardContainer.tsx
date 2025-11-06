@@ -93,7 +93,7 @@ export const ScoreboardContainer = () => {
     nextMatches,
     refetchMatches,
     setShowEndOfNightSummary,
-    resultsDuration: settings.results_duration_seconds
+    resultsDuration: settings.results_duration_minutes
   });
 
   // Add a visual indicator when a next match is ready
@@ -181,7 +181,7 @@ export const ScoreboardContainer = () => {
       onConfirmExit={confirmExit}
       fixture={fixture}
       nextMatchReady={isNextMatchReady && preloadedNextMatch ? true : false}
-      resultsDuration={settings.results_duration_seconds}
+      resultsDuration={settings.results_duration_minutes}
     />
   );
 };

@@ -20,8 +20,8 @@ import {
 export const TimerSettings = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useTimerSettings();
   const [setDuration, setSetDuration] = useState<number | "">(14);
-  const [breakDuration, setBreakDuration] = useState<number | "">(60);
-  const [resultsDuration, setResultsDuration] = useState<number | "">(50);
+  const [breakDuration, setBreakDuration] = useState<number | "">(1);
+  const [resultsDuration, setResultsDuration] = useState<number | "">(0.83);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -29,16 +29,16 @@ export const TimerSettings = () => {
   useEffect(() => {
     if (settings) {
       setSetDuration(settings.set_duration_minutes);
-      setBreakDuration(settings.break_duration_seconds);
-      setResultsDuration(settings.results_duration_seconds);
+      setBreakDuration(settings.break_duration_minutes);
+      setResultsDuration(settings.results_duration_minutes);
     }
   }, [settings]);
 
   useEffect(() => {
     const changed = 
       (typeof setDuration === "number" && setDuration !== settings.set_duration_minutes) ||
-      (typeof breakDuration === "number" && breakDuration !== settings.break_duration_seconds) ||
-      (typeof resultsDuration === "number" && resultsDuration !== settings.results_duration_seconds);
+      (typeof breakDuration === "number" && breakDuration !== settings.break_duration_minutes) ||
+      (typeof resultsDuration === "number" && resultsDuration !== settings.results_duration_minutes);
     setHasChanges(changed);
   }, [setDuration, breakDuration, resultsDuration, settings]);
 
@@ -49,8 +49,8 @@ export const TimerSettings = () => {
   const confirmSave = () => {
     updateSettings({
       setDuration: typeof setDuration === "number" ? setDuration : 14,
-      breakDuration: typeof breakDuration === "number" ? breakDuration : 60,
-      resultsDuration: typeof resultsDuration === "number" ? resultsDuration : 50,
+      breakDuration: typeof breakDuration === "number" ? breakDuration : 1,
+      resultsDuration: typeof resultsDuration === "number" ? resultsDuration : 0.83,
     });
     setShowConfirmDialog(false);
   };
@@ -61,20 +61,20 @@ export const TimerSettings = () => {
 
   const confirmReset = () => {
     setSetDuration(14);
-    setBreakDuration(60);
-    setResultsDuration(50);
+    setBreakDuration(1);
+    setResultsDuration(0.83);
     updateSettings({
       setDuration: 14,
-      breakDuration: 60,
-      resultsDuration: 50,
+      breakDuration: 1,
+      resultsDuration: 0.83,
     });
     setShowResetDialog(false);
   };
 
   const isValid = 
     typeof setDuration === "number" && setDuration >= 5 && setDuration <= 30 &&
-    typeof breakDuration === "number" && breakDuration >= 30 && breakDuration <= 180 &&
-    typeof resultsDuration === "number" && resultsDuration >= 20 && resultsDuration <= 180;
+    typeof breakDuration === "number" && breakDuration >= 0.5 && breakDuration <= 3 &&
+    typeof resultsDuration === "number" && resultsDuration >= 0.33 && resultsDuration <= 3;
 
   if (isLoading) {
     return <div className="text-center p-8">Loading settings...</div>;
@@ -115,34 +115,36 @@ export const TimerSettings = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="breakDuration">Break Duration (seconds)</Label>
+              <Label htmlFor="breakDuration">Break Duration (minutes)</Label>
               <Input
                 id="breakDuration"
                 type="number"
-                min={30}
-                max={180}
+                min={0.5}
+                max={3}
+                step={0.1}
                 value={breakDuration}
-                onChange={(e) => setBreakDuration(e.target.value === "" ? "" : parseInt(e.target.value))}
+                onChange={(e) => setBreakDuration(e.target.value === "" ? "" : parseFloat(e.target.value))}
                 className="max-w-[200px]"
               />
               <p className="text-sm text-muted-foreground">
-                Valid range: 30-180 seconds
+                Valid range: 0.5-3 minutes
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="resultsDuration">Results Display Duration (seconds)</Label>
+              <Label htmlFor="resultsDuration">Results Display Duration (minutes)</Label>
               <Input
                 id="resultsDuration"
                 type="number"
-                min={20}
-                max={180}
+                min={0.33}
+                max={3}
+                step={0.01}
                 value={resultsDuration}
-                onChange={(e) => setResultsDuration(e.target.value === "" ? "" : parseInt(e.target.value))}
+                onChange={(e) => setResultsDuration(e.target.value === "" ? "" : parseFloat(e.target.value))}
                 className="max-w-[200px]"
               />
               <p className="text-sm text-muted-foreground">
-                Valid range: 20-180 seconds. Controls auto-start timer on results screen.
+                Valid range: 0.33-3 minutes. Controls auto-start timer on results screen.
               </p>
             </div>
           </div>
@@ -180,8 +182,8 @@ export const TimerSettings = () => {
               Are you sure you want to update the timer settings?
               <div className="mt-4 space-y-2">
                 <p><strong>Set Duration:</strong> {setDuration} minutes</p>
-                <p><strong>Break Duration:</strong> {breakDuration} seconds</p>
-                <p><strong>Results Duration:</strong> {resultsDuration} seconds</p>
+                <p><strong>Break Duration:</strong> {breakDuration} minutes</p>
+                <p><strong>Results Duration:</strong> {resultsDuration} minutes</p>
               </div>
               <p className="mt-4 text-sm">
                 These changes will only apply to new matches. Matches in progress will continue with their current timer values.
@@ -203,8 +205,8 @@ export const TimerSettings = () => {
               This will reset the timer settings to the default values:
               <div className="mt-4 space-y-2">
                 <p><strong>Set Duration:</strong> 14 minutes</p>
-                <p><strong>Break Duration:</strong> 60 seconds</p>
-                <p><strong>Results Duration:</strong> 50 seconds</p>
+                <p><strong>Break Duration:</strong> 1 minute</p>
+                <p><strong>Results Duration:</strong> 0.83 minutes</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

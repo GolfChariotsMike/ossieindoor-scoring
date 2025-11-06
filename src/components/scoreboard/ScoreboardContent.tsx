@@ -86,7 +86,7 @@ export const ScoreboardContent = ({
             <>
               <Timer
                 initialMinutes={settings.set_duration_minutes}
-                breakDurationSeconds={settings.break_duration_seconds}
+                breakDurationSeconds={settings.break_duration_minutes * 60}
                 onComplete={gameState.handleTimerComplete}
                 onSwitchTeams={gameState.handleSwitchTeams}
                 isBreak={gameState.isBreak}

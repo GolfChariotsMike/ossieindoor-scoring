@@ -104,7 +104,7 @@ export const ScoreboardLayout = ({
     <div className="flex flex-col justify-between h-full">
       <Timer
         initialMinutes={settings.set_duration_minutes}
-        breakDurationSeconds={settings.break_duration_seconds}
+        breakDurationSeconds={settings.break_duration_minutes * 60}
         onComplete={onTimerComplete}
         onSwitchTeams={onSwitchTeams}
         isBreak={isBreak}
