@@ -19,8 +19,8 @@ import {
 
 export const TimerSettings = () => {
   const { settings, isLoading, updateSettings, isUpdating } = useTimerSettings();
-  const [setDuration, setSetDuration] = useState(14);
-  const [breakDuration, setBreakDuration] = useState(60);
+  const [setDuration, setSetDuration] = useState<number | "">(14);
+  const [breakDuration, setBreakDuration] = useState<number | "">(60);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -34,8 +34,8 @@ export const TimerSettings = () => {
 
   useEffect(() => {
     const changed = 
-      setDuration !== settings.set_duration_minutes ||
-      breakDuration !== settings.break_duration_seconds;
+      (typeof setDuration === "number" && setDuration !== settings.set_duration_minutes) ||
+      (typeof breakDuration === "number" && breakDuration !== settings.break_duration_seconds);
     setHasChanges(changed);
   }, [setDuration, breakDuration, settings]);
 
@@ -45,8 +45,8 @@ export const TimerSettings = () => {
 
   const confirmSave = () => {
     updateSettings({
-      setDuration,
-      breakDuration,
+      setDuration: typeof setDuration === "number" ? setDuration : 14,
+      breakDuration: typeof breakDuration === "number" ? breakDuration : 60,
     });
     setShowConfirmDialog(false);
   };
@@ -66,8 +66,8 @@ export const TimerSettings = () => {
   };
 
   const isValid = 
-    setDuration >= 5 && setDuration <= 30 &&
-    breakDuration >= 30 && breakDuration <= 180;
+    typeof setDuration === "number" && setDuration >= 5 && setDuration <= 30 &&
+    typeof breakDuration === "number" && breakDuration >= 30 && breakDuration <= 180;
 
   if (isLoading) {
     return <div className="text-center p-8">Loading settings...</div>;
@@ -99,7 +99,7 @@ export const TimerSettings = () => {
                 min={5}
                 max={30}
                 value={setDuration}
-                onChange={(e) => setSetDuration(parseInt(e.target.value) || 5)}
+                onChange={(e) => setSetDuration(e.target.value === "" ? "" : parseInt(e.target.value))}
                 className="max-w-[200px]"
               />
               <p className="text-sm text-muted-foreground">
@@ -115,7 +115,7 @@ export const TimerSettings = () => {
                 min={30}
                 max={180}
                 value={breakDuration}
-                onChange={(e) => setBreakDuration(parseInt(e.target.value) || 30)}
+                onChange={(e) => setBreakDuration(e.target.value === "" ? "" : parseInt(e.target.value))}
                 className="max-w-[200px]"
               />
               <p className="text-sm text-muted-foreground">
