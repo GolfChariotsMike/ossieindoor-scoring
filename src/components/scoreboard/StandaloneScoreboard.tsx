@@ -21,7 +21,6 @@ const StandaloneScoreboard = () => {
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
-  const [pendingSetScore, setPendingSetScore] = useState<{ home: number; away: number } | null>(null);
 
   // These values are now stable since startTime doesn't change
   const courtNumber = 0;
@@ -58,66 +57,43 @@ const StandaloneScoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // Break just ended - now add scores to display and save
-      if (pendingSetScore) {
-        const newSetScores = {
-          home: [...setScores.home, pendingSetScore.home],
-          away: [...setScores.away, pendingSetScore.away],
-        };
-        
-        setSetScores(newSetScores);
-        setPendingSetScore(null);
-        
-        try {
-          const fixtureTime = genericMatch.DateTime;
-          console.log('StandaloneScoreboard saving set scores after break with fixture time:', {
-            matchCode,
-            fixtureTime,
-            startTime,
-            homeTeam: homeTeamName,
-            awayTeam: awayTeamName,
-            setScores: newSetScores
-          });
-          
-          saveMatchScores(
-            matchCode,
-            newSetScores.home,
-            newSetScores.away,
-            false,
-            fixtureTime,
-            startTime,
-            homeTeamName,
-            awayTeamName
-          );
-        } catch (error) {
-          console.error('Error saving match scores:', error);
-        }
-      }
+      // Break just ended - capture current scores and save
+      const newSetScores = {
+        home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
+        away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
+      };
       
+      setSetScores(newSetScores);
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 });
       handleSwitchTeams();
       
-      if (!isMatchComplete) {
-        toast({
-          title: "Break Time Over",
-          description: "Starting next set",
+      try {
+        const fixtureTime = genericMatch.DateTime;
+        console.log('StandaloneScoreboard saving set scores after break with fixture time:', {
+          matchCode,
+          fixtureTime,
+          startTime,
+          homeTeam: homeTeamName,
+          awayTeam: awayTeamName,
+          setScores: newSetScores
         });
+        
+        saveMatchScores(
+          matchCode,
+          newSetScores.home,
+          newSetScores.away,
+          false,
+          fixtureTime,
+          startTime,
+          homeTeamName,
+          awayTeamName
+        );
+      } catch (error) {
+        console.error('Error saving match scores:', error);
       }
-    } else {
-      // Set just ended - store pending score but don't display yet
-      if (currentScore.home === 0 && currentScore.away === 0) {
-        return;
-      }
-
-      const currentHomeScore = isTeamsSwitched ? currentScore.away : currentScore.home;
-      const currentAwayScore = isTeamsSwitched ? currentScore.home : currentScore.away;
       
-      setPendingSetScore({ home: currentHomeScore, away: currentAwayScore });
-      setIsBreak(true);
-      
-      const futureSetCount = setScores.home.length + 1;
-      if (futureSetCount >= 3) {
+      if (newSetScores.home.length >= 3) {
         setIsMatchComplete(true);
         toast({
           title: "Match Complete",
@@ -125,10 +101,21 @@ const StandaloneScoreboard = () => {
         });
       } else {
         toast({
-          title: "Set Complete",
-          description: "Starting 1 minute break",
+          title: "Break Time Over",
+          description: "Starting next set",
         });
       }
+    } else {
+      // Set just ended - start break without saving yet
+      if (currentScore.home === 0 && currentScore.away === 0) {
+        return;
+      }
+
+      setIsBreak(true);
+      toast({
+        title: "Set Complete",
+        description: "Starting 1 minute break",
+      });
     }
   };
 
