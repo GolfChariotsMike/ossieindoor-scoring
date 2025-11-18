@@ -21,6 +21,7 @@ const StandaloneScoreboard = () => {
   const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
   const [isMatchComplete, setIsMatchComplete] = useState(false);
+  const [pendingSetScore, setPendingSetScore] = useState<{ home: number; away: number } | null>(null);
 
   // These values are now stable since startTime doesn't change
   const courtNumber = 0;
@@ -57,30 +58,40 @@ const StandaloneScoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
-      // Break just ended - save scores now
-      try {
-        const fixtureTime = genericMatch.DateTime;
-        console.log('StandaloneScoreboard saving set scores after break with fixture time:', {
-          matchCode,
-          fixtureTime,
-          startTime,
-          homeTeam: homeTeamName,
-          awayTeam: awayTeamName,
-          setScores
-        });
+      // Break just ended - now add scores to display and save
+      if (pendingSetScore) {
+        const newSetScores = {
+          home: [...setScores.home, pendingSetScore.home],
+          away: [...setScores.away, pendingSetScore.away],
+        };
         
-        saveMatchScores(
-          matchCode,
-          setScores.home,
-          setScores.away,
-          false,
-          fixtureTime,
-          startTime,
-          homeTeamName,
-          awayTeamName
-        );
-      } catch (error) {
-        console.error('Error saving match scores:', error);
+        setSetScores(newSetScores);
+        setPendingSetScore(null);
+        
+        try {
+          const fixtureTime = genericMatch.DateTime;
+          console.log('StandaloneScoreboard saving set scores after break with fixture time:', {
+            matchCode,
+            fixtureTime,
+            startTime,
+            homeTeam: homeTeamName,
+            awayTeam: awayTeamName,
+            setScores: newSetScores
+          });
+          
+          saveMatchScores(
+            matchCode,
+            newSetScores.home,
+            newSetScores.away,
+            false,
+            fixtureTime,
+            startTime,
+            homeTeamName,
+            awayTeamName
+          );
+        } catch (error) {
+          console.error('Error saving match scores:', error);
+        }
       }
       
       setIsBreak(false);
@@ -94,7 +105,7 @@ const StandaloneScoreboard = () => {
         });
       }
     } else {
-      // Set just ended - only update state, don't save yet
+      // Set just ended - store pending score but don't display yet
       if (currentScore.home === 0 && currentScore.away === 0) {
         return;
       }
@@ -102,15 +113,11 @@ const StandaloneScoreboard = () => {
       const currentHomeScore = isTeamsSwitched ? currentScore.away : currentScore.home;
       const currentAwayScore = isTeamsSwitched ? currentScore.home : currentScore.away;
       
-      const newSetScores = {
-        home: [...setScores.home, currentHomeScore],
-        away: [...setScores.away, currentAwayScore],
-      };
-      
-      setSetScores(newSetScores);
+      setPendingSetScore({ home: currentHomeScore, away: currentAwayScore });
       setIsBreak(true);
       
-      if (newSetScores.home.length >= 3) {
+      const futureSetCount = setScores.home.length + 1;
+      if (futureSetCount >= 3) {
         setIsMatchComplete(true);
         toast({
           title: "Match Complete",
