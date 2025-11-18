@@ -57,6 +57,32 @@ const StandaloneScoreboard = () => {
 
   const handleTimerComplete = () => {
     if (isBreak) {
+      // Break just ended - save scores now
+      try {
+        const fixtureTime = genericMatch.DateTime;
+        console.log('StandaloneScoreboard saving set scores after break with fixture time:', {
+          matchCode,
+          fixtureTime,
+          startTime,
+          homeTeam: homeTeamName,
+          awayTeam: awayTeamName,
+          setScores
+        });
+        
+        saveMatchScores(
+          matchCode,
+          setScores.home,
+          setScores.away,
+          false,
+          fixtureTime,
+          startTime,
+          homeTeamName,
+          awayTeamName
+        );
+      } catch (error) {
+        console.error('Error saving match scores:', error);
+      }
+      
       setIsBreak(false);
       setCurrentScore({ home: 0, away: 0 });
       handleSwitchTeams();
@@ -68,7 +94,7 @@ const StandaloneScoreboard = () => {
         });
       }
     } else {
-      // Only proceed if there are actual scores
+      // Set just ended - only update state, don't save yet
       if (currentScore.home === 0 && currentScore.away === 0) {
         return;
       }
@@ -83,33 +109,6 @@ const StandaloneScoreboard = () => {
       
       setSetScores(newSetScores);
       setIsBreak(true);
-      
-      // Save match scores after each set
-      try {
-        // Use the formatted fixture time from genericMatch
-        const fixtureTime = genericMatch.DateTime;
-        console.log('StandaloneScoreboard saving set scores with fixture time:', {
-          matchCode,
-          fixtureTime,
-          startTime,
-          homeTeam: homeTeamName,
-          awayTeam: awayTeamName
-        });
-        
-        // Pass both the display fixture time and the full ISO date
-        saveMatchScores(
-          matchCode,
-          newSetScores.home,
-          newSetScores.away,
-          false, // Don't immediately submit to Supabase
-          fixtureTime, // Pass formatted fixture time (dd/MM/yyyy HH:mm)
-          startTime,  // Pass full ISO date string
-          homeTeamName,
-          awayTeamName
-        );
-      } catch (error) {
-        console.error('Error saving match scores:', error);
-      }
       
       if (newSetScores.home.length >= 3) {
         setIsMatchComplete(true);
