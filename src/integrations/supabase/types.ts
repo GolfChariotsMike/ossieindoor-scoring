@@ -40,6 +40,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          added_to_shiftzip: boolean | null
           booking_date: string
           booking_type: string | null
           court_number: string | null
@@ -69,6 +70,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          added_to_shiftzip?: boolean | null
           booking_date: string
           booking_type?: string | null
           court_number?: string | null
@@ -98,6 +100,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          added_to_shiftzip?: boolean | null
           booking_date?: string
           booking_type?: string | null
           court_number?: string | null
@@ -142,6 +145,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      businesses: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       cash_flow_entries: {
         Row: {
@@ -392,6 +422,86 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_task_entries: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          date: string
+          id: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_task_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "daily_tasks_template"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_tasks_template: {
+        Row: {
+          created_at: string
+          day_of_week: string | null
+          id: string
+          is_active: boolean
+          link_url: string | null
+          role: string
+          section: string
+          sort_order: number
+          task_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week?: string | null
+          id?: string
+          is_active?: boolean
+          link_url?: string | null
+          role?: string
+          section?: string
+          sort_order?: number
+          task_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: string | null
+          id?: string
+          is_active?: boolean
+          link_url?: string | null
+          role?: string
+          section?: string
+          sort_order?: number
+          task_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       divider_images: {
         Row: {
           created_at: string | null
@@ -636,6 +746,90 @@ export type Database = {
           },
         ]
       }
+      food_register: {
+        Row: {
+          condition: string
+          created_at: string
+          date: string
+          expiry_date: string | null
+          id: string
+          item_description: string
+          notes: string | null
+          quantity: number
+          received_by: string
+          supplier: string
+          temperature_on_arrival: number | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          condition?: string
+          created_at?: string
+          date?: string
+          expiry_date?: string | null
+          id?: string
+          item_description: string
+          notes?: string | null
+          quantity?: number
+          received_by: string
+          supplier: string
+          temperature_on_arrival?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          condition?: string
+          created_at?: string
+          date?: string
+          expiry_date?: string | null
+          id?: string
+          item_description?: string
+          notes?: string | null
+          quantity?: number
+          received_by?: string
+          supplier?: string
+          temperature_on_arrival?: number | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fridge_temperatures: {
+        Row: {
+          checked_by: string
+          created_at: string
+          date: string
+          freezer: number | null
+          fridge_1: number | null
+          fridge_2: number | null
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          checked_by: string
+          created_at?: string
+          date?: string
+          freezer?: number | null
+          fridge_1?: number | null
+          fridge_2?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          checked_by?: string
+          created_at?: string
+          date?: string
+          freezer?: number | null
+          fridge_1?: number | null
+          fridge_2?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       frisat_social_cashflow: {
         Row: {
           cash_end: number
@@ -681,6 +875,247 @@ export type Database = {
           players?: number
           staff_member?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          created_at: string
+          customer_address: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          items: Json
+          notes: string | null
+          status: string
+          subtotal: number
+          tax_amount: number | null
+          tax_rate: number | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          items?: Json
+          notes?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          items?: Json
+          notes?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      junior_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          registration_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method: string
+          registration_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          registration_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "junior_payments_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "junior_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      junior_registrations: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          date_of_birth: string
+          fee_amount: number
+          id: string
+          is_active: boolean
+          notes: string | null
+          paid_weeks: number[] | null
+          parent_email: string | null
+          parent_name: string
+          parent_phone: string
+          payment_status: string
+          registration_date: string
+          session_id: string | null
+          student_name: string
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          created_at?: string
+          date_of_birth: string
+          fee_amount?: number
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          paid_weeks?: number[] | null
+          parent_email?: string | null
+          parent_name: string
+          parent_phone: string
+          payment_status?: string
+          registration_date?: string
+          session_id?: string | null
+          student_name: string
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          date_of_birth?: string
+          fee_amount?: number
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          paid_weeks?: number[] | null
+          parent_email?: string | null
+          parent_name?: string
+          parent_phone?: string
+          payment_status?: string
+          registration_date?: string
+          session_id?: string | null
+          student_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "junior_registrations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "junior_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      junior_sessions: {
+        Row: {
+          cost_per_round: number | null
+          created_at: string
+          end_date: string | null
+          fee_amount: number
+          id: string
+          is_active: boolean
+          name: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          cost_per_round?: number | null
+          created_at?: string
+          end_date?: string | null
+          fee_amount?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cost_per_round?: number | null
+          created_at?: string
+          end_date?: string | null
+          fee_amount?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      kitchen_cleaning: {
+        Row: {
+          cleaned_by: string
+          counters: boolean
+          created_at: string
+          date: string
+          floors: boolean
+          fridges: boolean
+          id: string
+          notes: string | null
+          sanitiser: boolean
+          sinks: boolean
+          updated_at: string
+          walls: boolean
+        }
+        Insert: {
+          cleaned_by: string
+          counters?: boolean
+          created_at?: string
+          date?: string
+          floors?: boolean
+          fridges?: boolean
+          id?: string
+          notes?: string | null
+          sanitiser?: boolean
+          sinks?: boolean
+          updated_at?: string
+          walls?: boolean
+        }
+        Update: {
+          cleaned_by?: string
+          counters?: boolean
+          created_at?: string
+          date?: string
+          floors?: boolean
+          fridges?: boolean
+          id?: string
+          notes?: string | null
+          sanitiser?: boolean
+          sinks?: boolean
+          updated_at?: string
+          walls?: boolean
         }
         Relationships: []
       }
@@ -1104,6 +1539,147 @@ export type Database = {
           id?: string
           six_players?: number
           two_players?: number
+        }
+        Relationships: []
+      }
+      receipts: {
+        Row: {
+          amount: number | null
+          business_name: string
+          category: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          notes: string | null
+          receipt_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          business_name: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          receipt_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          business_name?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          receipt_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scoreboard_match_data: {
+        Row: {
+          away_aces: number | null
+          away_blocks: number | null
+          away_bonus_points: number | null
+          away_result: string | null
+          away_team_name: string
+          away_total_match_points: number | null
+          away_total_points: number | null
+          court_number: number
+          created_at: string | null
+          division: string | null
+          fixture_start_time: string | null
+          has_final_score: boolean | null
+          home_aces: number | null
+          home_blocks: number | null
+          home_bonus_points: number | null
+          home_result: string | null
+          home_team_name: string
+          home_total_match_points: number | null
+          home_total_points: number | null
+          id: string
+          is_active: boolean | null
+          match_date: string | null
+          match_id: string | null
+          points_percentage: number | null
+          set1_away_score: number | null
+          set1_home_score: number | null
+          set2_away_score: number | null
+          set2_home_score: number | null
+          set3_away_score: number | null
+          set3_home_score: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          away_aces?: number | null
+          away_blocks?: number | null
+          away_bonus_points?: number | null
+          away_result?: string | null
+          away_team_name: string
+          away_total_match_points?: number | null
+          away_total_points?: number | null
+          court_number: number
+          created_at?: string | null
+          division?: string | null
+          fixture_start_time?: string | null
+          has_final_score?: boolean | null
+          home_aces?: number | null
+          home_blocks?: number | null
+          home_bonus_points?: number | null
+          home_result?: string | null
+          home_team_name: string
+          home_total_match_points?: number | null
+          home_total_points?: number | null
+          id?: string
+          is_active?: boolean | null
+          match_date?: string | null
+          match_id?: string | null
+          points_percentage?: number | null
+          set1_away_score?: number | null
+          set1_home_score?: number | null
+          set2_away_score?: number | null
+          set2_home_score?: number | null
+          set3_away_score?: number | null
+          set3_home_score?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          away_aces?: number | null
+          away_blocks?: number | null
+          away_bonus_points?: number | null
+          away_result?: string | null
+          away_team_name?: string
+          away_total_match_points?: number | null
+          away_total_points?: number | null
+          court_number?: number
+          created_at?: string | null
+          division?: string | null
+          fixture_start_time?: string | null
+          has_final_score?: boolean | null
+          home_aces?: number | null
+          home_blocks?: number | null
+          home_bonus_points?: number | null
+          home_result?: string | null
+          home_team_name?: string
+          home_total_match_points?: number | null
+          home_total_points?: number | null
+          id?: string
+          is_active?: boolean | null
+          match_date?: string | null
+          match_id?: string | null
+          points_percentage?: number | null
+          set1_away_score?: number | null
+          set1_home_score?: number | null
+          set2_away_score?: number | null
+          set2_home_score?: number | null
+          set3_away_score?: number | null
+          set3_home_score?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1660,6 +2236,36 @@ export type Database = {
         }
         Relationships: []
       }
+      tv_fullscreen_images: {
+        Row: {
+          created_at: string | null
+          display_order: number
+          file_path: string
+          id: string
+          is_active: boolean
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number
+          file_path: string
+          id?: string
+          is_active?: boolean
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number
+          file_path?: string
+          id?: string
+          is_active?: boolean
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tv_notices: {
         Row: {
           background_color: string
@@ -1823,6 +2429,7 @@ export type Database = {
         Args: { entry_id: string }
         Returns: boolean
       }
+      generate_invoice_number: { Args: never; Returns: string }
       get_league_comments: {
         Args: { p_league_id: string }
         Returns: {
