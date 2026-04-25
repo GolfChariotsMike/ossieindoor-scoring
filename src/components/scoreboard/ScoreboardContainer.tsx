@@ -33,6 +33,12 @@ interface CrashState {
   currentScore: Score;
   matchPhase: MatchPhase;
   timestamp: number;
+  aceBlockStats?: {
+    homeAces: number;
+    awayAces: number;
+    homeBlocks: number;
+    awayBlocks: number;
+  };
 }
 
 const CRASH_STATE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
@@ -180,6 +186,9 @@ export const ScoreboardContainer = () => {
     console.log(`Restoring crash state for court ${courtId} (${ageMinutes} min old)`);
     gameState.setCurrentScore(saved.currentScore);
     gameState.setSetScores(saved.setScores);
+    if (saved.aceBlockStats) {
+      gameState.setAceBlockStats(saved.aceBlockStats);
+    }
 
     if (ageMs <= CRASH_AUTO_RESTORE_MS) {
       // Silent auto-restore
@@ -206,11 +215,12 @@ export const ScoreboardContainer = () => {
       fixture,
       setScores: gameState.setScores,
       currentScore: gameState.currentScore,
-      matchPhase: "not_started", // we don't have phase here; this is a best-effort save
+      matchPhase: "not_started",
       timestamp: Date.now(),
+      aceBlockStats: gameState.aceBlockStats,
     };
     saveCrashState(courtId, state);
-  }, [courtId, gameState.currentScore, gameState.setScores, fixture]);
+  }, [courtId, gameState.currentScore, gameState.setScores, gameState.aceBlockStats, fixture]);
 
   // ─── Crash recovery: clear on complete or navigate away ───────────────────
   useEffect(() => {

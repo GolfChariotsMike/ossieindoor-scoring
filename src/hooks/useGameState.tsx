@@ -185,6 +185,7 @@ export const useGameState = () => {
     isMatchComplete,
     isBreak,
     aceBlockStats,
+    setAceBlockStats,
     handleScore,
     handleTimerComplete,
     handleSwitchTeams,
