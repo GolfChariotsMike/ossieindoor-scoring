@@ -53,7 +53,7 @@ const computePhaseFromElapsed = (
   } else if (adjusted < s3End) {
     return { phase: "set3", timeLeft: Math.ceil(s3End - adjusted), phaseStart: s3Start, phaseEnd: s3End };
   } else {
-    return { phase: "final_break", timeLeft: 0, phaseStart: s3End, phaseEnd: s3End };
+    return { phase: "complete", timeLeft: 0, phaseStart: s3End, phaseEnd: s3End };
   }
 };
 
@@ -121,17 +121,22 @@ export const useTimer = ({
 
       const prev = prevPhaseRef.current;
 
+      // Stop ticking once complete
+      if (phase === "complete" && prev === "complete") {
+        return;
+      }
+
       // Phase transition detected
       if (prev !== null && prev !== phase && !isPhaseChangingRef.current) {
         isPhaseChangingRef.current = true;
         console.log(`Wall-clock phase change: ${prev} → ${phase}`);
         setWallPhase(phase);
 
-        if (phase === "final_break" || phase === "complete") {
-          // Match over
+        if (phase !== "complete") {
           onComplete();
         } else {
-          onComplete();
+          // Match over — just mark complete, don't call onComplete again
+          setWallPhase("complete");
         }
 
         setTimeout(() => {
