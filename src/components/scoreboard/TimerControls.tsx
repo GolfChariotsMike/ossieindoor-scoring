@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, ArrowLeftRight } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeftRight } from "lucide-react";
 
 interface TimerControlsProps {
   isMatchComplete: boolean;
@@ -19,13 +18,6 @@ export const TimerControls = ({
   onAceBlock,
   isTeamsSwitched,
 }: TimerControlsProps) => {
-  const [isRunning, setIsRunning] = useState(false);
-
-  const handleStartStop = () => {
-    setIsRunning(!isRunning);
-    onStartStop();
-  };
-
   return (
     <div className="flex justify-between items-center mt-4">
       {/* Left buttons */}
@@ -50,34 +42,16 @@ export const TimerControls = ({
         </Button>
       </div>
 
-      {/* Center buttons */}
-      <div className="flex gap-4">
+      {/* Center — Switch Sides button (larger) */}
+      <div className="flex">
         <Button
           variant="outline"
-          size="lg"
-          onClick={handleStartStop}
-          disabled={isMatchComplete}
-          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-        >
-          {isRunning ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={onReset}
-          disabled={isMatchComplete}
-          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
-        >
-          <RotateCcw className="h-6 w-6" />
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
           onClick={onSwitchTeams}
           disabled={isMatchComplete}
-          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50"
+          className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50 h-16 px-10 text-lg"
         >
-          <ArrowLeftRight className="h-6 w-6" />
+          <ArrowLeftRight className="h-8 w-8 mr-2" />
+          Switch Sides
         </Button>
       </div>
 
