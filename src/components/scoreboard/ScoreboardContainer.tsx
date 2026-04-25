@@ -229,6 +229,18 @@ export const ScoreboardContainer = () => {
     }
   }, [gameState.isMatchComplete, courtId]);
 
+  // ─── Save scores after each break ends (when setScores grows) ─────────────
+  const prevSetCountRef = useRef(0);
+  useEffect(() => {
+    const setCount = gameState.setScores.home.length;
+    if (setCount > 0 && setCount > prevSetCountRef.current && match && !gameState.isMatchComplete) {
+      console.log(`Break ended — saving scores after set ${setCount}`);
+      gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away, fixture)
+        .catch(err => console.error('Error saving mid-match scores:', err));
+    }
+    prevSetCountRef.current = setCount;
+  }, [gameState.setScores.home.length]);
+
   useEffect(() => {
     return () => {
       // Clear when navigating away
