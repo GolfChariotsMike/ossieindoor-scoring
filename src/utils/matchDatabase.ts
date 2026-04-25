@@ -288,7 +288,7 @@ setInterval(() => {
   if (typeof navigator !== 'undefined' && navigator.onLine && !isProcessing) {
     processPendingScores(false).catch(console.error);
   }
-}, 30000);
+}, 5 * 60 * 1000); // Every 5 minutes
 
 window.addEventListener('offline', () => {
   console.log('Network connection lost, scores will be saved locally');
