@@ -187,7 +187,9 @@ export const useGameState = () => {
 
   return {
     currentScore,
+    setCurrentScore,
     setScores,
+    setSetScores,
     isTeamsSwitched,
     hasGameStarted,
     firstSetRecorded,

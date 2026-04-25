@@ -1,6 +1,6 @@
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { MatchPhase } from "./types";
+import { parse } from "date-fns";
 
 interface UseTimerProps {
   initialMinutes: number;
@@ -9,134 +9,145 @@ interface UseTimerProps {
   onSwitchTeams: () => void;
   isBreak: boolean;
   isMatchComplete: boolean;
-  fixture?: { Id: string };
+  fixture?: { Id: string; DateTime?: string };
 }
 
-export const useTimer = ({ 
-  initialMinutes, 
+// Parse the fixture DateTime "dd/MM/yyyy HH:mm" into a JS Date
+const parseFixtureStart = (dateTimeStr: string): Date | null => {
+  try {
+    return parse(dateTimeStr, 'dd/MM/yyyy HH:mm', new Date());
+  } catch (e) {
+    console.error('Failed to parse fixture DateTime:', dateTimeStr, e);
+    return null;
+  }
+};
+
+// Given elapsed seconds since fixture start, return the current phase and seconds remaining in that phase
+const computePhaseFromElapsed = (
+  elapsedSeconds: number,
+  setDurationSeconds: number,
+  breakDurationSeconds: number,
+  timeOffset: number
+): { phase: MatchPhase; timeLeft: number; phaseStart: number; phaseEnd: number } => {
+  const adjusted = elapsedSeconds + timeOffset;
+
+  const s1Start = 0;
+  const s1End = setDurationSeconds;
+  const b1Start = s1End;
+  const b1End = b1Start + breakDurationSeconds;
+  const s2Start = b1End;
+  const s2End = s2Start + setDurationSeconds;
+  const b2Start = s2End;
+  const b2End = b2Start + breakDurationSeconds;
+  const s3Start = b2End;
+  const s3End = s3Start + setDurationSeconds;
+
+  if (adjusted < s1End) {
+    return { phase: "set1", timeLeft: Math.ceil(s1End - adjusted), phaseStart: s1Start, phaseEnd: s1End };
+  } else if (adjusted < b1End) {
+    return { phase: "break1", timeLeft: Math.ceil(b1End - adjusted), phaseStart: b1Start, phaseEnd: b1End };
+  } else if (adjusted < s2End) {
+    return { phase: "set2", timeLeft: Math.ceil(s2End - adjusted), phaseStart: s2Start, phaseEnd: s2End };
+  } else if (adjusted < b2End) {
+    return { phase: "break2", timeLeft: Math.ceil(b2End - adjusted), phaseStart: b2Start, phaseEnd: b2End };
+  } else if (adjusted < s3End) {
+    return { phase: "set3", timeLeft: Math.ceil(s3End - adjusted), phaseStart: s3Start, phaseEnd: s3End };
+  } else {
+    return { phase: "final_break", timeLeft: 0, phaseStart: s3End, phaseEnd: s3End };
+  }
+};
+
+export const useTimer = ({
+  initialMinutes,
   breakDurationSeconds = 60,
-  onComplete, 
+  onComplete,
   onSwitchTeams,
   isBreak,
   isMatchComplete,
-  fixture 
+  fixture
 }: UseTimerProps) => {
-  const [timeLeft, setTimeLeft] = useState(initialMinutes * 60);
-  const [isRunning, setIsRunning] = useState(false);
-  const [matchPhase, setMatchPhase] = useState<MatchPhase>("not_started");
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isPhaseChangingRef = useRef(false);
+  const setDurationSeconds = initialMinutes * 60;
 
-  // Phase progression
-  const progressToNextPhase = () => {
-    if (isPhaseChangingRef.current) {
-      console.log("Phase change already in progress, ignoring redundant call");
+  // timeOffset shifts all future phase boundaries when user skips or resets
+  const timeOffsetRef = useRef<number>(0);
+  const prevPhaseRef = useRef<MatchPhase | null>(null);
+  const isPhaseChangingRef = useRef(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fallback manual timer state (used when no fixture DateTime)
+  const [manualTimeLeft, setManualTimeLeft] = useState(setDurationSeconds);
+  const [manualIsRunning, setManualIsRunning] = useState(false);
+  const [manualPhase, setManualPhase] = useState<MatchPhase>("not_started");
+  const manualIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const manualIsPhaseChangingRef = useRef(false);
+
+  // Wall-clock state
+  const [wallTimeLeft, setWallTimeLeft] = useState(setDurationSeconds);
+  const [wallPhase, setWallPhase] = useState<MatchPhase>("not_started");
+
+  // Determine whether we are in wall-clock mode
+  const hasFixtureDateTime = !!(fixture?.DateTime);
+  const fixtureStart = hasFixtureDateTime ? parseFixtureStart(fixture!.DateTime!) : null;
+  const isWallClock = hasFixtureDateTime && fixtureStart !== null && !isNaN(fixtureStart.getTime());
+
+  // ─── Wall-clock tick ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isWallClock || isMatchComplete) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       return;
     }
 
-    isPhaseChangingRef.current = true;
-    
-    const phases: MatchPhase[] = [
-      "not_started", 
-      "set1", 
-      "break1", 
-      "set2", 
-      "break2", 
-      "set3",
-      "final_break",
-      "complete"
-    ];
-    
-    const currentIndex = phases.indexOf(matchPhase);
-    const nextPhase = phases[currentIndex + 1];
-    
-    if (nextPhase) {
-      console.log(`Moving from ${matchPhase} to ${nextPhase}`);
-      
-      if (nextPhase === 'complete') {
-        setIsRunning(false);
-        onComplete();
-      } else {
-        // Set appropriate time for different phases
-        let phaseTime;
-        if (nextPhase.includes('break')) {
-          phaseTime = breakDurationSeconds; // Use configurable break duration
-          console.log(`Setting break time to ${phaseTime} seconds for phase ${nextPhase}`);
-        } else {
-          phaseTime = initialMinutes * 60; // Regular set time
-          console.log(`Setting set time to ${phaseTime} seconds for phase ${nextPhase}`);
-        }
-        
-        setTimeLeft(phaseTime);
-        setIsRunning(true);
-        
-        // Call onComplete when transitioning to a new set or break
-        // This ensures consistent behavior with the skip function
-        if (nextPhase.startsWith('set') || nextPhase.includes('break')) {
-          if (currentIndex > 0) { // Don't call for the initial transition to set1
-            onComplete();
-          }
-        }
+    const tick = () => {
+      const now = Date.now();
+      const elapsedSeconds = (now - fixtureStart!.getTime()) / 1000;
+
+      // Before the match starts, show full set time with phase "not_started"
+      if (elapsedSeconds < 0) {
+        setWallTimeLeft(setDurationSeconds);
+        setWallPhase("not_started");
+        prevPhaseRef.current = "not_started";
+        return;
       }
-      
-      setMatchPhase(nextPhase);
-    }
 
-    // Reset the flag after a short delay to prevent multiple rapid transitions
-    setTimeout(() => {
-      isPhaseChangingRef.current = false;
-    }, 100);
-  };
+      const { phase, timeLeft } = computePhaseFromElapsed(
+        elapsedSeconds,
+        setDurationSeconds,
+        breakDurationSeconds,
+        timeOffsetRef.current
+      );
 
-  // Handle fixture initialization (only run once when fixture first becomes available)
-  useEffect(() => {
-    if (fixture?.Id && matchPhase === "not_started") {
-      console.log('Initializing timer for fixture:', fixture.Id);
-      setMatchPhase("set1");
-      setTimeLeft(initialMinutes * 60);
-      setIsRunning(true);
-    }
-  }, [fixture?.Id, initialMinutes, matchPhase]);
+      const prev = prevPhaseRef.current;
 
-  // Timer logic
-  useEffect(() => {
-    // Clear any existing interval first
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+      // Phase transition detected
+      if (prev !== null && prev !== phase && !isPhaseChangingRef.current) {
+        isPhaseChangingRef.current = true;
+        console.log(`Wall-clock phase change: ${prev} → ${phase}`);
+        setWallPhase(phase);
 
-    if (isRunning && timeLeft > 0 && !isMatchComplete) {
-      console.log(`Timer running with ${timeLeft} seconds left in phase ${matchPhase}`);
-      
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(prevTime => {
-          // If time is up, clear interval and progress to next phase
-          if (prevTime <= 1) {
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current);
-              intervalRef.current = null;
-            }
-            
-            console.log(`Timer reached zero for phase ${matchPhase}`);
-            
-            // Set timeout to ensure this happens after state update but in the right order
-            setTimeout(() => {
-              if (!isPhaseChangingRef.current) {
-                progressToNextPhase();
-              }
-            }, 0);
-            
-            return 0;
-          }
-          return prevTime - 1;
-        });
-      }, 1000);
-    } else if (isRunning && timeLeft === 0 && !isMatchComplete && !isPhaseChangingRef.current) {
-      // Fix for timer getting stuck at 00:00 - force progression if timer is running but at zero
-      console.log(`Timer is at zero but still running in phase ${matchPhase}, forcing progression`);
-      progressToNextPhase();
-    }
+        if (phase === "final_break" || phase === "complete") {
+          // Match over
+          onComplete();
+        } else {
+          onComplete();
+        }
+
+        setTimeout(() => {
+          isPhaseChangingRef.current = false;
+        }, 100);
+      } else if (prev === null) {
+        // First tick — set phase without calling onComplete
+        setWallPhase(phase);
+      }
+
+      prevPhaseRef.current = phase;
+      setWallTimeLeft(Math.max(0, timeLeft));
+    };
+
+    tick(); // run immediately
+    intervalRef.current = setInterval(tick, 500);
 
     return () => {
       if (intervalRef.current) {
@@ -144,37 +155,171 @@ export const useTimer = ({
         intervalRef.current = null;
       }
     };
-  }, [isRunning, timeLeft, isMatchComplete, matchPhase]);
+  }, [isWallClock, isMatchComplete, fixtureStart, setDurationSeconds, breakDurationSeconds]);
+
+  // ─── Manual timer (fallback) ───────────────────────────────────────────────
+  const manualProgressToNextPhase = useCallback(() => {
+    if (manualIsPhaseChangingRef.current) return;
+    manualIsPhaseChangingRef.current = true;
+
+    setManualPhase(prev => {
+      const phases: MatchPhase[] = [
+        "not_started",
+        "set1",
+        "break1",
+        "set2",
+        "break2",
+        "set3",
+        "final_break",
+        "complete"
+      ];
+      const currentIndex = phases.indexOf(prev);
+      const nextPhase = phases[currentIndex + 1];
+
+      if (!nextPhase) {
+        manualIsPhaseChangingRef.current = false;
+        return prev;
+      }
+
+      console.log(`Manual phase: ${prev} → ${nextPhase}`);
+
+      if (nextPhase === 'complete') {
+        setManualIsRunning(false);
+        onComplete();
+      } else {
+        const phaseTime = nextPhase.includes('break') ? breakDurationSeconds : setDurationSeconds;
+        setManualTimeLeft(phaseTime);
+        setManualIsRunning(true);
+        if (currentIndex > 0) {
+          onComplete();
+        }
+      }
+
+      setTimeout(() => {
+        manualIsPhaseChangingRef.current = false;
+      }, 100);
+
+      return nextPhase;
+    });
+  }, [breakDurationSeconds, setDurationSeconds, onComplete]);
+
+  // Manual interval
+  useEffect(() => {
+    if (isWallClock) return;
+
+    if (manualIntervalRef.current) {
+      clearInterval(manualIntervalRef.current);
+      manualIntervalRef.current = null;
+    }
+
+    if (manualIsRunning && manualTimeLeft > 0 && !isMatchComplete) {
+      manualIntervalRef.current = setInterval(() => {
+        setManualTimeLeft(prev => {
+          if (prev <= 1) {
+            if (manualIntervalRef.current) {
+              clearInterval(manualIntervalRef.current);
+              manualIntervalRef.current = null;
+            }
+            setTimeout(() => {
+              if (!manualIsPhaseChangingRef.current) {
+                manualProgressToNextPhase();
+              }
+            }, 0);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (manualIsRunning && manualTimeLeft === 0 && !isMatchComplete && !manualIsPhaseChangingRef.current) {
+      manualProgressToNextPhase();
+    }
+
+    return () => {
+      if (manualIntervalRef.current) {
+        clearInterval(manualIntervalRef.current);
+        manualIntervalRef.current = null;
+      }
+    };
+  }, [isWallClock, manualIsRunning, manualTimeLeft, isMatchComplete, manualProgressToNextPhase]);
+
+  // ─── Public handlers ───────────────────────────────────────────────────────
 
   const handleStartStop = () => {
-    if (matchPhase === "not_started") {
-      setMatchPhase("set1");
-      setIsRunning(true);
+    if (isWallClock) return; // wall-clock: no manual start/stop
+    if (manualPhase === "not_started") {
+      setManualPhase("set1");
+      setManualIsRunning(true);
     } else if (!isMatchComplete) {
-      setIsRunning(!isRunning);
+      setManualIsRunning(r => !r);
     }
   };
 
   const handleReset = () => {
-    if (!isMatchComplete) {
-      setTimeLeft(initialMinutes * 60);
-      setIsRunning(false);
+    if (isWallClock) {
+      // Shift offset so current phase restarts from now
+      if (fixtureStart) {
+        const now = Date.now();
+        const elapsedSeconds = (now - fixtureStart.getTime()) / 1000;
+        const { phaseStart } = computePhaseFromElapsed(
+          elapsedSeconds,
+          setDurationSeconds,
+          breakDurationSeconds,
+          timeOffsetRef.current
+        );
+        // We want: adjusted = elapsedSeconds + newOffset to equal phaseStart
+        // So: newOffset = phaseStart - elapsedSeconds
+        timeOffsetRef.current = phaseStart - elapsedSeconds;
+        isPhaseChangingRef.current = false;
+        console.log('Wall-clock reset: new offset', timeOffsetRef.current);
+      }
+    } else {
+      if (!isMatchComplete) {
+        setManualTimeLeft(setDurationSeconds);
+        setManualIsRunning(false);
+      }
     }
   };
 
   const handleSkipPhase = () => {
-    // Immediately clear any running interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    
-    setTimeLeft(0);
-    // Ensure we're not already in a phase transition
-    if (!isPhaseChangingRef.current) {
-      progressToNextPhase();
+    if (isWallClock) {
+      if (fixtureStart) {
+        const now = Date.now();
+        const elapsedSeconds = (now - fixtureStart.getTime()) / 1000;
+        const { phaseEnd } = computePhaseFromElapsed(
+          elapsedSeconds,
+          setDurationSeconds,
+          breakDurationSeconds,
+          timeOffsetRef.current
+        );
+        // Jump to end of current phase: adjusted = phaseEnd => newOffset = phaseEnd - elapsedSeconds
+        timeOffsetRef.current = phaseEnd - elapsedSeconds;
+        isPhaseChangingRef.current = false;
+        console.log('Wall-clock skip: jumping to offset', timeOffsetRef.current);
+      }
+    } else {
+      if (manualIntervalRef.current) {
+        clearInterval(manualIntervalRef.current);
+        manualIntervalRef.current = null;
+      }
+      setManualTimeLeft(0);
+      if (!manualIsPhaseChangingRef.current) {
+        manualProgressToNextPhase();
+      }
     }
   };
+
+  const progressToNextPhase = () => {
+    if (isWallClock) {
+      handleSkipPhase();
+    } else {
+      manualProgressToNextPhase();
+    }
+  };
+
+  // ─── Expose unified state ──────────────────────────────────────────────────
+  const timeLeft = isWallClock ? wallTimeLeft : manualTimeLeft;
+  const isRunning = isWallClock ? (wallPhase !== "not_started" && wallPhase !== "complete" && wallPhase !== "final_break") : manualIsRunning;
+  const matchPhase = isWallClock ? wallPhase : manualPhase;
 
   return {
     timeLeft,

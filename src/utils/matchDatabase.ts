@@ -279,8 +279,16 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
 };
 
 window.addEventListener('online', () => {
-  console.log('Network connection restored');
+  console.log('Network connection restored, flushing pending scores...');
+  processPendingScores(false).catch(console.error);
 });
+
+// Background sync: retry pending scores every 30 seconds when online
+setInterval(() => {
+  if (typeof navigator !== 'undefined' && navigator.onLine && !isProcessing) {
+    processPendingScores(false).catch(console.error);
+  }
+}, 30000);
 
 window.addEventListener('offline', () => {
   console.log('Network connection lost, scores will be saved locally');
@@ -396,6 +404,9 @@ export const saveMatchScores = async (
     
     await savePendingScore(pendingScore);
     console.log('Pending score saved to IndexedDB successfully');
+
+    // Fire-and-forget background sync after every save
+    processPendingScores(false).catch(console.error);
 
     if (!submitToSupabase) {
       console.log('Scores saved locally only - will be uploaded at end of night');
