@@ -104,9 +104,9 @@ export const useTimer = ({
       const now = Date.now();
       const elapsedSeconds = (now - fixtureStart!.getTime()) / 1000;
 
-      // Before the match starts, show full set time with phase "not_started"
+      // Before the match starts, count down to kickoff
       if (elapsedSeconds < 0) {
-        setWallTimeLeft(setDurationSeconds);
+        setWallTimeLeft(Math.ceil(-elapsedSeconds)); // seconds until game starts
         setWallPhase("not_started");
         prevPhaseRef.current = "not_started";
         return;

@@ -47,6 +47,7 @@ export const Timer = ({
 
   const {
     timeLeft,
+    matchPhase,
     handleStartStop,
     handleReset,
     handleSkipPhase,
@@ -153,8 +154,9 @@ export const Timer = ({
       <TimerDisplay 
         minutes={minutes}
         seconds={seconds}
-        isBreak={isBreak}
+        isBreak={isBreak || matchPhase === "not_started"}
         isMatchComplete={isMatchComplete}
+        label={matchPhase === "not_started" ? "Game starts in" : undefined}
       />
       
       <TimerControls 
