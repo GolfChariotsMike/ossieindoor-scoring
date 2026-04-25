@@ -127,6 +127,10 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
               set3_home_score: score.homeScores[2] || 0,
               set3_away_score: score.awayScores[2] || 0,
               has_final_score: true,
+              home_aces: score.homeAces || 0,
+              away_aces: score.awayAces || 0,
+              home_blocks: score.homeBlocks || 0,
+              away_blocks: score.awayBlocks || 0,
               ...(fixtureStartTime ? { fixture_start_time: fixtureStartTime } : {})
             })
             .eq('id', existingData.id);
@@ -245,7 +249,11 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
                                       (score.awayScores.reduce((acc, s, index) => acc + (s > score.homeScores[index] ? 1 : 0), 0) * 2),
               match_date: fixtureStartTime || new Date().toISOString(),
               fixture_start_time: fixtureStartTime || null,
-              has_final_score: true
+              has_final_score: true,
+              home_aces: score.homeAces || 0,
+              away_aces: score.awayAces || 0,
+              home_blocks: score.homeBlocks || 0,
+              away_blocks: score.awayBlocks || 0,
             });
 
           if (upsertError) {
