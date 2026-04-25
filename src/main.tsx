@@ -6,7 +6,11 @@ import App from './App.tsx';
 import './index.css';
 import { supabase } from './integrations/supabase/client';
 import { cleanOldMatches } from './services/indexedDB';
-import { isOffline } from './utils/offlineMode';
+import { isOffline, disableForcedOfflineMode } from './utils/offlineMode';
+
+// Always clear any stale forced-offline mode on startup — it should never persist across sessions
+disableForcedOfflineMode();
+console.log('Forced offline mode cleared on startup');
 
 // Create a query client with default options for online/offline behavior
 const queryClient = new QueryClient({
