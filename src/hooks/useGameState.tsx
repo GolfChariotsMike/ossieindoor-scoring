@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Score, Match, Fixture } from '@/types/volleyball';
 import { useScoring } from './useScoring';
 import { saveMatchScores } from '@/utils/matchDatabase';
@@ -8,6 +8,8 @@ import { isOffline } from '@/utils/offlineMode';
 export const useGameState = () => {
   const [isBreak, setIsBreak] = useState(false);
   const [hasInitializedPhases, setHasInitializedPhases] = useState(false);
+  // Holds the final set scores at the moment match completes (avoids stale state race)
+  const finalScoresRef = useRef<{ home: number[]; away: number[] } | null>(null);
   const [aceBlockStats, setAceBlockStats] = useState({
     homeAces: 0,
     awayAces: 0,
@@ -70,8 +72,9 @@ export const useGameState = () => {
       handleSwitchTeams();
       
       if (newSetScores.home.length >= 3) {
+        finalScoresRef.current = { home: newSetScores.home, away: newSetScores.away };
         setIsMatchComplete(true);
-        console.log('Match complete after break, all sets finished');
+        console.log('Match complete after break, all sets finished', newSetScores);
       } else {
         console.log('Break over, new set starting');
       }
@@ -186,6 +189,7 @@ export const useGameState = () => {
     isBreak,
     aceBlockStats,
     setAceBlockStats,
+    finalScoresRef,
     handleScore,
     handleTimerComplete,
     handleSwitchTeams,

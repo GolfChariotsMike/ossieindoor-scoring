@@ -101,7 +101,9 @@ export const useMatchTransition = ({
           } : 'No fixture data'
         });
         
-        gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away, fixture)
+        const scores = gameState.finalScoresRef.current ?? { home: gameState.setScores.home, away: gameState.setScores.away };
+        console.log('Saving final scores:', scores);
+        gameState.saveScoresLocally(match.id, scores.home, scores.away, fixture)
           .catch(error => {
             console.error('Error saving match scores locally:', error);
             toast({
