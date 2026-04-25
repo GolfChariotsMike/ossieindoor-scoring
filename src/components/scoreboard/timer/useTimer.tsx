@@ -132,12 +132,8 @@ export const useTimer = ({
         console.log(`Wall-clock phase change: ${prev} → ${phase}`);
         setWallPhase(phase);
 
-        if (phase !== "complete") {
-          onComplete();
-        } else {
-          // Match over — just mark complete, don't call onComplete again
-          setWallPhase("complete");
-        }
+        // Always call onComplete on transition (including to complete) — drives results screen
+        onComplete();
 
         setTimeout(() => {
           isPhaseChangingRef.current = false;
