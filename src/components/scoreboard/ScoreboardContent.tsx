@@ -6,10 +6,12 @@ import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
 import { GameScores } from "./GameScores";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ResultsScreen } from "./ResultsScreen";
+import { AceBlockFlash } from "./AceBlockFlash";
 import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTimerSettings } from "@/hooks/useTimerSettings";
+import { useState, useCallback } from "react";
 
 interface ScoreboardContentProps {
   match: Match | undefined;
@@ -42,6 +44,13 @@ export const ScoreboardContent = ({
 }: ScoreboardContentProps) => {
   const navigate = useNavigate();
   const { settings, isLoading: isLoadingSettings } = useTimerSettings();
+  const [flashTrigger, setFlashTrigger] = useState<{ type: "ace" | "block"; team: "home" | "away"; id: number } | null>(null);
+  const flashCounter = useState(0);
+
+  const handleAceBlockWithFlash = useCallback((team: "home" | "away", type: "ace" | "block") => {
+    gameState.handleAceBlock(team, type);
+    setFlashTrigger({ type, team, id: Date.now() });
+  }, [gameState]);
 
   if (isLoading || isLoadingSettings || !match) {
     return <LoadingSpinner />;
@@ -92,7 +101,7 @@ export const ScoreboardContent = ({
                 isBreak={gameState.isBreak}
                 isMatchComplete={gameState.isMatchComplete}
                 fixture={fixture}
-                onAceBlock={gameState.handleAceBlock}
+                onAceBlock={handleAceBlockWithFlash}
                 isTeamsSwitched={gameState.isTeamsSwitched}
               />
 
@@ -113,6 +122,7 @@ export const ScoreboardContent = ({
           onConfirm={onConfirmExit}
         />
       </div>
+      <AceBlockFlash trigger={flashTrigger} />
     </div>
   );
 };
