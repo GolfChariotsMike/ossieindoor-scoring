@@ -41,6 +41,8 @@ const computePhaseFromElapsed = (
   const b2End = b2Start + breakDurationSeconds;
   const s3Start = b2End;
   const s3End = s3Start + setDurationSeconds;
+  const b3Start = s3End;
+  const b3End = b3Start + breakDurationSeconds;
 
   if (adjusted < s1End) {
     return { phase: "set1", timeLeft: Math.ceil(s1End - adjusted), phaseStart: s1Start, phaseEnd: s1End };
@@ -52,8 +54,10 @@ const computePhaseFromElapsed = (
     return { phase: "break2", timeLeft: Math.ceil(b2End - adjusted), phaseStart: b2Start, phaseEnd: b2End };
   } else if (adjusted < s3End) {
     return { phase: "set3", timeLeft: Math.ceil(s3End - adjusted), phaseStart: s3Start, phaseEnd: s3End };
+  } else if (adjusted < b3End) {
+    return { phase: "final_break", timeLeft: Math.ceil(b3End - adjusted), phaseStart: b3Start, phaseEnd: b3End };
   } else {
-    return { phase: "complete", timeLeft: 0, phaseStart: s3End, phaseEnd: s3End };
+    return { phase: "complete", timeLeft: 0, phaseStart: b3End, phaseEnd: b3End };
   }
 };
 

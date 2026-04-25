@@ -81,21 +81,9 @@ export const useGameState = () => {
         return;
       }
 
-      // If 2 sets already recorded, this is the end of Set 3 — end the match
-      if (setScores.home.length >= 2) {
-        const finalSetScores = {
-          home: [...setScores.home, isTeamsSwitched ? currentScore.away : currentScore.home],
-          away: [...setScores.away, isTeamsSwitched ? currentScore.home : currentScore.away],
-        };
-        setSetScores(finalSetScores);
-        setCurrentScore({ home: 0, away: 0 });
-        setIsMatchComplete(true);
-        console.log('Set 3 complete — match over');
-      } else {
-        // Set is complete, start a break
-        setIsBreak(true);
-        console.log('Set complete, starting break.');
-      }
+      // Set is complete — always start a break (including after Set 3 for umpire recording time)
+      setIsBreak(true);
+      console.log('Set complete, starting break.');
     }
   }, [
     isBreak, 
