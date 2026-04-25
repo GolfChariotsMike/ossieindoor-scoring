@@ -50,8 +50,10 @@ export const TimerControls = ({
           disabled={isMatchComplete}
           className="bg-volleyball-black text-[#FFFFFF] hover:bg-volleyball-black/90 border-[#FFFFFF] disabled:opacity-50 h-16 px-10 text-lg"
         >
-          <ArrowLeftRight className="h-8 w-8 mr-2" />
-          Switch Sides
+          <span className="transform rotate-180 flex items-center gap-2">
+            <ArrowLeftRight className="h-8 w-8" />
+            Switch Sides
+          </span>
         </Button>
       </div>
 
