@@ -4,7 +4,7 @@ import { MatchResultsTable } from "./MatchResultsTable";
 import { TimerSettings } from "./TimerSettings";
 import { AceBlockLeaderboard } from "./AceBlockLeaderboard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Database } from "lucide-react";
+import { ArrowLeft, Database, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { getPendingScores } from "@/services/indexedDB";
@@ -14,6 +14,25 @@ export const AdminDashboard = () => {
   const navigate = useNavigate();
   const [showPendingScores, setShowPendingScores] = useState(false);
   const [courtId, setCourtId] = useState<string>("1"); // Default court ID
+
+  const handleClearLocalData = async () => {
+    if (!confirm('Clear ALL local data? This will wipe scores, pending uploads, and cached match data from this device. Cannot be undone.')) return;
+    
+    // Clear IndexedDB
+    await new Promise<void>((resolve) => {
+      const req = indexedDB.deleteDatabase('volleyball_scores');
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+      req.onblocked = () => resolve();
+    });
+    
+    // Clear localStorage (court state)
+    const keysToRemove = Object.keys(localStorage).filter(k => k.startsWith('ossie_court_'));
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    
+    alert(`Local data cleared (${keysToRemove.length} court states + IndexedDB). Reloading...`);
+    window.location.reload();
+  };
 
   const handleCheckPendingScores = async () => {
     const pendingScores = await getPendingScores();
@@ -45,14 +64,24 @@ export const AdminDashboard = () => {
           Back to Courts
         </Button>
         
-        <Button 
-          variant="outline" 
-          onClick={handleCheckPendingScores}
-          className="flex items-center gap-2"
-        >
-          <Database className="h-4 w-4" />
-          Check Pending Scores
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleCheckPendingScores}
+            className="flex items-center gap-2"
+          >
+            <Database className="h-4 w-4" />
+            Check Pending Scores
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={handleClearLocalData}
+            className="flex items-center gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Clear Local Data
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="results" className="space-y-4">
