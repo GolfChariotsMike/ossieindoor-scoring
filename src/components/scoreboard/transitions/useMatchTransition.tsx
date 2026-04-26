@@ -106,17 +106,9 @@ export const useMatchTransition = ({
         gameState.saveScoresLocally(match.id, scores.home, scores.away, fixture)
           .catch(error => {
             console.error('Error saving match scores locally:', error);
-            toast({
-              title: "Local Storage Error",
-              description: "Failed to save scores locally. Please take a screenshot of the scores.",
-              variant: "destructive",
-            });
           })
           .finally(() => {
-            console.log('Starting results display timer');
-            setResultsDisplayStartTime(Date.now());
-            
-            // Start searching for the next match immediately while showing results
+            // Skip results display — go straight to next match
             if (!isSearchingNextMatch.current) {
               preloadNextMatch();
             }
@@ -181,121 +173,11 @@ export const useMatchTransition = ({
 
   const prepareForNextMatch = (nextMatch: Fixture) => {
     if (!nextMatch) return;
-    
-    // Show a loading toast to indicate the next match is being prepared
-    toast({
-      title: "Next Match Ready",
-      description: `${nextMatch.HomeTeam} vs ${nextMatch.AwayTeam} will start after the results timer`,
-      duration: 5000,
-    });
-    
-    // If less than 15 seconds left on the timer, start transition now
-    const timeElapsed = Date.now() - (resultsDisplayStartTime || Date.now());
-    const timeLeft = resultsDuration * 60 * 1000 - timeElapsed;
-    
-    if (timeLeft < 15000 && timeLeft > 0) {
-      console.log(`Less than 15 seconds left (${Math.round(timeLeft/1000)}s), starting transition soon`);
-      
-      // Clear existing timeout and set a shorter one
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-      }
-      
-      // Allow 5 more seconds to view results
-      transitionTimeoutRef.current = setTimeout(() => {
-        console.log('Starting next match early due to ready state');
-        handleStartNextMatch(nextMatch);
-      }, 5000);
-    }
+    // Go straight to next match — no results display delay
+    handleStartNextMatch(nextMatch);
   };
 
-  useEffect(() => {
-    if (resultsDisplayStartTime && !hasSetupTransitionTimer.current) {
-      if (transitionTimeoutRef.current) {
-        console.log('Cleaning up transition timeout');
-        clearTimeout(transitionTimeoutRef.current);
-      }
-
-      console.log(`Setting up transition timeout for ${resultsDuration} minutes at`, new Date().toISOString());
-      hasSetupTransitionTimer.current = true;
-      
-      transitionTimeoutRef.current = setTimeout(async () => {
-        console.log('Transition timeout triggered at', new Date().toISOString());
-        
-        try {
-          if (preloadedNextMatch) {
-            console.log('Using preloaded next match:', preloadedNextMatch.Id);
-            handleStartNextMatch(preloadedNextMatch);
-          } else {
-            console.log('No preloaded match, searching for next match now');
-            
-            if ((nextMatches.length === 0 || nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`).length <= 1) 
-                && !hasTriedRefetchingMatches.current) {
-              
-              console.log('Limited or no matches found, attempting to refetch matches data');
-              hasTriedRefetchingMatches.current = true;
-              
-              const refetchResult = await refetchMatches();
-              console.log('Refetched matches result:', {
-                success: refetchResult.isSuccess,
-                matchCount: refetchResult.data?.length || 0
-              });
-              
-              const nextMatch = await findNextMatch(refetchResult.data || []);
-              
-              if (nextMatch) {
-                console.log('Found next match after refetching:', nextMatch.Id);
-                handleStartNextMatch(nextMatch);
-              } else {
-                console.log('No next match found after refetching, auto-saving and returning to court selection');
-                handleEndOfNight();
-              }
-              
-              return;
-            }
-            
-            const nextMatch = await findNextMatch(nextMatches);
-            
-            if (nextMatch) {
-              console.log('Found next match, transitioning to:', nextMatch.Id);
-              handleStartNextMatch(nextMatch);
-            } else {
-              console.log('No next match found, auto-saving and returning to court selection');
-              const courtMatches = nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`);
-              console.log(`Court ${courtId} matches:`, courtMatches.map(m => ({
-                id: m.Id,
-                dateTime: m.DateTime,
-                teams: `${m.HomeTeam} vs ${m.AwayTeam}`
-              })));
-              
-              handleEndOfNight();
-            }
-          }
-        } catch (error) {
-          console.error('Error in match transition:', error);
-          transitionErrorCount.current += 1;
-          
-          if (transitionErrorCount.current >= 2) {
-            console.log('Multiple transition errors, showing end of night summary');
-            setShowEndOfNightSummary(true);
-          } else {
-            toast({
-              title: "Transition Error",
-              description: "There was a problem transitioning to the next match.",
-              variant: "destructive",
-            });
-          }
-        }
-      }, resultsDuration * 60 * 1000);
-
-      return () => {
-        if (transitionTimeoutRef.current) {
-          console.log('Cleaning up transition timeout');
-          clearTimeout(transitionTimeoutRef.current);
-        }
-      };
-    }
-  }, [resultsDisplayStartTime]);
+  // Results display removed — transition happens immediately via prepareForNextMatch
 
   return {
     resultsDisplayStartTime,
