@@ -254,7 +254,7 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
               away_aces: score.awayAces || 0,
               home_blocks: score.homeBlocks || 0,
               away_blocks: score.awayBlocks || 0,
-            }, { onConflict: 'match_id', ignoreDuplicates: false });
+            }, { onConflict: isLocalMatchId ? 'court_number,fixture_start_time' : 'match_id', ignoreDuplicates: false });
 
           if (upsertError) {
             console.error('Error saving match data:', upsertError);
