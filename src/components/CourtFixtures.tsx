@@ -166,13 +166,6 @@ const CourtFixtures = () => {
           </Button>
         </div>
 
-        {isOffline() && (
-          <div className="bg-yellow-600 text-volleyball-cream p-4 mb-6 rounded-lg">
-            <p className="text-xl font-medium">You are in offline mode</p>
-            <p>Fixtures loaded from local cache</p>
-          </div>
-        )}
-
         <div className="space-y-6">
           {courtFixtures.length > 0 ? (
             courtFixtures.map((fixture: Fixture, index: number) => (

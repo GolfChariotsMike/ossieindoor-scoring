@@ -300,11 +300,6 @@ setInterval(() => {
 
 window.addEventListener('offline', () => {
   console.log('Network connection lost, scores will be saved locally');
-  toast({
-    title: "You're offline",
-    description: "Scores will be saved locally and can be uploaded at the end of the night.",
-    variant: "default",
-  });
 });
 
 export const saveMatchScores = async (
@@ -422,11 +417,6 @@ export const saveMatchScores = async (
     }
 
     if (isOffline()) {
-      toast({
-        title: "You're offline",
-        description: "Scores saved locally and will be uploaded when connection is restored.",
-        variant: "default",
-      });
       return;
     }
 
@@ -457,11 +447,6 @@ export const saveMatchScores = async (
       }
     }
     
-    toast({
-      title: "Connection Issues",
-      description: "Scores saved locally and will be uploaded when connection is restored.",
-      variant: "default",
-    });
   }
 };
 
