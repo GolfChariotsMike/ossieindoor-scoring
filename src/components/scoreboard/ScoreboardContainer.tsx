@@ -111,7 +111,7 @@ export const ScoreboardContainer = () => {
       try {
         const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
         console.log('Fetching matches for date:', format(queryDate, 'yyyy-MM-dd'));
-        const result = await fetchMatchData(undefined, queryDate);
+        const result = await fetchMatchData(courtId, queryDate);
         
         console.log(`Found ${Array.isArray(result) ? result.length : 0} matches for date ${format(queryDate, 'yyyy-MM-dd')}`);
         
