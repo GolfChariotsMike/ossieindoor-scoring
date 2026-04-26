@@ -16,8 +16,16 @@ export const AdminDashboard = () => {
   const [courtId, setCourtId] = useState<string>("1"); // Default court ID
 
   const handleClearLocalData = async () => {
-    if (!confirm('Clear ALL local data? This will wipe scores, pending uploads, and cached match data from this device. Cannot be undone.')) return;
+    if (!confirm('Clear ALL score data? This wipes Supabase match results, local cache, and pending uploads. Cannot be undone.')) return;
     
+    // Wipe Supabase via RPC
+    const { error } = await supabase.rpc('truncate_match_data');
+    if (error) {
+      console.error('Error truncating Supabase:', error);
+      alert('Failed to clear Supabase data: ' + error.message);
+      return;
+    }
+
     // Clear IndexedDB
     await new Promise<void>((resolve) => {
       const req = indexedDB.deleteDatabase('volleyball_scores');
@@ -30,7 +38,7 @@ export const AdminDashboard = () => {
     const keysToRemove = Object.keys(localStorage).filter(k => k.startsWith('ossie_court_'));
     keysToRemove.forEach(k => localStorage.removeItem(k));
     
-    alert(`Local data cleared (${keysToRemove.length} court states + IndexedDB). Reloading...`);
+    alert(`All data cleared. Reloading...`);
     window.location.reload();
   };
 
