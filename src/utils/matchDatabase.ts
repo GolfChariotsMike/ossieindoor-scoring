@@ -223,7 +223,7 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
 
           const { error: upsertError } = await supabase
             .from('match_data_v2')
-            .insert({
+            .upsert({
               match_id: isLocalMatchId ? null : score.matchId,
               court_number: courtNumber,
               division: division,
@@ -254,7 +254,7 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
               away_aces: score.awayAces || 0,
               home_blocks: score.homeBlocks || 0,
               away_blocks: score.awayBlocks || 0,
-            });
+            }, { onConflict: 'match_id', ignoreDuplicates: false });
 
           if (upsertError) {
             console.error('Error saving match data:', upsertError);
