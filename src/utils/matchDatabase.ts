@@ -29,8 +29,10 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
 
     let processedCount = 0;
     
-    if (isOffline() && !forceProcess) {
-      console.log('In offline mode, pending scores will be processed later');
+    // Only block if the device genuinely has no network — never block on forced offline mode alone
+    // Forced offline mode is a UI preference; background sync should always attempt if network exists
+    if (!navigator.onLine && !forceProcess) {
+      console.log('No network connection, pending scores will be processed later');
       isProcessing = false;
       return 0;
     }
@@ -51,8 +53,8 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
         console.log('Processing score:', score.id);
         await updatePendingScoreStatus(score.id, 'processing');
         
-        if (isOffline()) {
-          console.log('No network connection or offline mode enabled, will retry later');
+        if (!navigator.onLine) {
+          console.log('No network connection, will retry later');
           await updatePendingScoreStatus(score.id, 'pending');
           continue;
         }
