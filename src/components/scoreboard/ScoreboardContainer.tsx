@@ -110,12 +110,14 @@ export const ScoreboardContainer = () => {
     queryFn: async () => {
       try {
         const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
-        console.log('Fetching matches for date:', format(queryDate, 'yyyy-MM-dd'));
-        const result = await fetchMatchData(courtId, queryDate);
+        console.log('Fetching ALL matches for date (no courtId filter):', format(queryDate, 'yyyy-MM-dd'));
+        // Pass undefined for courtId — we need ALL fixtures to find the next match on this court
+        const result = await fetchMatchData(undefined, queryDate);
         
-        console.log(`Found ${Array.isArray(result) ? result.length : 0} matches for date ${format(queryDate, 'yyyy-MM-dd')}`);
+        const fixtures = Array.isArray(result) ? result : [];
+        console.log(`Found ${fixtures.length} total fixtures for date ${format(queryDate, 'yyyy-MM-dd')}`);
         
-        return (Array.isArray(result) ? result : []).map(item => ({
+        return fixtures.map(item => ({
           ...item,
           Id: item.Id || item.id || `${item.DateTime}-${item.PlayingAreaName}`,
         })) as Fixture[];

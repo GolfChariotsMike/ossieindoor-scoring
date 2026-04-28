@@ -59,7 +59,10 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
           continue;
         }
 
-        const isLocalMatchId = score.matchId.startsWith('local-');
+        // Treat cached/fallback match IDs the same as local — they won't be in matches_v2
+        const isLocalMatchId = score.matchId.startsWith('local-') || 
+                               score.matchId.startsWith('fallback-') ||
+                               score.matchId.startsWith('default-');
         
         let existingData = null;
         let checkError = null;
@@ -203,12 +206,7 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
                 .eq('id', score.matchId)
                 .single();
 
-              if (matchError) {
-                console.error('Error fetching match:', matchError);
-                throw matchError;
-              }
-
-              if (matchData) {
+              if (!matchError && matchData) {
                 homeTeamName = score.homeTeam || matchData.home_team_name;
                 awayTeamName = score.awayTeam || matchData.away_team_name;
                 courtNumber = matchData.court_number;
@@ -217,9 +215,23 @@ const processPendingScores = async (forceProcess = false, matchSummaries?: Match
                   console.log(`Using fixture start time from matches_v2: ${matchData.fixture_start_time}`);
                   fixtureStartTime = matchData.fixture_start_time;
                 }
+              } else {
+                // Match not in matches_v2 (local/cached match) — extract from matchId or use score data
+                console.log('Match not found in matches_v2, using score metadata:', score.matchId);
+                homeTeamName = score.homeTeam || "Home Team";
+                awayTeamName = score.awayTeam || "Away Team";
+                // Try to extract court number from matchId (format: local-court{N}-... or similar)
+                const courtMatch = score.matchId.match(/court[_-]?(\d+)/i) || score.matchId.match(/(\d+)/);
+                courtNumber = courtMatch ? parseInt(courtMatch[1]) : 0;
+                division = "Unknown";
               }
             } catch (error) {
-              console.error('Error fetching match details:', error);
+              // Don't throw — use whatever data we have and continue the save
+              console.error('Error fetching match details, continuing with available data:', error);
+              homeTeamName = score.homeTeam || "Home Team";
+              awayTeamName = score.awayTeam || "Away Team";
+              courtNumber = 0;
+              division = "Unknown";
             }
           }
 
