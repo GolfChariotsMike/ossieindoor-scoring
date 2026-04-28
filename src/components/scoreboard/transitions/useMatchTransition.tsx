@@ -91,7 +91,9 @@ export const useMatchTransition = ({
       console.log('Match complete, preparing for results screen');
       isTransitioningToResults.current = true;
 
-      // Only save scores locally now, not to Supabase
+      // Capture nextMatches at the time of completion (not stale closure value)
+      const matchesAtCompletion = nextMatches;
+
       setTimeout(() => {
         console.log('Saving match with fixture data:', {
           matchId: match.id,
@@ -110,24 +112,25 @@ export const useMatchTransition = ({
           .finally(() => {
             // Skip results display — go straight to next match
             if (!isSearchingNextMatch.current) {
-              preloadNextMatch();
+              preloadNextMatch(matchesAtCompletion);
             }
           });
       }, 100);
     }
   }, [gameState.isMatchComplete, match, gameState.hasGameStarted]);
 
-  const preloadNextMatch = async () => {
+  const preloadNextMatch = async (matchesSnapshot: Fixture[]) => {
     if (isSearchingNextMatch.current) return;
     isSearchingNextMatch.current = true;
     
-    console.log('Preloading next match data during results display');
+    console.log('Preloading next match data during results display, matches available:', matchesSnapshot.length);
     
     try {
-      // If we have no matches or they are few, try to refetch once
-      if ((nextMatches.length === 0 || nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`).length <= 1) 
-          && !hasTriedRefetchingMatches.current) {
-        
+      let matchesToSearch = matchesSnapshot;
+
+      // If we have no/few matches for this court, try to refetch once
+      const courtMatches = matchesToSearch.filter(m => m.PlayingAreaName === `Court ${courtId}`);
+      if ((matchesToSearch.length === 0 || courtMatches.length <= 1) && !hasTriedRefetchingMatches.current) {
         console.log('Limited or no matches found, attempting to refetch matches data');
         hasTriedRefetchingMatches.current = true;
         
@@ -136,36 +139,27 @@ export const useMatchTransition = ({
           success: refetchResult.isSuccess,
           matchCount: refetchResult.data?.length || 0
         });
-        
-        // After refetching, try to find the next match
-        const nextMatch = await findNextMatch(refetchResult.data || []);
-        
-        if (nextMatch) {
-          console.log('Preloaded next match after refetching:', nextMatch.Id);
-          setPreloadedNextMatch(nextMatch);
-          setIsNextMatchReady(true);
-          prepareForNextMatch(nextMatch);
-        } else {
-          console.log('No next match found during preloading');
-          setPreloadedNextMatch(null);
-        }
+        matchesToSearch = refetchResult.data || matchesToSearch;
+      }
+
+      const nextMatch = await findNextMatch(matchesToSearch);
+      
+      if (nextMatch) {
+        console.log('Preloaded next match:', nextMatch.Id);
+        setPreloadedNextMatch(nextMatch);
+        setIsNextMatchReady(true);
+        prepareForNextMatch(nextMatch);
       } else {
-        // Try to find next match with current match data
-        const nextMatch = await findNextMatch(nextMatches);
-        
-        if (nextMatch) {
-          console.log('Preloaded next match:', nextMatch.Id);
-          setPreloadedNextMatch(nextMatch);
-          setIsNextMatchReady(true);
-          prepareForNextMatch(nextMatch);
-        } else {
-          console.log('No next match found during preloading');
-          setPreloadedNextMatch(null);
-        }
+        console.log('No next match found — showing end of night summary');
+        setPreloadedNextMatch(null);
+        // Instead of silently doing nothing, show end of night
+        setShowEndOfNightSummary(true);
       }
     } catch (error) {
       console.error('Error in preloading next match:', error);
       setPreloadedNextMatch(null);
+      // On error, fall back to end of night rather than hanging
+      setShowEndOfNightSummary(true);
     } finally {
       isSearchingNextMatch.current = false;
     }
