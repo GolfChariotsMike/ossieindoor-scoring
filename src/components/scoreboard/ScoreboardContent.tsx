@@ -5,7 +5,7 @@ import { BackButton } from "./BackButton";
 import { ExitConfirmationDialog } from "./ExitConfirmationDialog";
 import { GameScores } from "./GameScores";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { ResultsScreen } from "./ResultsScreen";
+// ResultsScreen removed — transitions directly to next match
 import { AceBlockFlash } from "./AceBlockFlash";
 import { Button } from "@/components/ui/button";
 import { FastForward } from "lucide-react";
@@ -82,15 +82,16 @@ export const ScoreboardContent = ({
 
         <div className="flex flex-col justify-between h-full">
           {gameState.isMatchComplete ? (
-            <ResultsScreen
-              match={match}
-              setScores={gameState.setScores}
-              isTeamsSwitched={gameState.isTeamsSwitched}
-              onStartNextMatch={onManualNextMatch}
-              onEndOfNight={onEndOfNight}
-              nextMatchReady={nextMatchReady}
-              resultsDuration={resultsDuration}
-            />
+            <div className="flex flex-col items-center justify-center h-full gap-6">
+              <div className="text-white text-4xl font-bold animate-pulse">Loading next match...</div>
+              <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" />
+              <button
+                onClick={onManualNextMatch}
+                className="mt-8 px-8 py-4 bg-white text-volleyball-red font-bold text-xl rounded-xl"
+              >
+                Next Match →
+              </button>
+            </div>
           ) : (
             <>
               <Timer
