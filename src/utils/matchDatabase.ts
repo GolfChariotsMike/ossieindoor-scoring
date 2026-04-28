@@ -389,9 +389,9 @@ export const saveMatchScores = async (
       awayScores
     });
 
-    // FIX: Store scores correctly without swapping
+    // FIX: Use matchId as the record key so mid-match saves overwrite each other (one record per match)
     const pendingScore = {
-      id: `${matchId}-${Date.now()}`,
+      id: matchId,
       matchId,
       homeScores: homeScores, // FIXED: No longer swapping home/away scores
       awayScores: awayScores, // FIXED: No longer swapping home/away scores
@@ -422,20 +422,10 @@ export const saveMatchScores = async (
     await savePendingScore(pendingScore);
     console.log('Pending score saved to IndexedDB successfully');
 
-    // Fire-and-forget background sync after every save
-    processPendingScores(false).catch(console.error);
-
-    if (!submitToSupabase) {
-      console.log('Scores saved locally only - will be uploaded at end of night');
-      return;
+    // Always try to submit immediately if online — don't wait for end of night
+    if (navigator.onLine) {
+      processPendingScores(true).catch(console.error);
     }
-
-    if (isOffline()) {
-      return;
-    }
-
-    // Fix: Changed to void return type to match Promise<void>
-    await processPendingScores(true);
     return;
   } catch (error) {
     console.error('Error saving match scores:', error);

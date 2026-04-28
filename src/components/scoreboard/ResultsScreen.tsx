@@ -155,7 +155,7 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
           <div className="relative z-10 flex flex-col items-center justify-center space-y-4">
             <div className="flex items-center justify-center gap-2 mb-2">
               <p className="text-2xl font-score text-black animate-pulse">
-                {scoresSaved ? "Scores saved locally" : "Scores saved locally. Submit all scores at the end of the night."}
+                {scoresSaved ? "Scores saved ✓" : "Scores saved to database ✓"}
               </p>
               {scoresSaved && <CheckCircle className="text-green-600 w-6 h-6" />}
             </div>

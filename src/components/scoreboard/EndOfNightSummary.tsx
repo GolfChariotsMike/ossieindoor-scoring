@@ -104,7 +104,7 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
             disabled={isSaving || !matches || matches.length === 0}
             className="gap-2"
           >
-            {isSaving ? "Saving..." : "Save All Scores"}
+            {isSaving ? "Saving..." : "Re-sync Scores"}
             <Save className="h-4 w-4" />
           </Button>
         </div>

@@ -110,8 +110,7 @@ export const useGameState = () => {
         awayScores,
         aceBlockStats
       });
-      // Always pass false for submitToSupabase parameter - we'll only submit at the end of the night
-      return await saveMatchScores(matchId, homeScores, awayScores, false, undefined, undefined, undefined, undefined, aceBlockStats);
+      return await saveMatchScores(matchId, homeScores, awayScores, true, undefined, undefined, undefined, undefined, aceBlockStats);
     } catch (error) {
       console.error('Error in saveMatchScoresToDatabase:', error);
       throw error;
