@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { getPendingScores } from "@/services/indexedDB";
 import { EndOfNightSummary } from "../scoreboard/EndOfNightSummary";
+import { supabase } from "@/integrations/supabase/client";
 
 export const AdminDashboard = () => {
   const navigate = useNavigate();
