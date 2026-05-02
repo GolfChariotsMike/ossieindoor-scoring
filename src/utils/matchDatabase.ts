@@ -80,7 +80,8 @@ const saveToSupabase = async (
   let division = 'Unknown';
 
   if (isLocalMatchId) {
-    const courtMatch = matchId.match(/court[_-]?(\d+)/i) || matchId.match(/(\d+)/);
+    // Extract court number: prefer explicit "court-1" pattern, fall back to first number segment
+    const courtMatch = matchId.match(/(?:court[_-]?)(\d+)/i) || matchId.match(/[^\d](\d+)/);
     courtNumber = courtMatch ? parseInt(courtMatch[1]) : 0;
     division = 'Local Match';
   } else {
@@ -109,23 +110,31 @@ const saveToSupabase = async (
   );
 
   if (isLocalMatchId) {
-    // Local matches: upsert on court_number + fixture_start_time
+    // Local matches: upsert on session_key (stable per match session, works even without fixture time)
     const { error } = await supabase
       .from('match_data_v2')
       .upsert(
-        { ...payload, match_id: null },
-        { onConflict: 'court_number,fixture_start_time', ignoreDuplicates: false }
+        { ...payload, match_id: null, session_key: matchId },
+        { onConflict: 'session_key', ignoreDuplicates: false }
       );
     if (error) throw error;
   } else {
-    // Spawtz matches: upsert on match_id
-    const { error } = await supabase
-      .from('match_data_v2')
-      .upsert(
-        { ...payload, match_id: matchId },
-        { onConflict: 'match_id', ignoreDuplicates: false }
-      );
-    if (error) throw error;
+    // Spawtz matches: upsert on court_number + fixture_start_time (match_id is UUID, local IDs are strings)
+    if (!fixtureStartTime) {
+      // No fixture time — just insert, don't upsert (can't deduplicate without a key)
+      const { error } = await supabase
+        .from('match_data_v2')
+        .insert({ ...payload, session_key: matchId });
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('match_data_v2')
+        .upsert(
+          { ...payload, session_key: matchId },
+          { onConflict: 'court_number,fixture_start_time', ignoreDuplicates: false }
+        );
+      if (error) throw error;
+    }
   }
 };
 
