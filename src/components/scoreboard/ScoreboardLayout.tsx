@@ -17,6 +17,7 @@ interface ScoreboardLayoutProps {
   onSwitchTeams: () => void;
   onScoreUpdate: (team: "home" | "away", increment: boolean) => void;
   onAceBlock: (team: "home" | "away", type: "ace" | "block") => void;
+  autoStart?: boolean;
 }
 
 export const ScoreboardLayout = ({
@@ -30,6 +31,7 @@ export const ScoreboardLayout = ({
   onSwitchTeams,
   onScoreUpdate,
   onAceBlock,
+  autoStart = false,
 }: ScoreboardLayoutProps) => {
   const { settings } = useTimerSettings();
   const homeTeam = isTeamsSwitched ? match.awayTeam : match.homeTeam;
@@ -103,6 +105,7 @@ export const ScoreboardLayout = ({
         fixture={fixtureData}
         onAceBlock={onAceBlock}
         isTeamsSwitched={isTeamsSwitched}
+        autoStart={autoStart}
       />
 
       <div className="grid grid-cols-[1fr_auto_1fr] gap-8 items-center mb-8">

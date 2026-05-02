@@ -3,6 +3,7 @@ import { TimerControls } from "./TimerControls";
 import { useTimer } from "./timer/useTimer";
 import { Fixture } from "@/types/volleyball";
 import { toast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 interface TimerProps {
   initialMinutes: number;
@@ -14,6 +15,7 @@ interface TimerProps {
   fixture?: Fixture;
   onAceBlock: (team: "home" | "away", type: "ace" | "block") => void;
   isTeamsSwitched: boolean;
+  autoStart?: boolean;
 }
 
 export const Timer = ({ 
@@ -25,7 +27,8 @@ export const Timer = ({
   isMatchComplete,
   fixture,
   onAceBlock,
-  isTeamsSwitched
+  isTeamsSwitched,
+  autoStart = false,
 }: TimerProps) => {
   const {
     timeLeft,
@@ -50,6 +53,13 @@ export const Timer = ({
     isMatchComplete,
     fixture
   });
+
+  // Auto-start for standalone/private bookings (no fixture time)
+  useEffect(() => {
+    if (autoStart && matchPhase === "not_started") {
+      handleStartStop();
+    }
+  }, [autoStart]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;

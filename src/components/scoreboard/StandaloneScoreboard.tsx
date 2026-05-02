@@ -144,6 +144,7 @@ const StandaloneScoreboard = () => {
           onSwitchTeams={handleSwitchTeams}
           onScoreUpdate={handleScore}
           onAceBlock={(team, type) => console.log(`${team} ${type}`)}
+          autoStart={true}
         />
 
         <ExitConfirmationDialog
