@@ -211,7 +211,7 @@ export const saveMatchScores = async (
     return;
   }
 
-  const fixtureStartTime = fixture_start_time || toISOFixtureTime(fixtureTime);
+  const fixtureStartTime = toISOFixtureTime(fixture_start_time) || toISOFixtureTime(fixtureTime);
   const stats = aceBlockStats || {};
 
   if (navigator.onLine && !isOffline()) {
