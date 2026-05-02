@@ -80,9 +80,11 @@ const saveToSupabase = async (
   let division = 'Unknown';
 
   if (isLocalMatchId) {
-    // Extract court number: prefer explicit "court-1" pattern, fall back to first number segment
-    const courtMatch = matchId.match(/(?:court[_-]?)(\d+)/i) || matchId.match(/[^\d](\d+)/);
-    courtNumber = courtMatch ? parseInt(courtMatch[1]) : 0;
+    // Match ID format: local-DDMMHHMM[CCC]_TEAM_TEAM-timestamp
+    // Court number is the last 3 digits of the first numeric segment (e.g. "02051930001" → "001" → 1)
+    const firstSegment = matchId.replace(/^[a-z]+-/i, '').split('_')[0].split('-')[0];
+    const numericPart = firstSegment.replace(/\D/g, '');
+    courtNumber = numericPart.length >= 3 ? parseInt(numericPart.slice(-3)) : parseInt(numericPart) || 0;
     division = 'Local Match';
   } else {
     // Fetch match metadata from matches_v2
