@@ -11,6 +11,8 @@ import { processPendingScores } from "@/utils/matchDatabase";
 import { useState } from "react";
 import { disableForcedOfflineMode, enableForcedOfflineMode, isOffline } from "@/utils/offlineMode";
 import { MatchSummary } from "@/services/db/types";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface EndOfNightSummaryProps {
   courtId: string;
@@ -23,10 +25,40 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
 
   const { data: matches, isLoading, refetch } = useQuery({
     queryKey: ["matches-summary", courtId],
-    queryFn: () => fetchMatchSummary(courtId, true), // Pass true to only fetch pending scores
+    queryFn: async (): Promise<MatchSummary[]> => {
+      // Fetch today's saved scores for this court from Supabase
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('match_data_v2')
+        .select('*')
+        .eq('court_number', parseInt(courtId))
+        .gte('created_at', `${today}T00:00:00Z`)
+        .order('fixture_start_time', { ascending: true });
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        // Fall back to pending scores if nothing in DB yet
+        return fetchMatchSummary(courtId, true);
+      }
+
+      return data.map(row => ({
+        matchId: row.session_key || row.id,
+        homeTeam: row.home_team_name,
+        awayTeam: row.away_team_name,
+        setScores: {
+          home: [row.set1_home_score, row.set2_home_score, row.set3_home_score].filter((_, i) =>
+            i === 0 ? true : i === 1 ? row.set2_home_score > 0 || row.set2_away_score > 0 : row.set3_home_score > 0 || row.set3_away_score > 0
+          ),
+          away: [row.set1_away_score, row.set2_away_score, row.set3_away_score].filter((_, i) =>
+            i === 0 ? true : i === 1 ? row.set2_home_score > 0 || row.set2_away_score > 0 : row.set3_home_score > 0 || row.set3_away_score > 0
+          ),
+        },
+        fixture_start_time: row.fixture_start_time,
+        status: 'synced' as const,
+      }));
+    },
     meta: {
       onError: (error: Error) => {
-        console.error("Error loading matches:", error);
         toast({
           title: "Error loading matches",
           description: "There was a problem loading the match data. Please try again.",
