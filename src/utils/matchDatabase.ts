@@ -9,9 +9,10 @@ const toISOFixtureTime = (raw?: string): string | undefined => {
   if (!raw) return undefined;
   if (raw.includes('T')) return raw; // already ISO
   if (/\d{2}\/\d{2}\/\d{4}/.test(raw)) {
+    // Format is DD/MM/YYYY HH:mm (Australian date format)
     const [datePart, timePart = '00:00'] = raw.split(' ');
-    const [d, m, y] = datePart.split('/');
-    const iso = `${y}-${m}-${d}T${timePart}:00`;
+    const [day, month, year] = datePart.split('/');
+    const iso = `${year}-${month}-${day}T${timePart}:00`;
     const parsed = new Date(iso);
     return isValid(parsed) ? parsed.toISOString() : undefined;
   }
