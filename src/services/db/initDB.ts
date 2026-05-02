@@ -75,12 +75,10 @@ export const initDB = async (): Promise<IDBDatabase> => {
         let versionToUse = DB_VERSION;
         try {
           const currentVersion = await getCurrentDBVersion();
-          console.log(`Current IndexedDB version: ${currentVersion}, config version: ${DB_VERSION}`);
           
           // Always use the higher version to avoid VersionError
           versionToUse = Math.max(currentVersion, DB_VERSION);
         } catch (error) {
-          console.log('Unable to determine current DB version, using configured version:', DB_VERSION);
         }
         
         const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -98,7 +96,6 @@ export const initDB = async (): Promise<IDBDatabase> => {
 
           request.onsuccess = () => {
             clearTimeout(requestTimeout);
-            console.log('Successfully opened IndexedDB with version:', request.result.version);
             dbInstance = request.result;
 
             validateIndexes(dbInstance).catch(err => {
@@ -107,9 +104,7 @@ export const initDB = async (): Promise<IDBDatabase> => {
 
             dbInstance.onclose = () => {
               if (!isClosingDb) {
-                console.log('IndexedDB connection closed unexpectedly');
               } else {
-                console.log('IndexedDB connection closed as requested');
               }
               dbInstance = null;
               dbConnectionPromise = null;
@@ -121,7 +116,6 @@ export const initDB = async (): Promise<IDBDatabase> => {
               dbInstance = null;
               dbConnectionPromise = null;
               isClosingDb = false;
-              console.log('IndexedDB version changed, connection closed');
             };
 
             dbInstance.onerror = (event) => {
@@ -142,12 +136,10 @@ export const initDB = async (): Promise<IDBDatabase> => {
               
               if (!db.objectStoreNames.contains(store.name)) {
                 objectStore = db.createObjectStore(store.name, { keyPath: store.keyPath });
-                console.log(`Created ${store.name} store`);
               } else {
                 const transaction = (event.target as IDBOpenDBRequest).transaction;
                 if (transaction) {
                   objectStore = transaction.objectStore(store.name);
-                  console.log(`Using existing ${store.name} store`);
                 }
               }
               
@@ -155,13 +147,11 @@ export const initDB = async (): Promise<IDBDatabase> => {
                 store.indexes.forEach(index => {
                   if (!objectStore.indexNames.contains(index.name)) {
                     objectStore.createIndex(index.name, index.keyPath, index.options || {});
-                    console.log(`Created index ${index.name} on ${store.name}`);
                   }
                 });
               }
             });
 
-            console.log('IndexedDB upgrade completed. Current stores:', Array.from(db.objectStoreNames));
           };
           
           request.onblocked = (event) => {
@@ -192,12 +182,10 @@ export const initDB = async (): Promise<IDBDatabase> => {
 };
 
 const validateIndexes = async (db: IDBDatabase): Promise<void> => {
-  console.log('Validating database indexes...');
   let needsUpgrade = false;
   
   for (const [storeName, storeSchema] of Object.entries(dbSchema)) {
     if (!db.objectStoreNames.contains(storeName)) {
-      console.log(`Store ${storeName} is missing, will be created on next upgrade`);
       needsUpgrade = true;
       continue;
     }
@@ -206,13 +194,11 @@ const validateIndexes = async (db: IDBDatabase): Promise<void> => {
     const hasAllIndexes = await checkStoreIndexes(db, storeName, requiredIndexNames);
     
     if (!hasAllIndexes) {
-      console.log(`Store ${storeName} is missing required indexes, will upgrade`);
       needsUpgrade = true;
     }
   }
   
   if (needsUpgrade) {
-    console.log('Database needs index upgrade, will close and reopen with higher version');
     const currentVersion = db.version;
     
     db.close();
@@ -222,7 +208,6 @@ const validateIndexes = async (db: IDBDatabase): Promise<void> => {
       const request = indexedDB.open(DB_NAME, currentVersion + 1);
       
       request.onupgradeneeded = (event) => {
-        console.log('Performing index upgrade...');
         const db = request.result;
         
         Object.values(dbSchema).forEach(store => {
@@ -235,7 +220,6 @@ const validateIndexes = async (db: IDBDatabase): Promise<void> => {
                   if (!objectStore.indexNames.contains(index.name)) {
                     try {
                       objectStore.createIndex(index.name, index.keyPath, index.options || {});
-                      console.log(`Added missing index ${index.name} to ${store.name}`);
                     } catch (error) {
                       console.error(`Error creating index ${index.name}:`, error);
                     }
@@ -248,7 +232,6 @@ const validateIndexes = async (db: IDBDatabase): Promise<void> => {
       };
       
       request.onsuccess = () => {
-        console.log('Index upgrade completed successfully');
         request.result.close();
         resolve();
       };
@@ -270,7 +253,6 @@ const scheduleConnectionTimeout = () => {
   
   connectionTimeout = window.setTimeout(() => {
     if (dbInstance && !isClosingDb) {
-      console.log('Automatically closing idle IndexedDB connection after timeout');
       closeDB();
     }
     connectionTimeout = null;
@@ -294,7 +276,6 @@ export const closeDB = () => {
         connectionTimeout = null;
       }
       
-      console.log('IndexedDB connection manually closed');
     }
   }
 };
@@ -302,7 +283,6 @@ export const closeDB = () => {
 export const checkStores = async (): Promise<boolean> => {
   const db = await initDB();
   const storeNames = Array.from(db.objectStoreNames);
-  console.log('Available stores:', storeNames);
   return Object.values(dbSchema).every(store => 
     storeNames.includes(store.name)
   );

@@ -13,7 +13,6 @@ const fetchFromUrl = async (url: string, date: string) => {
       throw new Error("Offline mode - cannot fetch fixture data");
     }
     
-    console.log('Fetching from URL:', url, 'with date:', date);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -30,8 +29,6 @@ const fetchFromUrl = async (url: string, date: string) => {
       }
       
       const text = await response.text();
-      console.log('Raw XML Response for URL:', url);
-      console.log(text);
       return text;
     } catch (error) {
       clearTimeout(timeoutId);
@@ -52,41 +49,29 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     const formattedDate = format(date, 'dd/MM/yyyy');
     const dayOfWeek = format(date, 'EEEE') as keyof typeof LEAGUE_URLS;
     
-    console.log('Fetching data for:', {
-      formattedDate,
-      dayOfWeek,
-      courtId,
-      selectedDate: selectedDate?.toISOString(),
-      offlineMode: isOffline()
-    });
 
     // If in offline mode and we have a court ID, try to get matches from cache
     // Only use cached data in offline mode, never when online
     if (isOffline() && courtId) {
-      console.log('Offline mode - trying to get matches from cache first');
       try {
         // Try getting matches for the specific date first
         let cachedMatches = await getCourtMatches(courtId, formattedDate);
         
         // If no matches found for this date, try all matches for the court
         if (cachedMatches.length === 0) {
-          console.log('No matches found for specified date, trying all matches for this court');
           cachedMatches = await getAllCourtMatches(courtId);
         }
         
         if (cachedMatches.length > 0) {
-          console.log('Found cached matches:', cachedMatches.length);
           return cachedMatches;
         }
         
-        console.log('No cached matches found, using default match');
       } catch (error) {
         console.error('Error reading from cache:', error);
       }
     }
 
     if (isOffline()) {
-      console.log('Offline mode enabled, using default match data');
       
       if (courtId) {
         return {
@@ -121,7 +106,6 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
     );
 
     let fixtures = allFixtures.flat();
-    console.log('Total number of fixtures found:', fixtures.length);
 
     fixtures = fixtures.filter(fixture => {
       if (!fixture?.DateTime) return false;
@@ -155,12 +139,10 @@ export const fetchMatchData = async (courtId?: string, selectedDate?: Date) => {
 
     try {
       await saveCourtMatches(courtMatches);
-      console.log('Saved ALL fixtures to IndexedDB:', courtMatches.length);
     } catch (error) {
       console.error('Error caching fixtures:', error);
     }
 
-    console.log('Fixtures after date filtering:', fixtures.length);
 
     if (courtId) {
       const currentMatch = fixtures.find((match) => match.PlayingAreaName === `Court ${courtId}`);

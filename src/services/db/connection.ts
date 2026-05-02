@@ -76,7 +76,6 @@ export const resetConnection = async (): Promise<IDBDatabase> => {
   try {
     closeDB();
   } catch (e) {
-    console.log('Error while closing connection during reset:', e);
   }
   
   // Get a fresh connection

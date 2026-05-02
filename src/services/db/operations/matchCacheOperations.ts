@@ -35,14 +35,12 @@ export const findCachedMatch = async (matchCode: string): Promise<any | null> =>
             const cursor = (event.target as IDBRequest).result;
             if (cursor) {
               if (cursor.value.matchCode === matchCode) {
-                console.log('Found match by cursor scan:', cursor.value);
                 resolve(cursor.value);
                 return;
               }
               cursor.continue();
             } else {
               // End of cursor scan, no match found
-              console.log('No cached match found for code (by scan):', matchCode);
               resolve(null);
             }
             return;
@@ -60,10 +58,8 @@ export const findCachedMatch = async (matchCode: string): Promise<any | null> =>
         // Normal index request handlers (only reached if index exists)
         request.onsuccess = () => {
           if (request.result) {
-            console.log('Found cached match:', request.result);
             resolve(request.result);
           } else {
-            console.log('No cached match found for code:', matchCode);
             resolve(null);
           }
         };
@@ -74,7 +70,6 @@ export const findCachedMatch = async (matchCode: string): Promise<any | null> =>
         };
         
         transaction.oncomplete = () => {
-          console.log('Find match transaction completed');
         };
         
         transaction.onerror = (event) => {
@@ -136,7 +131,6 @@ export const createCachedMatch = async (
             const request = store.add(matchData);
             
             request.onsuccess = () => {
-              console.log('Created new cached match:', matchData);
               resolve(matchData);
             };
             
@@ -146,7 +140,6 @@ export const createCachedMatch = async (
             };
             
             transaction.oncomplete = () => {
-              console.log('Create match transaction completed');
             };
             
             transaction.onerror = (event) => {
@@ -163,7 +156,6 @@ export const createCachedMatch = async (
         attempt++;
         
         if (attempt <= maxRetries) {
-          console.log(`Retrying createCachedMatch (${attempt}/${maxRetries})...`);
           await resetConnection();
           await new Promise(r => setTimeout(r, 500 * attempt));
         }
@@ -199,7 +191,6 @@ export const ensureMatchCacheSchema = async () => {
     
     // Check if the matchCode index exists
     if (!db.objectStoreNames.contains(STORES.COURT_MATCHES)) {
-      console.log('COURT_MATCHES store doesn\'t exist yet, will be created during DB init');
       return;
     }
     
@@ -209,7 +200,6 @@ export const ensureMatchCacheSchema = async () => {
       
       if (!store.indexNames.contains('matchCode')) {
         // We need to update the schema to add the index
-        console.log('matchCode index doesn\'t exist, need to add it');
         db.close();
         
         // Increment version to trigger an upgrade
@@ -224,12 +214,10 @@ export const ensureMatchCacheSchema = async () => {
               
             if (!store.indexNames.contains('matchCode')) {
               store.createIndex('matchCode', 'matchCode', { unique: false });
-              console.log('Created matchCode index');
             }
           };
           
           request.onsuccess = () => {
-            console.log('Schema upgrade complete');
             resolve(request.result);
           };
           

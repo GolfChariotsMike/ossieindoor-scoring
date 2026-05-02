@@ -110,12 +110,10 @@ export const ScoreboardContainer = () => {
     queryFn: async () => {
       try {
         const queryDate = fixture?.DateTime ? parseFixtureDate(fixture.DateTime) : new Date();
-        console.log('Fetching ALL matches for date (no courtId filter):', format(queryDate, 'yyyy-MM-dd'));
         // Pass undefined for courtId — we need ALL fixtures to find the next match on this court
         const result = await fetchMatchData(undefined, queryDate);
         
         const fixtures = Array.isArray(result) ? result : [];
-        console.log(`Found ${fixtures.length} total fixtures for date ${format(queryDate, 'yyyy-MM-dd')}`);
         
         return fixtures.map(item => ({
           ...item,
@@ -154,11 +152,8 @@ export const ScoreboardContainer = () => {
 
   useEffect(() => {
     if (nextMatches.length > 0) {
-      console.log('Available matches for transitions:', nextMatches.length);
       const courtMatches = nextMatches.filter(m => m.PlayingAreaName === `Court ${courtId}`);
-      console.log(`Matches for Court ${courtId}:`, courtMatches.length);
       courtMatches.forEach((m, index) => {
-        console.log(`  Match ${index + 1}: ${m.Id} - ${m.HomeTeam} vs ${m.AwayTeam} at ${m.DateTime}`);
       });
     }
   }, [nextMatches, courtId]);
@@ -185,7 +180,6 @@ export const ScoreboardContainer = () => {
 
     const ageMinutes = Math.round(ageMs / 60000);
     // Restore scores in both cases (auto-restore for <10min, user-visible restore for 10min-2hr)
-    console.log(`Restoring crash state for court ${courtId} (${ageMinutes} min old)`);
     gameState.setCurrentScore(saved.currentScore);
     gameState.setSetScores(saved.setScores);
     if (saved.aceBlockStats) {
@@ -236,7 +230,6 @@ export const ScoreboardContainer = () => {
   useEffect(() => {
     const setCount = gameState.setScores.home.length;
     if (setCount > 0 && setCount > prevSetCountRef.current && match) {
-      console.log(`Break ended — saving scores after set ${setCount}`);
       gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away, fixture)
         .catch(err => console.error('Error saving mid-match scores:', err));
     }
@@ -255,7 +248,6 @@ export const ScoreboardContainer = () => {
   // ─── New fixture reset ─────────────────────────────────────────────────────
   useEffect(() => {
     if (fixture?.Id && previousFixtureIdRef.current !== fixture.Id) {
-      console.log('New fixture detected, resetting game state:', fixture.Id);
       gameState.resetGameState();
       previousFixtureIdRef.current = fixture.Id;
       setShowEndOfNightSummary(false);

@@ -74,9 +74,7 @@ export const useGameState = () => {
       if (newSetScores.home.length >= 3) {
         finalScoresRef.current = { home: newSetScores.home, away: newSetScores.away };
         setIsMatchComplete(true);
-        console.log('Match complete after break, all sets finished', newSetScores);
       } else {
-        console.log('Break over, new set starting');
       }
     } else {
       // Only proceed if there are actual scores
@@ -86,7 +84,6 @@ export const useGameState = () => {
 
       // Set is complete — always start a break (including after Set 3 for umpire recording time)
       setIsBreak(true);
-      console.log('Set complete, starting break.');
     }
   }, [
     isBreak, 
@@ -104,12 +101,6 @@ export const useGameState = () => {
   // Save match scores to database (modified to always use local storage first)
   const saveMatchScoresToDatabase = useCallback(async (matchId: string, homeScores: number[], awayScores: number[]) => {
     try {
-      console.log('Saving match scores to database:', {
-        matchId,
-        homeScores,
-        awayScores,
-        aceBlockStats
-      });
       return await saveMatchScores(matchId, homeScores, awayScores, true, undefined, undefined, undefined, undefined, aceBlockStats);
     } catch (error) {
       console.error('Error in saveMatchScoresToDatabase:', error);
@@ -120,15 +111,6 @@ export const useGameState = () => {
   // Save scores locally without submitting to Supabase
   const saveScoresLocally = useCallback(async (matchId: string, homeScores: number[], awayScores: number[], fixtureData?: Fixture) => {
     try {
-      console.log('Saving scores locally only:', {
-        matchId,
-        homeScores, 
-        awayScores,
-        isTeamsSwitched,
-        aceBlockStats,
-        fixtureTime: fixtureData?.DateTime,
-        fixture_start_time: fixtureData?.fixture_start_time || fixtureData?.DateTime
-      });
 
       // IMPORTANT: We do NOT adjust based on isTeamsSwitched here - the scores are already
       // in the right orientation in the UI, but need to be swapped when saving

@@ -17,26 +17,15 @@ const CourtFixtures = () => {
   const parsedDate = date ? parse(date, 'yyyy-MM-dd', new Date()) : new Date();
   const formattedDate = format(parsedDate, 'dd/MM/yyyy');
   
-  console.log('CourtFixtures date parsing:', {
-    urlDate: date,
-    parsedDate: parsedDate.toISOString(),
-    formattedForDisplay: format(parsedDate, 'yyyy-MM-dd'),
-    formattedForQuery: formattedDate,
-    courtId,
-    isOfflineMode: isOffline()
-  });
 
   const { data: matches = [], isLoading, refetch } = useQuery({
     queryKey: ["matches", date, courtId],
     queryFn: async () => {
-      console.log('Fetching matches in CourtFixtures...');
       
       // Only use cached matches if in offline mode
       if (isOffline()) {
         try {
-          console.log('Getting matches from local IndexedDB (offline mode)...');
           const localMatches = await getCourtMatches(courtId || '', formattedDate);
-          console.log('Local matches retrieved:', localMatches);
           
           if (localMatches.length > 0) {
             return localMatches;
@@ -57,9 +46,7 @@ const CourtFixtures = () => {
       
       // When online, always fetch fresh data
       try {
-        console.log('Fetching fresh match data from remote source...');
         const fetchedMatches = await fetchMatchData(undefined, parsedDate);
-        console.log('Fetched matches from remote:', Array.isArray(fetchedMatches) ? fetchedMatches.length : 'not an array');
         
         // Cache matches for offline usage
         if (Array.isArray(fetchedMatches) && fetchedMatches.length > 0) {
@@ -74,7 +61,6 @@ const CourtFixtures = () => {
             
             // Save all matches to IndexedDB for later offline use
             await saveCourtMatches(courtMatches);
-            console.log('Cached all fixtures for future offline use', courtMatches.length);
           } catch (cacheError) {
             console.error('Error caching fixtures for offline use:', cacheError);
           }
@@ -97,12 +83,10 @@ const CourtFixtures = () => {
   // Try to refetch if we initially have no matches
   useEffect(() => {
     if (!isLoading && Array.isArray(matches) && matches.length === 0 && !isOffline()) {
-      console.log('No matches loaded initially, attempting refetch...');
       refetch();
     }
   }, [isLoading, matches, refetch]);
 
-  console.log('Received matches:', matches);
 
   const courtFixtures = Array.isArray(matches) 
     ? matches
@@ -119,7 +103,6 @@ const CourtFixtures = () => {
         })
     : [];
 
-  console.log('Filtered and sorted court fixtures:', courtFixtures);
 
   if (isLoading) {
     return (

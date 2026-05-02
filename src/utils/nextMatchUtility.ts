@@ -27,7 +27,6 @@ export const findNextMatchByIndex = (
     m.PlayingAreaName === `Court ${courtId}`
   );
   
-  console.log(`Found ${sameCourtMatches.length} matches on Court ${courtId}`);
   
   // Sort matches by date
   const sortedMatches = [...sameCourtMatches].sort((a, b) => {
@@ -41,12 +40,10 @@ export const findNextMatchByIndex = (
   
   // Log the sorted matches for debugging
   sortedMatches.forEach((match, i) => {
-    console.log(`Match ${i+1}: ${match.Id} - ${match.HomeTeam} vs ${match.AwayTeam} at ${match.DateTime}`);
   });
   
   // Find the index of the current match by ID
   let currentMatchIndex = sortedMatches.findIndex(m => m.Id === currentFixtureId);
-  console.log('Current match index using ID:', currentMatchIndex);
   
   if (currentMatchIndex !== -1 && currentMatchIndex < sortedMatches.length - 1) {
     return { 
@@ -78,14 +75,12 @@ export const findNextMatchByTeams = (
   });
   
   // Try to find by teams if ID match fails
-  console.log('Trying to find current match by teams instead of ID');
   const currentMatchIndex = sortedMatches.findIndex(m => 
     m.HomeTeam === fixture.HomeTeam && 
     m.AwayTeam === fixture.AwayTeam &&
     m.DateTime === fixture.DateTime
   );
   
-  console.log('Current match index using teams and time:', currentMatchIndex);
   
   if (currentMatchIndex !== -1 && currentMatchIndex < sortedMatches.length - 1) {
     return sortedMatches[currentMatchIndex + 1];
@@ -113,7 +108,6 @@ export const findNextMatchByFlexibleMatching = (
     }
   });
   
-  console.log('Trying more flexible match criteria');
   
   // Try matching by any part of the ID (useful for offline IDs)
   const matchesById = sortedMatches.findIndex(m => 
@@ -121,7 +115,6 @@ export const findNextMatchByFlexibleMatching = (
   );
   
   if (matchesById !== -1 && matchesById < sortedMatches.length - 1) {
-    console.log('Found match using partial ID match:', matchesById);
     return sortedMatches[matchesById + 1];
   }
   
@@ -137,7 +130,6 @@ export const findNextMatchByFlexibleMatching = (
   );
   
   if (matchesByTeam !== -1 && matchesByTeam < sortedMatches.length - 1) {
-    console.log('Found match using fuzzy team name match:', matchesByTeam);
     return sortedMatches[matchesByTeam + 1];
   }
   
@@ -154,7 +146,6 @@ export const findNextMatchByTime = (
     m.PlayingAreaName === `Court ${courtId}`
   );
   
-  console.log('Fallback to time-based next match search');
   const matchesAfterCurrent = sameCourtMatches.filter(m => {
     try {
       return parseFixtureDate(m.DateTime) > currentFixtureDate;
@@ -186,11 +177,9 @@ export const getAdditionalMatchesFromCache = async (
   existingMatches: Fixture[]
 ): Promise<Fixture[]> => {
   try {
-    console.log('In offline mode with limited matches, trying to get more from cache');
     const cachedMatches = await getAllCourtMatches(courtId);
     
     if (cachedMatches.length > 0) {
-      console.log(`Found ${cachedMatches.length} cached matches for Court ${courtId}`);
       
       // Convert the cached matches to Fixture format
       const additionalMatches = cachedMatches.map(m => ({
@@ -212,7 +201,6 @@ export const getAdditionalMatchesFromCache = async (
       const uniqueAdditionalMatches = additionalMatches.filter(m => !existingIds.has(m.Id));
       
       if (uniqueAdditionalMatches.length > 0) {
-        console.log(`Adding ${uniqueAdditionalMatches.length} unique matches from cache`);
         return [...existingMatches, ...uniqueAdditionalMatches];
       }
     }

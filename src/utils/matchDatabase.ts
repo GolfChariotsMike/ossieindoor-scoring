@@ -167,7 +167,6 @@ const flushPendingScores = async (): Promise<void> => {
           }
         );
         await removePendingScore(score.id);
-        console.log('Flushed offline score:', score.id);
       } catch (err) {
         console.warn('Failed to flush score, will retry later:', score.id, err);
       }
@@ -179,7 +178,6 @@ const flushPendingScores = async (): Promise<void> => {
 
 // Flush when connection restores
 window.addEventListener('online', () => {
-  console.log('Back online — flushing pending scores');
   flushPendingScores().catch(console.error);
 });
 
@@ -223,7 +221,6 @@ export const saveMatchScores = async (
       awayTeam || 'Away Team',
       stats
     ).then(() => {
-      console.log('Saved to Supabase:', matchId, homeScores, awayScores);
     }).catch(async (err) => {
       console.error('Supabase save failed, queuing offline:', err);
       // Fall back to offline queue
@@ -243,7 +240,6 @@ export const saveMatchScores = async (
     });
   } else {
     // ── Offline path: queue for later ──
-    console.log('Offline — queuing score for later:', matchId);
     await savePendingScore({
       id: matchId,
       matchId,

@@ -32,7 +32,6 @@ export const createNewMatch = async (
     try {
       const parsedDate = parse(fixture.DateTime, 'dd/MM/yyyy HH:mm', new Date());
       formattedStartTime = format(parsedDate, "yyyy-MM-dd'T'HH:mm:ssXXX");
-      console.log('Formatted start time:', formattedStartTime);
     } catch (error) {
       console.error('Error parsing date:', error);
       formattedStartTime = new Date().toISOString();

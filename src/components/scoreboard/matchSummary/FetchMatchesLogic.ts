@@ -8,17 +8,6 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
   try {
     // Get pending scores first
     const pendingScores = await getPendingScores();
-    console.log(`Found ${pendingScores.length} pending scores`);
-    console.log('First few pending scores with fixture data:', pendingScores.slice(0, 3).map(score => ({
-      id: score.id,
-      matchId: score.matchId,
-      fixtureTime: score.fixtureTime,
-      fixture_start_time: score.fixture_start_time,
-      homeTeam: score.homeTeam,
-      awayTeam: score.awayTeam,
-      homeScores: score.homeScores,
-      awayScores: score.awayScores
-    })));
 
     let pendingSummaries: MatchSummary[] = [];
     const matchMetadata = new Map<string, { fixtureTime?: string, fixture_start_time?: string }>();
@@ -55,7 +44,6 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
             if (error) {
               console.error('Error fetching match metadata:', error);
             } else if (matchesData) {
-              console.log(`Found metadata for ${matchesData.length} matches`);
               matchesData.forEach(match => {
                 // Format the fixture time for display - extract only time
                 const fixtureTime = match.fixture_start_time ? 
@@ -141,12 +129,6 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
               }
               
               // FIX: Keep home and away scores in their correct orientation
-              console.log(`Processing match ${score.matchId} for end of night summary:`, {
-                homeTeam,
-                awayTeam,
-                homeScores: score.homeScores,
-                awayScores: score.awayScores
-              });
               
               // Create summary without swapping scores
               return {
@@ -182,12 +164,6 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
         }
         
         // Log with correct score orientation
-        console.log(`Processing match ${score.matchId} for end of night summary:`, {
-          homeTeam,
-          awayTeam,
-          homeScores: score.homeScores,
-          awayScores: score.awayScores
-        });
         
         // Default summary when we can't parse the local ID or for non-local matches
         // FIX: Keep scores in correct orientation
@@ -209,13 +185,11 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
 
     // If we only want pending scores, return them now
     if (pendingOnly) {
-      console.log(`Returning ${pendingSummaries.length} pending match summaries`);
       return pendingSummaries;
     }
 
     // If there's no network connection, just return the pending scores
     if (isOffline()) {
-      console.log('Offline mode - returning only pending scores');
       return pendingSummaries;
     }
 
@@ -269,12 +243,6 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
         (match.match_date ? format(parseISO(match.match_date), 'HH:mm') : undefined);
 
       // Log server data to debug
-      console.log(`Server match ${match.id} data:`, {
-        homeTeam: match.home_team_name,
-        awayTeam: match.away_team_name,
-        homeScores,
-        awayScores
-      });
 
       return {
         id: match.id,
@@ -299,7 +267,6 @@ export const fetchMatchSummary = async (courtId: string, pendingOnly = false): P
       ...serverSummaries.filter(summary => !pendingMatchIds.has(summary.matchId))
     ];
 
-    console.log(`Returning ${combinedSummaries.length} total match summaries`);
     return combinedSummaries;
   } catch (error) {
     console.error('Error in fetchMatchSummary:', error);

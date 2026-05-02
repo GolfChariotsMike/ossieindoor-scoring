@@ -4,12 +4,6 @@ import { STORES } from '../dbConfig';
 import { getConnection } from '../connection';
 
 export const savePendingScore = async (score: Omit<PendingScore, 'status'>): Promise<void> => {
-  console.log('savePendingScore called with fixture data:', {
-    id: score.id,
-    matchId: score.matchId,
-    fixtureTime: score.fixtureTime,
-    fixture_start_time: score.fixture_start_time
-  });
   
   let retries = 0;
   const maxRetries = 3;
@@ -46,20 +40,10 @@ export const savePendingScore = async (score: Omit<PendingScore, 'status'>): Pro
           status: 'pending'
         };
 
-        console.log('Saving to IndexedDB with fixture data:', {
-          id: scoreWithStatus.id,
-          fixtureTime: scoreWithStatus.fixtureTime,
-          fixture_start_time: scoreWithStatus.fixture_start_time
-        });
 
         const request = store.put(scoreWithStatus);
 
         request.onsuccess = () => {
-          console.log('Successfully saved pending score to IndexedDB:', {
-            id: scoreWithStatus.id,
-            fixtureTime: scoreWithStatus.fixtureTime,
-            fixture_start_time: scoreWithStatus.fixture_start_time
-          });
           resolve();
         };
 
@@ -69,7 +53,6 @@ export const savePendingScore = async (score: Omit<PendingScore, 'status'>): Pro
         };
 
         transaction.oncomplete = () => {
-          console.log('Score transaction completed successfully');
         };
       });
       
@@ -144,7 +127,6 @@ export const updatePendingScoreStatus = async (
         getRequest.onerror = () => reject(getRequest.error);
 
         transaction.oncomplete = () => {
-          console.log('Update score transaction completed successfully');
         };
       });
       
@@ -201,15 +183,8 @@ export const getPendingScores = async (): Promise<PendingScore[]> => {
 
         request.onsuccess = () => {
           const pendingScores = request.result;
-          console.log(`Retrieved ${pendingScores.length} pending scores from IndexedDB`);
           
           if (pendingScores.length > 0) {
-            console.log('Sample of retrieved scores with fixture data:', pendingScores.slice(0, 3).map(score => ({
-              id: score.id,
-              matchId: score.matchId,
-              fixtureTime: score.fixtureTime,
-              fixture_start_time: score.fixture_start_time
-            })));
           }
           
           resolve(pendingScores);
@@ -221,7 +196,6 @@ export const getPendingScores = async (): Promise<PendingScore[]> => {
         };
         
         transaction.oncomplete = () => {
-          console.log('Get scores transaction completed successfully');
         };
       });
       
@@ -299,7 +273,6 @@ export const removePendingScore = async (scoreId: string): Promise<void> => {
         const request = store.delete(scoreId);
 
         request.onsuccess = () => {
-          console.log('Successfully removed pending score:', scoreId);
           resolve();
         };
 
@@ -309,7 +282,6 @@ export const removePendingScore = async (scoreId: string): Promise<void> => {
         };
         
         transaction.oncomplete = () => {
-          console.log('Remove score transaction completed successfully');
         };
       });
       

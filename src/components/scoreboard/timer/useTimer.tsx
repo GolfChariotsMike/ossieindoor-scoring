@@ -133,7 +133,6 @@ export const useTimer = ({
       // Phase transition detected
       if (prev !== null && prev !== phase && !isPhaseChangingRef.current) {
         isPhaseChangingRef.current = true;
-        console.log(`Wall-clock phase change: ${prev} → ${phase}`);
         setWallPhase(phase);
 
         // Always call onComplete on transition (including to complete) — drives results screen
@@ -186,7 +185,6 @@ export const useTimer = ({
         return prev;
       }
 
-      console.log(`Manual phase: ${prev} → ${nextPhase}`);
 
       if (nextPhase === 'complete') {
         setManualIsRunning(false);
@@ -275,7 +273,6 @@ export const useTimer = ({
         // So: newOffset = phaseStart - elapsedSeconds
         timeOffsetRef.current = phaseStart - elapsedSeconds;
         isPhaseChangingRef.current = false;
-        console.log('Wall-clock reset: new offset', timeOffsetRef.current);
       }
     } else {
       if (!isMatchComplete) {
@@ -299,7 +296,6 @@ export const useTimer = ({
         // Jump to end of current phase: adjusted = phaseEnd => newOffset = phaseEnd - elapsedSeconds
         timeOffsetRef.current = phaseEnd - elapsedSeconds;
         isPhaseChangingRef.current = false;
-        console.log('Wall-clock skip: jumping to offset', timeOffsetRef.current);
       }
     } else {
       if (manualIntervalRef.current) {

@@ -26,12 +26,10 @@ export const getTeamName = async (matchId: string, isHome: boolean) => {
           const homeTeam = underscoreParts[1].replace(/([A-Z])/g, " $1").trim();
           const awayTeam = underscoreParts[2].replace(/([A-Z])/g, " $1").trim();
           
-          console.log(`Extracted team names from local ID: ${homeTeam} vs ${awayTeam}`);
           return isHome ? homeTeam : awayTeam;
         }
       }
       
-      console.log(`Failed to parse team name from local match ID: ${matchId}`);
       return isHome ? "Home Team" : "Away Team";
     } catch (error) {
       console.error(`Error parsing team name from local match ID ${matchId}:`, error);

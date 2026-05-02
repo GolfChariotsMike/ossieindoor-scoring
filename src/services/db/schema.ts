@@ -30,7 +30,6 @@ export const dbSchema: DBSchema = {
 // Helper function to check if a store has all required indexes
 export const checkStoreIndexes = async (db: IDBDatabase, storeName: string, requiredIndexes: string[]): Promise<boolean> => {
   if (!db.objectStoreNames.contains(storeName)) {
-    console.log(`Store ${storeName} doesn't exist yet`);
     return false;
   }
   

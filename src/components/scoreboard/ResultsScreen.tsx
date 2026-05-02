@@ -99,7 +99,6 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
   useEffect(() => {
     // Convert minutes to seconds for countdown
     const resultsDurationSeconds = Math.ceil(resultsDuration * 60);
-    console.log(`Results screen countdown started for ${resultsDuration} minutes (${resultsDurationSeconds} seconds)`);
     const startTime = Date.now();
     let timeLeft = resultsDurationSeconds;
 
@@ -109,7 +108,6 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
       
       if (timeLeft <= 0) {
         setCountdown("Starting next match...");
-        console.log('Countdown complete, next match should start soon');
         clearInterval(interval);
       } else {
         setCountdown(`Auto-starting next match in ${timeLeft} seconds`);
@@ -167,7 +165,6 @@ export const ResultsScreen = ({ match, setScores, isTeamsSwitched, onStartNextMa
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('Next match button clicked');
                   setDialogOpen(true);
                 }}
                 className="bg-volleyball-red text-white hover:bg-volleyball-red/90 text-2xl py-8 px-12 rounded-xl font-bold shadow-lg animate-pulse-scale"

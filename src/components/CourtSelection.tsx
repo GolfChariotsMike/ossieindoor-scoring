@@ -21,7 +21,6 @@ const CourtSelection = () => {
   useEffect(() => {
     const wasOffline = ensureOnlineMode();
     if (wasOffline) {
-      console.log('Main page loaded - switched to online mode');
     }
   }, []);
 

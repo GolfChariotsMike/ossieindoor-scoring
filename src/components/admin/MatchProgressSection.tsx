@@ -34,7 +34,6 @@ export const MatchProgressSection = () => {
   const { data: matchProgress = [], isLoading: isLoadingProgress } = useQuery({
     queryKey: ["match-progress", selectedDay],
     queryFn: async () => {
-      console.log('MatchProgressSection: Fetching match progress data');
       const { data: recordedMatches, error } = await supabase
         .from('match_progress_view')
         .select('*')
@@ -60,7 +59,6 @@ export const MatchProgressSection = () => {
       try {
         const date = new Date();
         const fixtures = await fetchMatchData(undefined, date);
-        console.log('Raw fixtures data:', fixtures);
         return Array.isArray(fixtures) ? fixtures : [];
       } catch (error) {
         console.error('Error fetching fixtures:', error);
@@ -145,7 +143,6 @@ export const MatchProgressSection = () => {
   };
 
   const missingScores = scheduledFixtures.filter(fixture => {
-    console.log('Checking fixture:', fixture);
     return !matchProgress.some(match => 
       match.court_number === fixture.court &&
       match.home_team_name === fixture.homeTeam?.name &&
@@ -154,10 +151,8 @@ export const MatchProgressSection = () => {
     );
   });
 
-  console.log('Missing scores:', missingScores);
 
   const filteredMatches = [...matchProgress, ...missingScores.map(fixture => {
-    console.log('Processing fixture:', fixture);
     return {
       id: fixture.id || `fixture-${fixture.court}-${fixture.startTime}`,
       court_number: fixture.court,

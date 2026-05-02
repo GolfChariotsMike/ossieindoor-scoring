@@ -20,13 +20,11 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
       try {
         // Generate the match code
         const matchCode = generateMatchCode(courtId, fixture);
-        console.log('Generated match code:', matchCode);
         
         // First, try to find the match in local cache
         try {
           const cachedMatch = await findCachedMatch(matchCode);
           if (cachedMatch) {
-            console.log('Found cached match in local storage:', cachedMatch);
             return transformToMatch(cachedMatch);
           }
         } catch (cacheError) {
@@ -44,12 +42,10 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           try {
             const existingMatch = await findExistingMatch(matchCode);
             if (existingMatch) {
-              console.log('Found existing match in Supabase:', existingMatch);
               
               // Try to cache the Supabase match locally for future offline use
               try {
                 await createCachedMatch(courtId, fixture, matchCode);
-                console.log('Cached Supabase match locally');
               } catch (cachingError) {
                 console.error('Failed to cache Supabase match locally:', cachingError);
               }
@@ -63,7 +59,6 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         }
 
         // If not found online or we're offline, create locally
-        console.log(isOffline() ? 'Offline - Creating match locally:' : 'Creating new match locally:', fixture);
         
         let newMatch;
         try {
@@ -87,7 +82,6 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
         
         
         const transformedMatch = transformToMatch(newMatch);
-        console.log('Created and transformed new match:', transformedMatch);
         return transformedMatch;
 
       } catch (error) {

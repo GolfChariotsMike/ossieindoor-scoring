@@ -90,15 +90,6 @@ export const ScoreboardLayout = ({
     fixtureTime: formatFixtureTime(match.startTime)
   };
 
-  console.log('ScoreboardLayout - Creating fixture data from match:', {
-    id: match.id,
-    DateTime: match.startTime,
-    PlayingAreaName: `Court ${match.court}`,
-    HomeTeam: match.homeTeam.name,
-    AwayTeam: match.awayTeam.name,
-    fixtureTime: fixtureData.fixtureTime,
-    fixture_start_time: fixtureData.fixture_start_time
-  });
 
   return (
     <div className="flex flex-col justify-between h-full">

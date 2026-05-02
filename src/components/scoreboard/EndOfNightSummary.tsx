@@ -45,7 +45,6 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
     try {
       // Temporarily disable offline mode for this operation
       if (wasOffline) {
-        console.log('Temporarily disabling offline mode to upload scores');
         disableForcedOfflineMode();
       }
       
@@ -76,7 +75,6 @@ export const EndOfNightSummary = ({ courtId, onBack }: EndOfNightSummaryProps) =
     } finally {
       // Restore offline mode if it was enabled before
       if (wasOffline) {
-        console.log('Restoring offline mode after upload attempt');
         enableForcedOfflineMode();
       }
       

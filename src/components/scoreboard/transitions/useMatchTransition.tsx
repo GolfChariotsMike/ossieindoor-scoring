@@ -45,7 +45,6 @@ export const useMatchTransition = ({
   const { findNextMatch, handleStartNextMatch } = useNextMatch(courtId!, fixture);
 
   const handleEndOfNight = async () => {
-    console.log('No next match found, auto-saving pending scores');
     
     try {
       toast({
@@ -88,26 +87,16 @@ export const useMatchTransition = ({
 
   useEffect(() => {
     if (gameState.isMatchComplete && match && gameState.hasGameStarted && !isTransitioningToResults.current) {
-      console.log('Match complete, preparing for results screen');
       isTransitioningToResults.current = true;
 
       // Capture nextMatches at the time of completion (not stale closure value)
       const matchesAtCompletion = nextMatches;
 
       setTimeout(() => {
-        console.log('Saving match with fixture data:', {
-          matchId: match.id,
-          fixture: fixture ? {
-            DateTime: fixture.DateTime,
-            fixture_start_time: fixture.fixture_start_time || fixture.DateTime
-          } : 'No fixture data'
-        });
         
         const scores = gameState.finalScoresRef.current ?? { home: gameState.setScores.home, away: gameState.setScores.away };
-        console.log('Saving final scores:', scores);
         gameState.saveScoresLocally(match.id, scores.home, scores.away, fixture)
           .then(() => {
-            console.log('Final scores saved successfully, transitioning to next match');
           })
           .catch(error => {
             console.error('Error saving match scores locally:', error);
@@ -126,7 +115,6 @@ export const useMatchTransition = ({
     if (isSearchingNextMatch.current) return;
     isSearchingNextMatch.current = true;
     
-    console.log('Preloading next match data during results display, matches available:', matchesSnapshot.length);
     
     try {
       let matchesToSearch = matchesSnapshot;
@@ -134,26 +122,19 @@ export const useMatchTransition = ({
       // If we have no/few matches for this court, try to refetch once
       const courtMatches = matchesToSearch.filter(m => m.PlayingAreaName === `Court ${courtId}`);
       if ((matchesToSearch.length === 0 || courtMatches.length <= 1) && !hasTriedRefetchingMatches.current) {
-        console.log('Limited or no matches found, attempting to refetch matches data');
         hasTriedRefetchingMatches.current = true;
         
         const refetchResult = await refetchMatches();
-        console.log('Refetched matches result:', {
-          success: refetchResult.isSuccess,
-          matchCount: refetchResult.data?.length || 0
-        });
         matchesToSearch = refetchResult.data || matchesToSearch;
       }
 
       const nextMatch = await findNextMatch(matchesToSearch);
       
       if (nextMatch) {
-        console.log('Preloaded next match:', nextMatch.Id);
         setPreloadedNextMatch(nextMatch);
         setIsNextMatchReady(true);
         prepareForNextMatch(nextMatch);
       } else {
-        console.log('No next match found — showing end of night summary');
         setPreloadedNextMatch(null);
         // Instead of silently doing nothing, show end of night
         setShowEndOfNightSummary(true);

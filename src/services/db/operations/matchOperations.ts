@@ -10,7 +10,6 @@ interface CourtMatch {
 
 export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => {
   if (!matches || matches.length === 0) {
-    console.log('No matches to save');
     return;
   }
   
@@ -73,7 +72,6 @@ export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => 
         let processMatch = (index: number) => {
           if (index >= processedMatches.length) {
             if (completed + errors === processedMatches.length) {
-              console.log('Saved court matches to IndexedDB:', completed);
               resolve();
             }
             return;
@@ -101,7 +99,6 @@ export const saveCourtMatches = async (matches: CourtMatch[]): Promise<void> => 
         }
         
         transaction.oncomplete = () => {
-          console.log('Match save transaction completed successfully');
           resolve();
         };
       });
@@ -163,7 +160,6 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
 
         request.onsuccess = () => {
           const allMatches = request.result;
-          console.log(`Retrieved ${allMatches.length} total matches from cache`);
           
           const courtMatches = allMatches.filter(match => {
             if (match.court_number === parseInt(courtNumber)) return true;
@@ -173,7 +169,6 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
             return false;
           });
           
-          console.log(`Found ${courtMatches.length} matches for Court ${courtNumber}`);
           
           if (date) {
             const dateMatches = courtMatches.filter(match => {
@@ -192,7 +187,6 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
               }
             });
             
-            console.log(`After date filtering, found ${dateMatches.length} matches for date ${date}`);
             resolve(dateMatches);
           } else {
             resolve(courtMatches);
@@ -205,7 +199,6 @@ export const getCourtMatches = async (courtNumber: string, date?: string): Promi
         };
         
         transaction.oncomplete = () => {
-          console.log('Read match transaction completed successfully');
         };
       });
       
@@ -250,7 +243,6 @@ export const cleanOldMatches = async (): Promise<void> => {
         
         try {
           if (!db || !db.objectStoreNames.contains(STORES.COURT_MATCHES)) {
-            console.log('Database or store not ready for cleaning old matches');
             resolve();
             return;
           }
@@ -278,7 +270,6 @@ export const cleanOldMatches = async (): Promise<void> => {
         request.onsuccess = () => {
           const now = new Date();
           const matches = request.result;
-          console.log(`Found ${matches.length} total matches to check for cleanup`);
           
           const oldMatches = matches.filter(match => {
             try {
@@ -308,7 +299,6 @@ export const cleanOldMatches = async (): Promise<void> => {
             }
           });
           
-          console.log(`Found ${oldMatches.length} matches older than 14 days to clean up`);
           
           if (oldMatches.length === 0) {
             resolve();
@@ -321,7 +311,6 @@ export const cleanOldMatches = async (): Promise<void> => {
           const processMatch = (index: number) => {
             if (index >= oldMatches.length) {
               if (completed + errors === oldMatches.length) {
-                console.log(`Successfully deleted ${completed} old matches, with ${errors} errors`);
                 resolve();
               }
               return;
@@ -351,7 +340,6 @@ export const cleanOldMatches = async (): Promise<void> => {
         };
         
         transaction.oncomplete = () => {
-          console.log('Clean old matches transaction completed successfully');
           resolve();
         };
       });

@@ -70,14 +70,6 @@ const StandaloneScoreboard = () => {
       
       try {
         const fixtureTime = genericMatch.DateTime;
-        console.log('StandaloneScoreboard saving set scores after break with fixture time:', {
-          matchCode,
-          fixtureTime,
-          startTime,
-          homeTeam: homeTeamName,
-          awayTeam: awayTeamName,
-          setScores: newSetScores
-        });
         
         saveMatchScores(
           matchCode,
