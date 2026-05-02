@@ -85,16 +85,6 @@ export const useMatchData = (courtId: string, fixture?: Fixture) => {
           };
         }
         
-        // If we're not in offline mode, also try to save to Supabase (but don't wait for it)
-        if (!isOffline()) {
-          createNewMatch(courtId, fixture, matchCode)
-            .then(serverMatch => {
-              console.log('Successfully created match in Supabase as well:', serverMatch);
-            })
-            .catch(error => {
-              console.error('Failed to create match in Supabase, but local match was created:', error);
-            });
-        }
         
         const transformedMatch = transformToMatch(newMatch);
         console.log('Created and transformed new match:', transformedMatch);
