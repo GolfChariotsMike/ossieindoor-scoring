@@ -235,7 +235,7 @@ export const ScoreboardContainer = () => {
   const prevSetCountRef = useRef(0);
   useEffect(() => {
     const setCount = gameState.setScores.home.length;
-    if (setCount > 0 && setCount > prevSetCountRef.current && match && !gameState.isMatchComplete) {
+    if (setCount > 0 && setCount > prevSetCountRef.current && match) {
       console.log(`Break ended — saving scores after set ${setCount}`);
       gameState.saveScoresLocally(match.id, gameState.setScores.home, gameState.setScores.away, fixture)
         .catch(err => console.error('Error saving mid-match scores:', err));
