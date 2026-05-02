@@ -1,326 +1,188 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { savePendingScore, getPendingScores, removePendingScore, updatePendingScoreStatus } from "@/services/indexedDB";
+import { savePendingScore, getPendingScores, removePendingScore } from "@/services/indexedDB";
 import { isOffline } from "@/utils/offlineMode";
-import { MatchSummary, PendingScore } from "@/services/db/types";
 import { parseISO, isValid } from "date-fns";
 
-const MAX_RETRIES = 5;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-let isProcessing = false;
-
-const processPendingScores = async (forceProcess = false, matchSummaries?: MatchSummary[]) => {
-  if (isProcessing && !forceProcess) {
-    console.log('Already processing pending scores, skipping...');
-    return 0;
+const toISOFixtureTime = (raw?: string): string | undefined => {
+  if (!raw) return undefined;
+  if (raw.includes('T')) return raw; // already ISO
+  if (/\d{2}\/\d{2}\/\d{4}/.test(raw)) {
+    const [datePart, timePart = '00:00'] = raw.split(' ');
+    const [d, m, y] = datePart.split('/');
+    const iso = `${y}-${m}-${d}T${timePart}:00`;
+    const parsed = new Date(iso);
+    return isValid(parsed) ? parsed.toISOString() : undefined;
   }
+  return undefined;
+};
 
-  try {
-    isProcessing = true;
-    const pendingScores = await getPendingScores();
-    console.log('Processing pending scores:', pendingScores.length);
-    console.log('First few pendingScores with fixture data:', pendingScores.slice(0, 3).map(score => ({
-      id: score.id,
-      matchId: score.matchId,
-      fixtureTime: score.fixtureTime,
-      fixture_start_time: score.fixture_start_time
-    })));
+const buildUpsertPayload = (
+  matchId: string,
+  homeScores: number[],
+  awayScores: number[],
+  courtNumber: number,
+  division: string,
+  homeTeam: string,
+  awayTeam: string,
+  fixtureStartTime: string | undefined,
+  aceBlockStats: { homeAces?: number; awayAces?: number; homeBlocks?: number; awayBlocks?: number }
+) => {
+  const homeSetsWon = homeScores.reduce((acc, s, i) => acc + (s > awayScores[i] ? 1 : 0), 0);
+  const awaySetsWon = homeScores.reduce((acc, s, i) => acc + (s < awayScores[i] ? 1 : 0), 0);
+  const homeBonusPoints = homeScores.reduce((t, s) => t + Math.floor(s / 10), 0);
+  const awayBonusPoints = awayScores.reduce((t, s) => t + Math.floor(s / 10), 0);
 
-    let processedCount = 0;
-    
-    // Only block if the device genuinely has no network — never block on forced offline mode alone
-    // Forced offline mode is a UI preference; background sync should always attempt if network exists
-    if (!navigator.onLine && !forceProcess) {
-      console.log('No network connection, pending scores will be processed later');
-      isProcessing = false;
-      return 0;
-    }
+  return {
+    court_number: courtNumber,
+    division,
+    home_team_name: homeTeam,
+    away_team_name: awayTeam,
+    set1_home_score: homeScores[0] || 0,
+    set1_away_score: awayScores[0] || 0,
+    set2_home_score: homeScores[1] || 0,
+    set2_away_score: awayScores[1] || 0,
+    set3_home_score: homeScores[2] || 0,
+    set3_away_score: awayScores[2] || 0,
+    home_total_points: homeScores.reduce((a, b) => a + b, 0),
+    away_total_points: awayScores.reduce((a, b) => a + b, 0),
+    home_result: homeSetsWon > awaySetsWon ? 'W' : homeSetsWon < awaySetsWon ? 'L' : 'D',
+    away_result: awaySetsWon > homeSetsWon ? 'W' : awaySetsWon < homeSetsWon ? 'L' : 'D',
+    home_bonus_points: homeBonusPoints,
+    away_bonus_points: awayBonusPoints,
+    home_total_match_points: homeBonusPoints + (homeSetsWon * 2),
+    away_total_match_points: awayBonusPoints + (awaySetsWon * 2),
+    match_date: fixtureStartTime || new Date().toISOString(),
+    fixture_start_time: fixtureStartTime || null,
+    has_final_score: true,
+    home_aces: aceBlockStats.homeAces || 0,
+    away_aces: aceBlockStats.awayAces || 0,
+    home_blocks: aceBlockStats.homeBlocks || 0,
+    away_blocks: aceBlockStats.awayBlocks || 0,
+  };
+};
 
-    const fixtureStartTimes = new Map<string, string>();
-    if (matchSummaries && matchSummaries.length > 0) {
-      matchSummaries.forEach(match => {
-        if (match.matchId && match.fixture_start_time) {
-          fixtureStartTimes.set(match.matchId, match.fixture_start_time);
-        }
-      });
-      console.log(`Created lookup map with ${fixtureStartTimes.size} fixture start times`);
-      console.log('Sample fixture start times:', Array.from(fixtureStartTimes.entries()).slice(0, 3));
-    }
+// ─── Direct Supabase save (non-blocking) ─────────────────────────────────────
 
-    for (const score of pendingScores) {
-      try {
-        console.log('Processing score:', score.id);
-        await updatePendingScoreStatus(score.id, 'processing');
-        
-        if (!navigator.onLine) {
-          console.log('No network connection, will retry later');
-          await updatePendingScoreStatus(score.id, 'pending');
-          continue;
-        }
+const saveToSupabase = async (
+  matchId: string,
+  homeScores: number[],
+  awayScores: number[],
+  fixtureStartTime: string | undefined,
+  homeTeam: string,
+  awayTeam: string,
+  aceBlockStats: { homeAces?: number; awayAces?: number; homeBlocks?: number; awayBlocks?: number }
+): Promise<void> => {
+  const isLocalMatchId = matchId.startsWith('local-') || matchId.startsWith('fallback-') || matchId.startsWith('default-');
 
-        // Treat cached/fallback match IDs the same as local — they won't be in matches_v2
-        const isLocalMatchId = score.matchId.startsWith('local-') || 
-                               score.matchId.startsWith('fallback-') ||
-                               score.matchId.startsWith('default-');
-        
-        let existingData = null;
-        let checkError = null;
-        
-        if (!isLocalMatchId) {
-          const result = await supabase
-            .from('match_data_v2')
-            .select()
-            .eq('match_id', score.matchId)
-            .maybeSingle();
-          
-          existingData = result.data;
-          checkError = result.error;
-        }
+  let courtNumber = 0;
+  let division = 'Unknown';
 
-        if (checkError) {
-          console.error('Error checking existing match data:', checkError);
-          score.retryCount += 1;
-          await updatePendingScoreStatus(score.id, score.retryCount >= MAX_RETRIES ? 'failed' : 'pending');
-          continue;
-        }
+  if (isLocalMatchId) {
+    const courtMatch = matchId.match(/court[_-]?(\d+)/i) || matchId.match(/(\d+)/);
+    courtNumber = courtMatch ? parseInt(courtMatch[1]) : 0;
+    division = 'Local Match';
+  } else {
+    // Fetch match metadata from matches_v2
+    const { data: matchData } = await supabase
+      .from('matches_v2')
+      .select('court_number, division, home_team_name, away_team_name, fixture_start_time')
+      .eq('id', matchId)
+      .maybeSingle();
 
-        // Get the fixture start time from different sources and ensure it's in ISO format
-        let fixtureStartTime = fixtureStartTimes.get(score.matchId) || score.fixture_start_time;
-        
-        // Convert non-ISO format strings (like "25/03/2025 20:15") to ISO format
-        if (fixtureStartTime && !fixtureStartTime.includes('T') && /\d{2}\/\d{2}\/\d{4}/.test(fixtureStartTime)) {
-          try {
-            // Try to parse the date using date-fns
-            const parts = fixtureStartTime.split(' ');
-            const datePart = parts[0]; // dd/MM/yyyy
-            const timePart = parts.length > 1 ? parts[1] : '00:00'; // HH:mm or default to midnight
-            
-            const dateParts = datePart.split('/');
-            if (dateParts.length === 3) {
-              // Create an ISO string manually to avoid parsing issues
-              const isoString = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timePart}:00`;
-              const parsed = new Date(isoString);
-              
-              if (isValid(parsed)) {
-                fixtureStartTime = parsed.toISOString();
-                console.log(`Converted fixture time "${datePart} ${timePart}" to ISO: ${fixtureStartTime}`);
-              } else {
-                console.error(`Failed to parse fixture time: ${fixtureStartTime}`);
-                fixtureStartTime = new Date().toISOString(); // Fallback to now
-              }
-            }
-          } catch (error) {
-            console.error('Error converting fixture time to ISO:', fixtureStartTime, error);
-            fixtureStartTime = new Date().toISOString(); // Fallback to now
-          }
-        }
-        
-        console.log(`Fixture start time for ${score.matchId}: ${fixtureStartTime || 'not found'}`);
-
-        if (existingData) {
-          console.log('Updating existing match data:', existingData.id);
-          const { error: updateError } = await supabase
-            .from('match_data_v2')
-            .update({
-              home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
-              away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
-              set1_home_score: score.homeScores[0] || 0,
-              set1_away_score: score.awayScores[0] || 0,
-              set2_home_score: score.homeScores[1] || 0,
-              set2_away_score: score.awayScores[1] || 0,
-              set3_home_score: score.homeScores[2] || 0,
-              set3_away_score: score.awayScores[2] || 0,
-              has_final_score: true,
-              home_aces: score.homeAces || 0,
-              away_aces: score.awayAces || 0,
-              home_blocks: score.homeBlocks || 0,
-              away_blocks: score.awayBlocks || 0,
-              ...(fixtureStartTime ? { fixture_start_time: fixtureStartTime } : {})
-            })
-            .eq('id', existingData.id);
-
-          if (updateError) {
-            throw updateError;
-          }
-        } else {
-          console.log('Saving new match data for match:', score.matchId);
-          
-          const homePointsFor = score.homeScores.reduce((acc, s) => acc + s, 0);
-          const awayPointsFor = score.awayScores.reduce((acc, s) => acc + s, 0);
-
-          const homeSetsWon = score.homeScores.reduce((acc, s, index) => 
-            acc + (s > score.awayScores[index] ? 1 : 0), 0);
-          const awaySetsWon = score.homeScores.reduce((acc, s, index) => 
-            acc + (s < score.awayScores[index] ? 1 : 0), 0);
-
-          const getResult = (isHomeTeam: boolean) => {
-            const teamSetsWon = isHomeTeam ? homeSetsWon : awaySetsWon;
-            const opponentSetsWon = isHomeTeam ? awaySetsWon : homeSetsWon;
-            if (teamSetsWon > opponentSetsWon) return 'W';
-            if (teamSetsWon < opponentSetsWon) return 'L';
-            return 'D';
-          };
-
-          const homeBonusPoints = score.homeScores.reduce((total, setScore) => 
-            total + Math.floor(setScore / 10), 0);
-          const awayBonusPoints = score.awayScores.reduce((total, setScore) => 
-            total + Math.floor(setScore / 10), 0);
-
-          const homeMatchPoints = homeBonusPoints + (homeSetsWon * 2);
-          const awayMatchPoints = awayBonusPoints + (awaySetsWon * 2);
-          
-          let homeTeamName = score.homeTeam || "Home Team";
-          let awayTeamName = score.awayTeam || "Away Team";
-          let courtNumber = 0;
-          let division = "Unknown";
-          
-          if (isLocalMatchId) {
-            try {
-              const parts = score.matchId.split('_');
-              if (parts.length >= 3) {
-                courtNumber = parseInt(parts[0].slice(-3)) || 0;
-                
-                if (!score.homeTeam) {
-                  homeTeamName = parts[1].replace(/([A-Z])/g, ' $1').trim();
-                }
-                
-                if (!score.awayTeam) {
-                  let awayPart = parts[2];
-                  if (awayPart.includes('-')) {
-                    awayPart = awayPart.split('-')[0];
-                  }
-                  awayTeamName = awayPart.replace(/([A-Z])/g, ' $1').trim();
-                }
-                
-                division = "Local Match";
-              }
-            } catch (error) {
-              console.error('Error parsing local match ID:', error);
-            }
-          } else {
-            try {
-              const { data: matchData, error: matchError } = await supabase
-                .from('matches_v2')
-                .select('*')
-                .eq('id', score.matchId)
-                .single();
-
-              if (!matchError && matchData) {
-                homeTeamName = score.homeTeam || matchData.home_team_name;
-                awayTeamName = score.awayTeam || matchData.away_team_name;
-                courtNumber = matchData.court_number;
-                division = matchData.division || "Unknown";
-                if (!fixtureStartTime && matchData.fixture_start_time) {
-                  console.log(`Using fixture start time from matches_v2: ${matchData.fixture_start_time}`);
-                  fixtureStartTime = matchData.fixture_start_time;
-                }
-              } else {
-                // Match not in matches_v2 (local/cached match) — extract from matchId or use score data
-                console.log('Match not found in matches_v2, using score metadata:', score.matchId);
-                homeTeamName = score.homeTeam || "Home Team";
-                awayTeamName = score.awayTeam || "Away Team";
-                // Try to extract court number from matchId (format: local-court{N}-... or similar)
-                const courtMatch = score.matchId.match(/court[_-]?(\d+)/i) || score.matchId.match(/(\d+)/);
-                courtNumber = courtMatch ? parseInt(courtMatch[1]) : 0;
-                division = "Unknown";
-              }
-            } catch (error) {
-              // Don't throw — use whatever data we have and continue the save
-              console.error('Error fetching match details, continuing with available data:', error);
-              homeTeamName = score.homeTeam || "Home Team";
-              awayTeamName = score.awayTeam || "Away Team";
-              courtNumber = 0;
-              division = "Unknown";
-            }
-          }
-
-          const { error: upsertError } = await supabase
-            .from('match_data_v2')
-            .upsert({
-              match_id: isLocalMatchId ? null : score.matchId,
-              court_number: courtNumber,
-              division: division,
-              home_team_name: homeTeamName,
-              away_team_name: awayTeamName,
-              set1_home_score: score.homeScores[0] || 0,
-              set1_away_score: score.awayScores[0] || 0,
-              set2_home_score: score.homeScores[1] || 0,
-              set2_away_score: score.awayScores[1] || 0,
-              set3_home_score: score.homeScores[2] || 0,
-              set3_away_score: score.awayScores[2] || 0,
-              home_total_points: score.homeScores.reduce((a, b) => a + b, 0),
-              away_total_points: score.awayScores.reduce((a, b) => a + b, 0),
-              home_result: score.homeScores.reduce((acc, s, index) => acc + (s > score.awayScores[index] ? 1 : 0), 0) > 
-                           score.awayScores.reduce((acc, s, index) => acc + (s > score.homeScores[index] ? 1 : 0), 0) ? 'W' : 'L',
-              away_result: score.awayScores.reduce((acc, s, index) => acc + (s > score.homeScores[index] ? 1 : 0), 0) > 
-                           score.homeScores.reduce((acc, s, index) => acc + (s > score.awayScores[index] ? 1 : 0), 0) ? 'W' : 'L',
-              home_bonus_points: score.homeScores.reduce((total, setScore) => total + Math.floor(setScore / 10), 0),
-              away_bonus_points: score.awayScores.reduce((total, setScore) => total + Math.floor(setScore / 10), 0),
-              home_total_match_points: score.homeScores.reduce((total, setScore) => total + Math.floor(setScore / 10), 0) + 
-                                      (score.homeScores.reduce((acc, s, index) => acc + (s > score.awayScores[index] ? 1 : 0), 0) * 2),
-              away_total_match_points: score.awayScores.reduce((total, setScore) => total + Math.floor(setScore / 10), 0) + 
-                                      (score.awayScores.reduce((acc, s, index) => acc + (s > score.homeScores[index] ? 1 : 0), 0) * 2),
-              match_date: fixtureStartTime || new Date().toISOString(),
-              fixture_start_time: fixtureStartTime || null,
-              has_final_score: true,
-              home_aces: score.homeAces || 0,
-              away_aces: score.awayAces || 0,
-              home_blocks: score.homeBlocks || 0,
-              away_blocks: score.awayBlocks || 0,
-            }, { onConflict: isLocalMatchId ? 'court_number,fixture_start_time' : 'match_id', ignoreDuplicates: false });
-
-          if (upsertError) {
-            console.error('Error saving match data:', upsertError);
-            throw upsertError;
-          }
-        }
-
-        await removePendingScore(score.id);
-        console.log('Successfully processed pending score:', score.id);
-        processedCount++;
-      } catch (error) {
-        console.error('Failed to process pending score:', score.id, error);
-        score.retryCount += 1;
-        await updatePendingScoreStatus(score.id, score.retryCount >= MAX_RETRIES ? 'failed' : 'pending');
-        
-        if (score.retryCount >= MAX_RETRIES) {
-          console.error('Max retries reached for score:', score.id);
-        }
+    if (matchData) {
+      courtNumber = matchData.court_number;
+      division = matchData.division || 'Unknown';
+      homeTeam = homeTeam || matchData.home_team_name;
+      awayTeam = awayTeam || matchData.away_team_name;
+      if (!fixtureStartTime && matchData.fixture_start_time) {
+        fixtureStartTime = matchData.fixture_start_time;
       }
     }
-    
-    console.log('Finished processing scores. Total processed:', processedCount);
-    return processedCount;
-  } catch (error) {
-    console.error('Error processing pending scores:', error);
-    throw error;
-  } finally {
-    isProcessing = false;
+  }
+
+  const payload = buildUpsertPayload(
+    matchId, homeScores, awayScores,
+    courtNumber, division, homeTeam, awayTeam,
+    fixtureStartTime, aceBlockStats
+  );
+
+  if (isLocalMatchId) {
+    // Local matches: upsert on court_number + fixture_start_time
+    const { error } = await supabase
+      .from('match_data_v2')
+      .upsert(
+        { ...payload, match_id: null },
+        { onConflict: 'court_number,fixture_start_time', ignoreDuplicates: false }
+      );
+    if (error) throw error;
+  } else {
+    // Spawtz matches: upsert on match_id
+    const { error } = await supabase
+      .from('match_data_v2')
+      .upsert(
+        { ...payload, match_id: matchId },
+        { onConflict: 'match_id', ignoreDuplicates: false }
+      );
+    if (error) throw error;
   }
 };
 
-window.addEventListener('online', () => {
-  console.log('Network connection restored, flushing pending scores...');
-  processPendingScores(false).catch(console.error);
-});
+// ─── Offline queue flush ──────────────────────────────────────────────────────
 
-// Background sync: retry pending scores every 30 seconds when online
-setInterval(() => {
-  if (typeof navigator !== 'undefined' && navigator.onLine && !isProcessing) {
-    processPendingScores(false).catch(console.error);
+let isFlushing = false;
+
+const flushPendingScores = async (): Promise<void> => {
+  if (isFlushing || !navigator.onLine) return;
+  isFlushing = true;
+  try {
+    const pending = await getPendingScores();
+    for (const score of pending) {
+      try {
+        await saveToSupabase(
+          score.matchId,
+          score.homeScores,
+          score.awayScores,
+          score.fixture_start_time,
+          score.homeTeam || 'Home Team',
+          score.awayTeam || 'Away Team',
+          {
+            homeAces: score.homeAces,
+            awayAces: score.awayAces,
+            homeBlocks: score.homeBlocks,
+            awayBlocks: score.awayBlocks,
+          }
+        );
+        await removePendingScore(score.id);
+        console.log('Flushed offline score:', score.id);
+      } catch (err) {
+        console.warn('Failed to flush score, will retry later:', score.id, err);
+      }
+    }
+  } finally {
+    isFlushing = false;
   }
-}, 5 * 60 * 1000); // Every 5 minutes
+};
 
-window.addEventListener('offline', () => {
-  console.log('Network connection lost, scores will be saved locally');
+// Flush when connection restores
+window.addEventListener('online', () => {
+  console.log('Back online — flushing pending scores');
+  flushPendingScores().catch(console.error);
 });
+
+// Background flush every 5 min (catches anything missed)
+setInterval(() => {
+  if (navigator.onLine) flushPendingScores().catch(console.error);
+}, 5 * 60 * 1000);
+
+// ─── Main export ─────────────────────────────────────────────────────────────
 
 export const saveMatchScores = async (
   matchId: string,
   homeScores: number[],
   awayScores: number[],
-  submitToSupabase: boolean = false,
+  _submitToSupabase: boolean = false, // kept for API compatibility, ignored
   fixtureTime?: string,
   fixture_start_time?: string,
   homeTeam?: string,
@@ -332,126 +194,58 @@ export const saveMatchScores = async (
     awayBlocks?: number;
   }
 ): Promise<void> => {
-  console.log('Starting saveMatchScores with:', {
-    matchId,
-    homeScores,
-    awayScores,
-    fixtureTime,
-    fixture_start_time,
-    homeTeam,
-    awayTeam,
-    timestamp: new Date().toISOString(),
-    submitToSupabase
-  });
-
   if (!matchId || !homeScores.length || !awayScores.length) {
-    console.error('Invalid match data:', { matchId, homeScores, awayScores });
-    toast({
-      title: "Error saving scores",
-      description: "Invalid match data provided",
-      variant: "destructive",
-    });
+    console.error('saveMatchScores: invalid data', { matchId, homeScores, awayScores });
     return;
   }
 
-  try {
-    // If we have a fixture time in dd/MM/yyyy HH:mm format, convert it to ISO string
-    let isoFixtureStartTime = fixture_start_time;
-    
-    if (fixtureTime && !fixture_start_time && /\d{2}\/\d{2}\/\d{4}/.test(fixtureTime)) {
-      try {
-        // Try to parse the date using date-fns
-        const parts = fixtureTime.split(' ');
-        const datePart = parts[0]; // dd/MM/yyyy
-        const timePart = parts.length > 1 ? parts[1] : '00:00'; // HH:mm or default to midnight
-        
-        const dateParts = datePart.split('/');
-        if (dateParts.length === 3) {
-          // Create an ISO string manually to avoid parsing issues
-          const isoString = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timePart}:00`;
-          const parsed = new Date(isoString);
-          
-          if (isValid(parsed)) {
-            isoFixtureStartTime = parsed.toISOString();
-            console.log(`Converted fixture time "${fixtureTime}" to ISO: ${isoFixtureStartTime}`);
-          }
-        }
-      } catch (error) {
-        console.error('Error converting fixture time to ISO:', fixtureTime, error);
-      }
-    }
+  const fixtureStartTime = fixture_start_time || toISOFixtureTime(fixtureTime);
+  const stats = aceBlockStats || {};
 
-    // Debug the score orientation
-    console.log('Score orientation check:', {
-      homeTeam,
-      awayTeam,
-      homeScores,
-      awayScores
+  if (navigator.onLine && !isOffline()) {
+    // ── Online path: save directly to Supabase, non-blocking ──
+    saveToSupabase(
+      matchId, homeScores, awayScores,
+      fixtureStartTime,
+      homeTeam || 'Home Team',
+      awayTeam || 'Away Team',
+      stats
+    ).then(() => {
+      console.log('Saved to Supabase:', matchId, homeScores, awayScores);
+    }).catch(async (err) => {
+      console.error('Supabase save failed, queuing offline:', err);
+      // Fall back to offline queue
+      await savePendingScore({
+        id: matchId,
+        matchId,
+        homeScores,
+        awayScores,
+        fixtureTime,
+        fixture_start_time: fixtureStartTime,
+        homeTeam,
+        awayTeam,
+        timestamp: new Date().toISOString(),
+        retryCount: 0,
+        ...stats,
+      });
     });
-
-    // FIX: Use matchId as the record key so mid-match saves overwrite each other (one record per match)
-    const pendingScore = {
+  } else {
+    // ── Offline path: queue for later ──
+    console.log('Offline — queuing score for later:', matchId);
+    await savePendingScore({
       id: matchId,
       matchId,
-      homeScores: homeScores, // FIXED: No longer swapping home/away scores
-      awayScores: awayScores, // FIXED: No longer swapping home/away scores
+      homeScores,
+      awayScores,
       fixtureTime,
-      fixture_start_time: isoFixtureStartTime,
+      fixture_start_time: fixtureStartTime,
       homeTeam,
       awayTeam,
       timestamp: new Date().toISOString(),
       retryCount: 0,
-      ...(aceBlockStats && {
-        homeAces: aceBlockStats.homeAces || 0,
-        awayAces: aceBlockStats.awayAces || 0,
-        homeBlocks: aceBlockStats.homeBlocks || 0,
-        awayBlocks: aceBlockStats.awayBlocks || 0
-      })
-    };
-    
-    console.log('About to save pending score with fixture data:', {
-      id: pendingScore.id,
-      fixtureTime: pendingScore.fixtureTime,
-      fixture_start_time: pendingScore.fixture_start_time,
-      homeTeam: pendingScore.homeTeam,
-      awayTeam: pendingScore.awayTeam,
-      homeScores: pendingScore.homeScores,
-      awayScores: pendingScore.awayScores
+      ...stats,
     });
-    
-    await savePendingScore(pendingScore);
-    console.log('Pending score saved to IndexedDB successfully');
-
-    // Always try to submit immediately if online — don't wait for end of night
-    if (navigator.onLine) {
-      processPendingScores(true).catch(console.error);
-    }
-    return;
-  } catch (error) {
-    console.error('Error saving match scores:', error);
-    
-    if (!isOffline() && submitToSupabase) {
-      try {
-        await supabase.from('crash_logs').insert({
-          error_type: 'match_score_save_error',
-          error_message: error instanceof Error ? error.message : 'Unknown error',
-          error_stack: JSON.stringify({
-            matchId,
-            homeScores,
-            awayScores,
-            error
-          }),
-          browser_info: {
-            userAgent: navigator.userAgent,
-            url: window.location.href
-          }
-        });
-      } catch (logError) {
-        console.error('Failed to log error to crash_logs:', logError);
-      }
-    }
-    
   }
 };
 
-export { processPendingScores };
+export { flushPendingScores as processPendingScores };
